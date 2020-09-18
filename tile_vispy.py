@@ -1,7 +1,6 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
 
 import sys
-from string import Template
 from vispy import app, gloo
 from math import sqrt, cos, sin, pi
 
@@ -16,9 +15,7 @@ void main() {
 fragment = ('''
 uniform vec2 resolution;
 uniform float shortdim;
-uniform vec3 mirror1;
-uniform vec3 mirror2;
-uniform vec3 mirror3;
+uniform vec3 mirrors [3];
 
 // --- minkowski geometry ---
 
@@ -40,31 +37,27 @@ vec3 mreflect(vec3 v, vec3 mirror) {
 
 vec3 sample(vec2 coord) {
   vec2 u = 1.2*(2.*coord - resolution) / shortdim;
-  vec3 color = vec3(0.25, 0.15, 0.35);
   float r_sq = dot(u, u);
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq);
     int flips = 0;
     int onsides = 0;
     while (flips < 40) {
-'''
-+ ''.join([Template('''
-      if (mprod($mirror, v) > 0.) {
-        v = mreflect(v, $mirror);
-        flips += 1;
-        onsides = 0;
-      } else {
-        onsides += 1;
-        if (onsides >= 3) {
-          color = vec3(mod(flips, 2));
-          break;
+      for (int k = 0; k < 3; k++) {
+        if (mprod(mirrors[k], v) > 0.) {
+          v = mreflect(v, mirrors[k]);
+          flips += 1;
+          onsides = 0;
+        } else {
+          onsides += 1;
+          if (onsides >= 3) {
+            return vec3(mod(flips, 2));
+          }
         }
       }
-''').substitute(mirror = m) for m in ['mirror1', 'mirror2', 'mirror3']])
-+ '''
     }
   }
-  return color;
+  return vec3(0.25, 0.15, 0.35);
 }
 
 void main() {
@@ -118,9 +111,9 @@ class TilingCanvas(app.Canvas):
     cr = cos(pi/r)
     
     # find the side normals of the fundamental triangle, scaled to unit norm
-    self.program['mirror1'] = (1, 0, 0)
-    self.program['mirror2'] = (-cp, sp, 0)
-    self.program['mirror3'] = (
+    self.program['mirrors[0]'] = (1, 0, 0)
+    self.program['mirrors[1]'] = (-cp, sp, 0)
+    self.program['mirrors[2]'] = (
       -cq,
       -(cp*cq + cr) / sp,
       sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
