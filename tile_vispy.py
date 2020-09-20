@@ -35,8 +35,10 @@ vec3 mreflect(vec3 v, vec3 mirror) {
 
 // --- tiling ---
 
-vec3 sample(vec2 coord) {
-  vec2 u = 1.2*(2.*coord - resolution) / shortdim;
+const float VIEW = 1.2;
+
+/*vec3 sample(vec2 coord) {
+  vec2 u = VIEW*(2.*coord - resolution) / shortdim;
   float r_sq = dot(u, u);
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq);
@@ -58,9 +60,9 @@ vec3 sample(vec2 coord) {
     }
   }
   return vec3(0.25, 0.15, 0.35);
-}
+}*/
 
-void main() {
+/*void main() {*/
   // mix subpixels
   /*vec2 jiggle = vec2(0.25);
   vec3 color_sum = vec3(0.);
@@ -72,13 +74,48 @@ void main() {
     jiggle.x = -jiggle.x;
   }
   gl_FragColor = vec4(0.25*color_sum, 1.);*/
-  vec3 color_sum = vec3(0.);
+  /*vec3 color_sum = vec3(0.);
   for (int jiggle_x = -1; jiggle_x < 2; jiggle_x++) {
     for (int jiggle_y = -1; jiggle_y < 2; jiggle_y++) {
       color_sum += sample(gl_FragCoord.xy + vec2(jiggle_x, jiggle_y)/3.);
     }
   }
   gl_FragColor = vec4(color_sum / 9., 1.);
+}*/
+
+void main() {
+  // find screen coordinate
+  vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
+  float r_sq = dot(u, u);
+  
+  // find pixel radius, for antialiasing
+  float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
+  float r_px = 2.*r_px_screen / (1.+r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
+  
+  // reduce to fundamental domain
+  float mirror_prod [3];
+  if (r_sq < 1.) {
+    vec3 v = vec3(2.*u, 1.+r_sq);
+    int flips = 0;
+    int onsides = 0;
+    while (flips < 40) {
+      for (int k = 0; k < 3; k++) {
+        mirror_prod[k] = mprod(v, mirrors[k]);
+        if (mirror_prod[k] > 0.) {
+          v -= 2.*mirror_prod[k]*mirrors[k];
+          flips += 1;
+          onsides = 0;
+        } else {
+          onsides += 1;
+          if (onsides >= 3) {
+            gl_FragColor = vec4(vec3(mod(flips, 2)), 1.);
+            return;
+          }
+        }
+      }
+    }
+  }
+  gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
 }
 ''')
 
