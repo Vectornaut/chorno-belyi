@@ -36,8 +36,9 @@ vec3 mreflect(vec3 v, vec3 mirror) {
 // --- tiling ---
 
 const float VIEW = 1.2;
+const float SQRT2 = 1.4142135623730951;
 
-/*vec3 sample(vec2 coord) {
+vec3 sample(vec2 coord) {
   vec2 u = VIEW*(2.*coord - resolution) / shortdim;
   float r_sq = dot(u, u);
   if (r_sq < 1.) {
@@ -60,9 +61,9 @@ const float VIEW = 1.2;
     }
   }
   return vec3(0.25, 0.15, 0.35);
-}*/
+}
 
-/*void main() {*/
+void main_multi() {
   // mix subpixels
   /*vec2 jiggle = vec2(0.25);
   vec3 color_sum = vec3(0.);
@@ -74,30 +75,34 @@ const float VIEW = 1.2;
     jiggle.x = -jiggle.x;
   }
   gl_FragColor = vec4(0.25*color_sum, 1.);*/
-  /*vec3 color_sum = vec3(0.);
+  vec3 color_sum = vec3(0.);
   for (int jiggle_x = -1; jiggle_x < 2; jiggle_x++) {
     for (int jiggle_y = -1; jiggle_y < 2; jiggle_y++) {
       color_sum += sample(gl_FragCoord.xy + vec2(jiggle_x, jiggle_y)/3.);
     }
   }
   gl_FragColor = vec4(color_sum / 9., 1.);
-}*/
+}
 
-void main() {
+void main_area() {
   // find screen coordinate
   vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
   
   // find pixel radius, for antialiasing
   float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
-  float r_px = 2.*r_px_screen / (1.+r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
+  float r_px = 2.*r_px_screen / (1.-r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
   
   // reduce to fundamental domain
   float mirror_prod [3];
   if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq);
+    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
+    /*if (mprod(v, v) < -0.5) {
+      gl_FragColor = vec4(0.2, 0., 1., 1.);
+      return;
+    }*/
     int flips = 0;
-    int onsides = 0;
+    int onsides = 0; // how many times in a row we've been on the negative side of a mirror
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
         mirror_prod[k] = mprod(v, mirrors[k]);
@@ -108,7 +113,25 @@ void main() {
         } else {
           onsides += 1;
           if (onsides >= 3) {
-            gl_FragColor = vec4(vec3(mod(flips, 2)), 1.);
+            // we're in the fundamental domain, on the negative side of every mirror
+            
+            //get the distance to the nearest mirror
+            float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
+            /*if (mirror_dist > r_px) {
+              gl_FragColor = vec4(0., 1., 0., 1.);
+              return;
+            }*/
+            /*if (mprod(v, v) < -1.+1e-6) {
+              gl_FragColor = vec4(1., 0., 0.2, 1.);
+              return;
+            }*/
+            
+            // estimate how much of our pixel is on the negative side of the nearest mirror
+            float coverage = 0.5 + 0.5*min(mirror_dist / r_px, 1.);
+            
+            float pos_color = mod(flips, 2);
+            float px_color = coverage*pos_color + (1.-coverage)*(1.-pos_color);
+            gl_FragColor = vec4(vec3(px_color), 1.);
             return;
           }
         }
@@ -116,6 +139,11 @@ void main() {
     }
   }
   gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
+}
+
+void main() {
+  /*main_multi();*/
+  main_area();
 }
 ''')
 
