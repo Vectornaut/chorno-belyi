@@ -105,10 +105,6 @@ void main_linramp() {
   float mirror_prod [3];
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
-    /*if (mprod(v, v) < -0.5) {
-      gl_FragColor = vec4(0.2, 0., 1., 1.);
-      return;
-    }*/
     int flips = 0;
     int onsides = 0; // how many times in a row we've been on the negative side of a mirror
     while (flips < 40) {
@@ -125,14 +121,6 @@ void main_linramp() {
             
             // get the distance to the nearest mirror
             float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
-            /*if (mirror_dist > r_px) {
-              gl_FragColor = vec4(0., 1., 0., 1.);
-              return;
-            }*/
-            /*if (mprod(v, v) < -1.+1e-6) {
-              gl_FragColor = vec4(1., 0., 0.2, 1.);
-              return;
-            }*/
             
             // estimate how much of our pixel is on the negative side of the nearest mirror
             float coverage = 0.5 + 0.5*min(mirror_dist / r_px, 1.);
@@ -190,10 +178,6 @@ void main_gauss() {
             
             // get the distance to the nearest mirror
             float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
-            /*if (mirror_dist > r_px) {
-              gl_FragColor = vec4(0., 1., 0., 1.);
-              return;
-            }*/
             
             // estimate how much of our pixel is on the negative side of the nearest mirror
             float overflow = 0.5*erfc_appx(mirror_dist / r_px);
@@ -224,10 +208,6 @@ void main_box() {
   float mirror_prod [3];
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
-    /*if (mprod(v, v) < -0.5) {
-      gl_FragColor = vec4(0.2, 0., 1., 1.);
-      return;
-    }*/
     int flips = 0;
     int onsides = 0; // how many times in a row we've been on the negative side of a mirror
     while (flips < 40) {
