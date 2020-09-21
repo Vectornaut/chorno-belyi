@@ -365,6 +365,15 @@ class TilingCanvas(app.Canvas):
     self.update()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
+  # show controls
+  print('''
+  qwe  select multisampled antialiasing methods
+  asd  select area-sampled antialiasing methods
+  
+  uio  raise vertex orders
+  jkl  lower vertex orders
+  ''')
+  
   orders = (2, 3, 7)
   TilingCanvas(*orders, size = (500, 500)).show()
   app.run()
