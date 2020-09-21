@@ -16,6 +16,7 @@ fragment = ('''
 uniform vec2 resolution;
 uniform float shortdim;
 uniform vec3 mirrors [3];
+uniform int aa_method;
 
 // --- minkowski geometry ---
 
@@ -63,9 +64,13 @@ vec3 sample(vec2 coord) {
   return vec3(0.25, 0.15, 0.35);
 }
 
-void main_multi() {
+void main_none() {
+  gl_FragColor = vec4(sample(gl_FragCoord.xy), 1.);
+}
+
+void main_multi4x() {
   // mix subpixels
-  /*vec2 jiggle = vec2(0.25);
+  vec2 jiggle = vec2(0.25);
   vec3 color_sum = vec3(0.);
   for (int sgn_x = 0; sgn_x < 2; sgn_x++) {
     for (int sgn_y = 0; sgn_y < 2; sgn_y++) {
@@ -74,7 +79,10 @@ void main_multi() {
     }
     jiggle.x = -jiggle.x;
   }
-  gl_FragColor = vec4(0.25*color_sum, 1.);*/
+  gl_FragColor = vec4(0.25*color_sum, 1.);
+}
+
+void main_multi9x() {
   vec3 color_sum = vec3(0.);
   for (int jiggle_x = -1; jiggle_x < 2; jiggle_x++) {
     for (int jiggle_y = -1; jiggle_y < 2; jiggle_y++) {
@@ -281,10 +289,12 @@ void main_box() {
 }
 
 void main() {
-  /*main_multi();*/
-  /*main_linramp();*/
-  main_gauss();
-  /*main_box();*/
+  if (aa_method == 0) main_none();
+  else if (aa_method == 1) main_multi4x();
+  else if (aa_method == 2) main_multi9x();
+  else if (aa_method == 3) main_linramp();
+  else if (aa_method == 4) main_gauss();
+  else if (aa_method == 5) main_box();
 }
 ''')
 
@@ -300,19 +310,36 @@ class TilingCanvas(app.Canvas):
     ]
     
     # initialize settings
-    self.set_resolution()
+    self.update_resolution()
+    self.set_aa_method(4)
     self.set_tiling(p, q, r)
+    self.update_title()
   
-  def set_resolution(self):
+  def update_title(self):
+    tiling_name = 'Tiling {} {} {}'.format(*self.orders)
+    aa_name = [
+      'no AA',
+      '4x MSAA',
+      '9x MSAA',
+      'linear ramp AA',
+      'Gaussian AA',
+      'box AA'
+    ][self.aa_method]
+    self.title = tiling_name + ' | ' + aa_name
+  
+  def update_resolution(self):
     width, height = self.physical_size
     gloo.set_viewport(0, 0, width, height)
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
   
+  def set_aa_method(self, aa_method):
+    self.aa_method = aa_method
+    self.program['aa_method'] = aa_method
+  
   def set_tiling(self, p, q, r):
     # store and display vertex orders
     self.orders = (p, q, r)
-    self.title = 'Tiling {} {} {}'.format(p, q, r)
     
     # get vertex cosines
     sp = sin(pi/p)
@@ -333,7 +360,7 @@ class TilingCanvas(app.Canvas):
     self.program.draw()
   
   def on_resize(self, event):
-    self.set_resolution()
+    self.update_resolution()
   
   def on_key_press(self, event):
     # update tiling
@@ -344,9 +371,18 @@ class TilingCanvas(app.Canvas):
     elif event.text == 'i': q += 1
     elif event.text == 'l': r -= 1
     elif event.text == 'o': r += 1
+    elif event.text == 'q': self.set_aa_method(0)
+    elif event.text == 'w': self.set_aa_method(1)
+    elif event.text == 'e': self.set_aa_method(2)
+    elif event.text == 'a': self.set_aa_method(3)
+    elif event.text == 's': self.set_aa_method(4)
+    elif event.text == 'd': self.set_aa_method(5)
+    
     if (q*r + r*p + p*q < p*q*r):
       self.set_tiling(p, q, r)
-      self.update()
+    
+    self.update_title()
+    self.update()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   orders = (2, 3, 7)
