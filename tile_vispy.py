@@ -146,6 +146,7 @@ const float A2 = 0.230389;
 const float A3 = 0.000972;
 const float A4 = 0.078108;
 
+// Abramowitz and Stegun, equation 7.1.27
 float erfc_appx(float t) {
   float p = 1. + A1*(t + A2*(t + A3*(t + A4*t)));
   float p_sq = p*p;
@@ -309,7 +310,11 @@ class TilingCanvas(app.Canvas):
     self.program['shortdim'] = min(width, height)
   
   def set_tiling(self, p, q, r):
-    # get angle cosines
+    # store and display vertex orders
+    self.orders = (p, q, r)
+    self.title = 'Tiling {} {} {}'.format(p, q, r)
+    
+    # get vertex cosines
     sp = sin(pi/p)
     cp = cos(pi/p)
     cq = cos(pi/q)
@@ -329,9 +334,21 @@ class TilingCanvas(app.Canvas):
   
   def on_resize(self, event):
     self.set_resolution()
+  
+  def on_key_press(self, event):
+    # update tiling
+    p, q, r = self.orders
+    if event.text == 'j': p -= 1
+    elif event.text == 'u': p += 1
+    elif event.text == 'k': q -= 1
+    elif event.text == 'i': q += 1
+    elif event.text == 'l': r -= 1
+    elif event.text == 'o': r += 1
+    if (q*r + r*p + p*q < p*q*r):
+      self.set_tiling(p, q, r)
+      self.update()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
-  orders = [2, 3, 7]
-  title = 'Tiling {} {} {}'.format(*orders)
-  TilingCanvas(*orders, size = (500, 500), title = title).show()
+  orders = (2, 3, 7)
+  TilingCanvas(*orders, size = (500, 500)).show()
   app.run()
