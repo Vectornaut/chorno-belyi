@@ -84,7 +84,7 @@ void main_multi() {
   gl_FragColor = vec4(color_sum / 9., 1.);
 }
 
-void main_tophat() {
+void main_linramp() {
   // find screen coordinate
   vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
@@ -131,6 +131,66 @@ void main_tophat() {
             
             float pos_color = mod(flips, 2);
             float px_color = mix(1.-pos_color, pos_color, coverage);
+            gl_FragColor = vec4(vec3(px_color), 1.);
+            return;
+          }
+        }
+      }
+    }
+  }
+  gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
+}
+
+const float A1 = 0.278393;
+const float A2 = 0.230389;
+const float A3 = 0.000972;
+const float A4 = 0.078108;
+
+float erfc_appx(float t) {
+  float p = 1. + A1*(t + A2*(t + A3*(t + A4*t)));
+  float p_sq = p*p;
+  return 1. / (p_sq*p_sq);
+}
+
+void main_gauss() {
+  // find screen coordinate
+  vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
+  float r_sq = dot(u, u);
+  
+  // find pixel radius, for antialiasing
+  float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
+  float r_px = 2.*r_px_screen / (1.-r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
+  
+  // reduce to fundamental domain
+  float mirror_prod [3];
+  if (r_sq < 1.) {
+    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
+    int flips = 0;
+    int onsides = 0; // how many times in a row we've been on the negative side of a mirror
+    while (flips < 40) {
+      for (int k = 0; k < 3; k++) {
+        mirror_prod[k] = mprod(v, mirrors[k]);
+        if (mirror_prod[k] > 0.) {
+          v -= 2.*mirror_prod[k]*mirrors[k];
+          flips += 1;
+          onsides = 0;
+        } else {
+          onsides += 1;
+          if (onsides >= 3) {
+            // we're in the fundamental domain, on the negative side of every mirror
+            
+            // get the distance to the nearest mirror
+            float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
+            /*if (mirror_dist > r_px) {
+              gl_FragColor = vec4(0., 1., 0., 1.);
+              return;
+            }*/
+            
+            // estimate how much of our pixel is on the negative side of the nearest mirror
+            float overflow = 0.5*erfc_appx(mirror_dist / r_px);
+            
+            float pos_color = mod(flips, 2);
+            float px_color = mix(pos_color, 1.-pos_color, overflow);
             gl_FragColor = vec4(vec3(px_color), 1.);
             return;
           }
@@ -221,8 +281,9 @@ void main_box() {
 
 void main() {
   /*main_multi();*/
-  /*main_tophat();*/
-  main_box();
+  /*main_linramp();*/
+  main_gauss();
+  /*main_box();*/
 }
 ''')
 
