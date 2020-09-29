@@ -135,15 +135,14 @@ void main() {
   // find pixel radius, for antialiasing
   float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
   
-  vec3 color = vec3(1.);
-  vec2 z = casin(u);
-  if (mod(8./PI * z.x, 1.) < 0.5) {
-    color.r *= 0.8;
-    color.g *= 0.7;
-  }
-  if (mod(8./PI * z.y, 1.) < 0.5) {
-    color.g *= 0.8;
-    color.b *= 0.7;
+  vec2 z = 48./PI * casin(u);
+  z.y = abs(z.y);
+  vec3 color = vec3(0.5);
+  if (z.y < 1.5) {
+    color = vec3(z.x < 0. ? 0. : 1.);
+  } else {
+    float off = mod(z.y, 1.);
+    color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
   }
   gl_FragColor = vec4(color, 1.);
 }
