@@ -1,6 +1,9 @@
 # coding=utf-8
 
-from sage.all import QQ, CDF, polygen, PowerSeriesRing, hypergeometric
+from sage.all import \
+  QQ, CDF, \
+  matrix, diagonal_matrix, \
+  polygen, PowerSeriesRing, hypergeometric
 import numpy as np
 from numpy import pi
 
@@ -19,6 +22,22 @@ class Covering():
     self.p = p
     self.q = q
     self.r = r
+    
+    # --- find shift
+    
+    # `shift` is the Möbius transformation that translates `b` to `a` along the
+    # real axis
+    
+    # find the translation length
+    # lam = cosh(d(a, b))
+    # mu = exp(d(a, b))
+    lam = (np.cos(pi/p)*np.cos(pi/q) + np.cos(pi/r)) / (np.sin(pi/p)*np.sin(pi/q))
+    mu = lam + np.sqrt(lam**2 - 1)
+    
+    # build the translation
+    xyt_to_lry = matrix([[-1, 0, 1], [1, 0, 1], [0, 1, 0]])
+    shift_eigvals = diagonal_matrix([mu, 1/mu, 1])
+    self.shift = np.array(xyt_to_lry**(-1) * shift_eigvals * xyt_to_lry)
     
     # --- find covering series
     
@@ -66,23 +85,13 @@ class Covering():
     # invert lifting series to get covering series
     self.cover_a, self.cover_b = [
       lift.reverse()(s = w).change_ring(CDF)
-      for lift in lift_0, lift_1
+      for lift in [lift_0, lift_1]
     ]
-    
-    # --- find shift
-    
-    # `shift` is the Möbius transformation that translates `b` to `a` along the
-    # real axis
-    
-    # lam = cosh(d(a, b))
-    lam = (np.cos(pi/p)*np.cos(pi/q) + np.cos(pi/r)) / (np.sin(pi/p)*np.sin(pi/q))
-    mu = lam + np.sqrt(lam**2 - 1)
-    self.shift = np.array([[1+mu, 1-mu], [1-mu, 1+mu]])
 
 if __name__ == '__main__':
-  belyi = Covering(5, 4, 3, 3)
-  print(belyi.cover_a)
+  bel = Covering(5, 4, 3, 3)
+  print(bel.shift)
   print()
-  print(belyi.cover_b)
+  print(bel.cover_a)
   print()
-  print(belyi.shift)
+  print(bel.cover_b)
