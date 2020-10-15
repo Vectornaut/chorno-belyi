@@ -1,9 +1,6 @@
 # coding=utf-8
 
-from sage.all import \
-  QQ, CDF, \
-  matrix, diagonal_matrix, \
-  polygen, PowerSeriesRing, hypergeometric
+from sage.all import QQ, CDF, polygen, PowerSeriesRing, hypergeometric
 import numpy as np
 from numpy import pi
 
@@ -17,6 +14,11 @@ from numpy import pi
 #
 # where `shift` is the Möbius transformation that translates `b` to `a` along
 # the real axis
+#
+#   [KMSV] Michael Klug, Michael Musty, Sam Schiavone, and John Voight.
+#          "Numerical calculation of three-point branched covers of the
+#          projective line" <arXiv:1311.2081>
+#
 class Covering():
   def __init__(self, p, q, r, prec):
     self.p = p
@@ -26,18 +28,15 @@ class Covering():
     # --- find shift
     
     # `shift` is the Möbius transformation that translates `b` to `a` along the
-    # real axis
-    
-    # find the translation length
-    # lam = cosh(d(a, b))
-    # mu = exp(d(a, b))
-    lam = (np.cos(pi/p)*np.cos(pi/q) + np.cos(pi/r)) / (np.sin(pi/p)*np.sin(pi/q))
-    mu = lam + np.sqrt(lam**2 - 1)
-    
-    # build the translation
-    xyt_to_lry = matrix([[-1, 0, 1], [1, 0, 1], [0, 1, 0]])
-    shift_eigvals = diagonal_matrix([mu, 1/mu, 1])
-    self.shift = np.array(xyt_to_lry**(-1) * shift_eigvals * xyt_to_lry)
+    # real axis. `cosh_dist` is cosh(d(a, b)). in [KMSV], `cosh_dist` is called
+    # `lambda` (and the formula for it is off by a factor of two)
+    cosh_dist = (np.cos(pi/p)*np.cos(pi/q) + np.cos(pi/r)) / (np.sin(pi/p)*np.sin(pi/q))
+    sinh_dist = np.sqrt(cosh_dist**2 - 1)
+    self.shift = np.array([
+      [cosh_dist, 0, -sinh_dist],
+      [        0, 1,          0],
+      [-sinh_dist, 0, cosh_dist]
+    ])
     
     # --- find covering series
     
