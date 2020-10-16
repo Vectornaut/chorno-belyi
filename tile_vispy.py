@@ -1,4 +1,5 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
+# <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
 import sys
 from vispy import app, gloo
@@ -94,7 +95,7 @@ vec2 cover(vec3 v) {
   vec3 v_shift = shift * v;
   if (v.z < v_shift.z) {
     // v is closer to the time axis (this comparison works because v and v_shift
-    // are on the forward +1 hyperboloid)
+    // are on the forward -1 hyperboloid)
     vec2 w = v.xy / (1. + v.z);
     vec2 s = apply_series(cover_a, w / K_a, p);
     return cpow(s, p);
@@ -243,11 +244,11 @@ class TilingCanvas(app.Canvas):
     cr = cos(pi/r)
     
     # find the side normals of the fundamental triangle, scaled to unit norm
-    self.program['mirrors[0]'] = (1, 0, 0)
-    self.program['mirrors[1]'] = (-cp, sp, 0)
+    self.program['mirrors[0]'] = (0, 1, 0)
+    self.program['mirrors[1]'] = (-sp, -cp, 0)
     self.program['mirrors[2]'] = (
+      (cp*cq + cr) / sp,
       -cq,
-      -(cp*cq + cr) / sp,
       sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
     )
     
