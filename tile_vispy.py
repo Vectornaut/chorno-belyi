@@ -85,6 +85,19 @@ vec2 apply_series(float[20] series, vec2 w, int order) {
   return mul(w, deformation);
 }
 
+vec2 cover(vec3 v) {
+  vec3 v_shift = shift * v;
+  if (v.z < v_shift.z) {
+    // v is closer to the time axis (this comparison works because v and v_shift
+    // are on the forward +1 hyperboloid)
+    vec2 w = v.xy / (1. + v.z);
+    return apply_series(cover_a, w, p);
+  } else {
+    vec2 w_shift = v_shift.xy / (1. + v_shift.z);
+    return apply_series(cover_b, w_shift, q);
+  }
+}
+
 // --- tiling ---
 
 const float VIEW = 1.2;
@@ -106,12 +119,10 @@ void main_none() {
         } else {
           onsides += 1;
           if (onsides >= 3) {
-            vec2 w = v.xy / (1. + v.z);
-            vec2 z = apply_series(cover_a, w, p);
-            float dist_a = length(z - ZERO);
-            float dist_b = length(z - ONE);
-            gl_FragColor = vec4(vec3(1. / (1. + dist_a/dist_b)), 1.);
-            /*gl_FragColor = vec4(vec3(mod(flips, 2)), 1.);*/
+            vec2 z = cover(v);
+            float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
+            gl_FragColor = vec4(0.8*tone, tone, 0., 1.);
+            if (mod(flips, 2) == 0) gl_FragColor = gl_FragColor.rbga;
             return;
           }
         }
