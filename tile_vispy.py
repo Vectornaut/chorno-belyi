@@ -115,7 +115,7 @@ void main_none() {
   vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
   if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq);
+    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0;
     while (flips < 40) {
