@@ -3,6 +3,7 @@
 from sage.all import QQ, CDF, polygen, PowerSeriesRing, hypergeometric
 import numpy as np
 from numpy import pi
+from scipy.special import gamma
 
 # a covering map from the Poincaré disk to CP^1 which maps the vertices of the
 # p, q, r triangulation to 0, 1, infinity. the order-p vertex `a` is at 0, and
@@ -38,12 +39,24 @@ class Covering():
       [-sinh_dist, 0, cosh_dist]
     ])
     
-    # --- find covering series
+    # --- find scale factors
     
     # get hypergeometric parameters
     A = QQ(1)/2 * (QQ(1)/p - QQ(1)/q - QQ(1)/r + 1)
     B = QQ(1)/2 * (QQ(1)/p - QQ(1)/q + QQ(1)/r + 1)
     C = 1 + QQ(1)/p
+    
+    w_b = sinh_dist / (1 + cosh_dist)
+    self.K_a = (
+      w_b * gamma(2-C)*gamma(C-A)*gamma(C-B)
+      / (gamma(1-A)*gamma(1-B)*gamma(C))
+    )
+    self.K_b = (
+      -w_b * gamma(1+A+B-C)*gamma(C-A)*gamma(C-B)
+      / (gamma(A)*gamma(B)*gamma(1-A-B+C))
+    )
+    
+    # --- find covering series
     
     # define coordinates
     # z is the standard coordinate on CP^1

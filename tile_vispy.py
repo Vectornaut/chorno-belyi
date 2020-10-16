@@ -20,9 +20,11 @@ uniform float shortdim;
 uniform bool antialias;
 
 uniform vec3 mirrors [3];
+uniform mat3 shift;
 uniform int p;
 uniform int q;
-uniform mat3 shift;
+uniform float K_a;
+uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
 
@@ -34,18 +36,27 @@ const vec2 I    = vec2(0., 1.);
 
 //  the complex conjugate of `z`
 vec2 conj(vec2 z) {
-    return vec2(z.x, -z.y);
+  return vec2(z.x, -z.y);
 }
 
 // the product of `z` and `w`
 vec2 mul(vec2 z, vec2 w) {
-    return mat2(z, conj(z).yx) * w;
+  return mat2(z, conj(z).yx) * w;
 }
 
 // the reciprocal of `z`
 vec2 rcp(vec2 z) {
-    // 1/z = z'/(z'*z) = z'/|z|^2
-    return conj(z) / dot(z, z);
+  // 1/z = z'/(z'*z) = z'/|z|^2
+  return conj(z) / dot(z, z);
+}
+
+// `z^n`
+vec2 cpow(vec2 z, int n) {
+  vec2 z_power = ONE;
+  for (int k = 0; k < n; k++) {
+    z_power = mul(z, z_power);
+  }
+  return z_power;
 }
 
 // --- minkowski geometry ---
@@ -68,20 +79,14 @@ vec3 mreflect(vec3 v, vec3 mirror) {
 
 /*[TEMP] should make size adjustable*/
 vec2 apply_series(float[20] series, vec2 w, int order) {
-  // find w^order
-  vec2 w_order = ONE;
-  for (int n = 0; n < order; n++) {
-    w_order = mul(w, w_order);
-  }
-  
-  // write cover(z) as z * deformation(z)
+  // write cover(w) as w * deformation(w)
   vec2 deformation = vec2(0.);
+  vec2 w_order = cpow(w, order);
   vec2 w_power = ONE;
   for (int n = 0; n < 20; n++) {
     deformation += series[n] * w_power;
     w_power = mul(w_order, w_power);
   }
-  
   return mul(w, deformation);
 }
 
@@ -91,10 +96,12 @@ vec2 cover(vec3 v) {
     // v is closer to the time axis (this comparison works because v and v_shift
     // are on the forward +1 hyperboloid)
     vec2 w = v.xy / (1. + v.z);
-    return apply_series(cover_a, w, p);
+    vec2 s = apply_series(cover_a, w / K_a, p);
+    return cpow(s, p);
   } else {
     vec2 w_shift = v_shift.xy / (1. + v_shift.z);
-    return apply_series(cover_b, w_shift, q);
+    vec2 s = apply_series(cover_b, w_shift / K_b, q);
+    return ONE - cpow(s, q);
   }
 }
 
@@ -246,9 +253,11 @@ class TilingCanvas(app.Canvas):
     
     # find the covering map to CP^1
     bel = covering.Covering(p, q, r, 20)
+    self.program['shift'] = bel.shift
     self.program['p'] = bel.p
     self.program['q'] = bel.q
-    self.program['shift'] = bel.shift
+    self.program['K_a'] = bel.K_a;
+    self.program['K_b'] = bel.K_b;
     for n in range(len(bel.cover_a)):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
