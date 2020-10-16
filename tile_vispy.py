@@ -4,6 +4,8 @@ import sys
 from vispy import app, gloo
 from math import sqrt, cos, sin, pi
 
+import covering
+
 vertex = '''
 attribute vec2 position;
 
@@ -15,8 +17,36 @@ void main() {
 fragment = ('''
 uniform vec2 resolution;
 uniform float shortdim;
-uniform vec3 mirrors [3];
 uniform bool antialias;
+
+uniform vec3 mirrors [3];
+uniform int p;
+uniform int q;
+uniform mat3 shift;
+uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
+uniform float cover_b [20]; /*[TEMP]*/
+
+// --- complex arithmetic ---
+
+const vec2 ZERO = vec2(0.);
+const vec2 ONE  = vec2(1., 0.);
+const vec2 I    = vec2(0., 1.);
+
+//  the complex conjugate of `z`
+vec2 conj(vec2 z) {
+    return vec2(z.x, -z.y);
+}
+
+// the product of `z` and `w`
+vec2 mul(vec2 z, vec2 w) {
+    return mat2(z, conj(z).yx) * w;
+}
+
+// the reciprocal of `z`
+vec2 rcp(vec2 z) {
+    // 1/z = z'/(z'*z) = z'/|z|^2
+    return conj(z) / dot(z, z);
+}
 
 // --- minkowski geometry ---
 
@@ -32,6 +62,27 @@ float msq(vec3 v) {
 // a minkowski version of the built-in `reflect`
 vec3 mreflect(vec3 v, vec3 mirror) {
   return v - 2*mprod(v, mirror)*mirror;
+}
+
+// --- covering ---
+
+/*[TEMP] should make size adjustable*/
+vec2 apply_series(float[20] series, vec2 w, int order) {
+  // find w^order
+  vec2 w_order = ONE;
+  for (int n = 0; n < order; n++) {
+    w_order = mul(w, w_order);
+  }
+  
+  // write cover(z) as z * deformation(z)
+  vec2 deformation = vec2(0.);
+  vec2 w_power = ONE;
+  for (int n = 0; n < 20; n++) {
+    deformation += series[n] * w_power;
+    w_power = mul(w_order, w_power);
+  }
+  
+  return mul(w, deformation);
 }
 
 // --- tiling ---
@@ -55,7 +106,12 @@ void main_none() {
         } else {
           onsides += 1;
           if (onsides >= 3) {
-            gl_FragColor = vec4(vec3(mod(flips, 2)), 1.);
+            vec2 w = v.xy / (1. + v.z);
+            vec2 z = apply_series(cover_a, w, p);
+            float dist_a = length(z - ZERO);
+            float dist_b = length(z - ONE);
+            gl_FragColor = vec4(vec3(1. / (1. + dist_a/dist_b)), 1.);
+            /*gl_FragColor = vec4(vec3(mod(flips, 2)), 1.);*/
             return;
           }
         }
@@ -176,6 +232,15 @@ class TilingCanvas(app.Canvas):
       -(cp*cq + cr) / sp,
       sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
     )
+    
+    # find the covering map to CP^1
+    bel = covering.Covering(p, q, r, 20)
+    self.program['p'] = bel.p
+    self.program['q'] = bel.q
+    self.program['shift'] = bel.shift
+    for n in range(len(bel.cover_a)):
+      self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
+      self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
   
   def on_draw(self, event):
     self.program.draw()

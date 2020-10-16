@@ -47,13 +47,12 @@ class Covering():
     
     # define coordinates
     # z is the standard coordinate on CP^1
-    # w is the standard coordinate on the Poincaré disk
+    # w is the standard coordinate on the Poincaré disk (only used in comments)
     # around 0,        t =   z,  s^p = t
     # around 1,        t = 1-z,  s^q = t
     # around infinity, t = 1/z,  s^r = t
     t = polygen(QQ, 't')
     s = polygen(QQ, 's')
-    w = polygen(QQ, 'w')
     P = PowerSeriesRing(QQ, 's')
     
     # use ratios of hypergeometric functions to describe the function that lifts
@@ -81,9 +80,13 @@ class Covering():
     h2_1 = hypergeometric([  A,   B], [1+A+B-C], t).series(t, prec) # y_5
     lift_1 = s * P(h1_1(t = s**q), q*prec) / P(h2_1(t = s**q), q*prec)
     
-    # invert lifting series to get covering series
+    # invert lifting series to get covering series, and extract non-zero
+    # coefficients. each series is of the form
+    #
+    #   w*(cover[0] + cover[1]*w^p + cover[2]*w^(2p) + cover[3]*w^(3p) + ...)
+    #
     self.cover_a, self.cover_b = [
-      lift.reverse()(s = w).change_ring(CDF)
+      np.array(lift.reverse().coefficients())
       for lift in [lift_0, lift_1]
     ]
 
