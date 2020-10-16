@@ -129,8 +129,8 @@ void main_none() {
           if (onsides >= 3) {
             vec2 z = cover(v);
             float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
-            gl_FragColor = vec4(0.8*tone, tone, 0., 1.);
-            if (mod(flips, 2) == 0) gl_FragColor = gl_FragColor.rbga;
+            vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);
+            gl_FragColor = vec4(color, 1.);
             return;
           }
         }
