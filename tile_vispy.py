@@ -60,6 +60,81 @@ vec2 cpow(vec2 z, int n) {
   return z_power;
 }
 
+// the square root of `z`, from the complex arithmetic code listing in
+// Appendix C of _Numerical Recipes in C_
+//
+// William Press, Saul Teukolsky, William Vetterling, and Brian Flannery,
+// _Numerical Recipes in C_, 2nd edition. Cambridge University Press, 1992
+//
+vec2 csqrt(vec2 z) {
+    // sqrt(0) = 0
+    if (z.x == 0. && z.y == 0.) {
+        return vec2(0.);
+    }
+    
+    // calculate w
+    vec2 a = abs(z);
+    float w;
+    if (a.x >= a.y) {
+        float sl = a.y / a.x;
+        w = sqrt(a.x) * sqrt(0.5*(1. + sqrt(1. + sl*sl)));
+    } else {
+        float sl = a.x / a.y;
+        w = sqrt(a.y) * sqrt(0.5*(sl + sqrt(1. + sl*sl)));
+    }
+    
+    // construct output
+    if (z.x >= 0.) {
+        return vec2(w, z.y / (2.*w));
+    } else if (z.y >= 0.) {
+        return vec2(z.y/(2.*w), w);
+    } else {
+        return -vec2(z.y/(2.*w), w);
+    }
+}
+
+// --- elliptic integral of the first kind ---
+//
+// B. C. Carlson, "Numerical computation of real or complex elliptic integrals"
+// Numerical Algorithms, vol. 10, pp. 13--26, 1995
+// <doi:10.1007/BF02198293>
+//
+// William Press and Saul Teukolsky, "Elliptic Integrals"
+// Computers in Physics, vol. 4, pp. 92--96, 1990
+// <doi:10.1063/1.4822893>
+
+const int N = 12;
+
+const vec2 C1 = 1./24. * ONE;
+const vec2 C2 = 0.1    * ONE;
+const vec2 C3 = 3./44. * ONE;
+const vec2 C4 = 1./14. * ONE;
+
+vec2 RF(vec2 x, vec2 y, vec2 z) {
+    for (int n = 0; n < N; n++) {
+        vec2 sqrt_x = csqrt(x);
+        vec2 sqrt_y = csqrt(y);
+        vec2 sqrt_z = csqrt(z);
+        vec2 lambda = mul(sqrt_x, sqrt_y) + mul(sqrt_y, sqrt_z) + mul(sqrt_z, sqrt_x);
+        x = 0.25*(x + lambda);
+        y = 0.25*(y + lambda);
+        z = 0.25*(z + lambda);
+    }
+    vec2 avg = (x + y + z)/3.;
+    vec2 off_x = x - avg;
+    vec2 off_y = y - avg;
+    vec2 off_z = z - avg;
+    vec2 e2 = mul(off_x, off_y) - mul(off_z, off_z);
+    vec2 e3 = mul(mul(off_x, off_y), off_z);
+    return mul(ONE + mul(mul(C1, e2) - C2 - mul(C3, e3), e2) + mul(C4, e3), rcp(csqrt(avg)));
+}
+
+// inverse sine (Carlson 1995, equation 4.18)
+vec2 casin(vec2 z) {
+    vec2 z_sq = mul(z, z);
+    return mul(z, RF(ONE - z_sq, ONE, ONE));
+}
+
 // --- minkowski geometry ---
 
 // the minkowski bilinear form
@@ -106,6 +181,22 @@ vec2 cover(vec3 v) {
   }
 }
 
+// --- strip coloring ---
+
+const float PI = 3.141592653589793;
+
+vec3 strip_color(vec2 z) {
+  vec2 h = 8./PI * casin(z);
+  h.y = abs(h.y);
+  vec3 color = vec3(0.5);
+  if (h.y < 0.5) {
+    return vec3(h.x < 0. ? 0. : 1.);
+  } else {
+    float off = mod(h.y, 1.);
+    return (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
+  }
+}
+
 // --- tiling ---
 
 const float VIEW = 1.2;
@@ -128,8 +219,9 @@ void main_none() {
           onsides += 1;
           if (onsides >= 3) {
             vec2 z = cover(v);
-            float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
-            vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);
+            vec3 color = strip_color(2.*z - ONE);
+            /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
+            vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
             gl_FragColor = vec4(color, 1.);
             return;
           }
