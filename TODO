@@ -1,5 +1,0 @@
-1) Take point in fundamental domain for Delta and return point in PP^1
-  a) Figure out disc of convergence of series for phi
-  b) Python code that gives list of series coefficients (for possibly multiple series) to be passed to shader
-  
-2) Drawing code for leaves of quadratic differential
