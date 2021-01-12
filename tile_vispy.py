@@ -228,8 +228,8 @@ void main_none() {
         }
       }
     }
-    gl_FragColor = vec4(0., 1., 0., 1.); #[DEBUG] real axis speckles
-    return; #[DEBUG] real axis speckles
+    gl_FragColor = vec4(0., 1., 0., 1.); /*[DEBUG] real axis speckles*/
+    return; /*[DEBUG] real axis speckles*/
   }
   gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
 }
@@ -287,8 +287,8 @@ void main_gauss() {
         }
       }
     }
-    gl_FragColor = vec4(0., 1., 0., 1.); #[DEBUG] real axis speckles
-    return; #[DEBUG] real axis speckles
+    gl_FragColor = vec4(0., 1., 0., 1.); /*[DEBUG] real axis speckles*/
+    return; /*[DEBUG] real axis speckles*/
   }
   gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
 }
