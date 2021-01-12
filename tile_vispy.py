@@ -1,8 +1,11 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
+# <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
 import sys
 from vispy import app, gloo
 from math import sqrt, cos, sin, pi
+
+import covering
 
 vertex = '''
 attribute vec2 position;
@@ -15,8 +18,122 @@ void main() {
 fragment = ('''
 uniform vec2 resolution;
 uniform float shortdim;
+uniform bool antialias;
+
 uniform vec3 mirrors [3];
-uniform int aa_method;
+uniform mat3 shift;
+uniform int p;
+uniform int q;
+uniform float K_a;
+uniform float K_b;
+uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
+uniform float cover_b [20]; /*[TEMP]*/
+
+// --- complex arithmetic ---
+
+const vec2 ZERO = vec2(0.);
+const vec2 ONE  = vec2(1., 0.);
+const vec2 I    = vec2(0., 1.);
+
+//  the complex conjugate of `z`
+vec2 conj(vec2 z) {
+  return vec2(z.x, -z.y);
+}
+
+// the product of `z` and `w`
+vec2 mul(vec2 z, vec2 w) {
+  return mat2(z, conj(z).yx) * w;
+}
+
+// the reciprocal of `z`
+vec2 rcp(vec2 z) {
+  // 1/z = z'/(z'*z) = z'/|z|^2
+  return conj(z) / dot(z, z);
+}
+
+// `z^n`
+vec2 cpow(vec2 z, int n) {
+  vec2 z_power = ONE;
+  for (int k = 0; k < n; k++) {
+    z_power = mul(z, z_power);
+  }
+  return z_power;
+}
+
+// the square root of `z`, from the complex arithmetic code listing in
+// Appendix C of _Numerical Recipes in C_
+//
+// William Press, Saul Teukolsky, William Vetterling, and Brian Flannery,
+// _Numerical Recipes in C_, 2nd edition. Cambridge University Press, 1992
+//
+vec2 csqrt(vec2 z) {
+    // sqrt(0) = 0
+    if (z.x == 0. && z.y == 0.) {
+        return vec2(0.);
+    }
+    
+    // calculate w
+    vec2 a = abs(z);
+    float w;
+    if (a.x >= a.y) {
+        float sl = a.y / a.x;
+        w = sqrt(a.x) * sqrt(0.5*(1. + sqrt(1. + sl*sl)));
+    } else {
+        float sl = a.x / a.y;
+        w = sqrt(a.y) * sqrt(0.5*(sl + sqrt(1. + sl*sl)));
+    }
+    
+    // construct output
+    if (z.x >= 0.) {
+        return vec2(w, z.y / (2.*w));
+    } else if (z.y >= 0.) {
+        return vec2(z.y/(2.*w), w);
+    } else {
+        return -vec2(z.y/(2.*w), w);
+    }
+}
+
+// --- elliptic integral of the first kind ---
+//
+// B. C. Carlson, "Numerical computation of real or complex elliptic integrals"
+// Numerical Algorithms, vol. 10, pp. 13--26, 1995
+// <doi:10.1007/BF02198293>
+//
+// William Press and Saul Teukolsky, "Elliptic Integrals"
+// Computers in Physics, vol. 4, pp. 92--96, 1990
+// <doi:10.1063/1.4822893>
+
+const int N = 12;
+
+const vec2 C1 = 1./24. * ONE;
+const vec2 C2 = 0.1    * ONE;
+const vec2 C3 = 3./44. * ONE;
+const vec2 C4 = 1./14. * ONE;
+
+vec2 RF(vec2 x, vec2 y, vec2 z) {
+    for (int n = 0; n < N; n++) {
+        vec2 sqrt_x = csqrt(x);
+        vec2 sqrt_y = csqrt(y);
+        vec2 sqrt_z = csqrt(z);
+        vec2 lambda = mul(sqrt_x, sqrt_y) + mul(sqrt_y, sqrt_z) + mul(sqrt_z, sqrt_x);
+        x = 0.25*(x + lambda);
+        y = 0.25*(y + lambda);
+        z = 0.25*(z + lambda);
+    }
+    vec2 avg = (x + y + z)/3.;
+    vec2 off_x = x - avg;
+    vec2 off_y = y - avg;
+    vec2 off_z = z - avg;
+    vec2 e2 = mul(off_x, off_y) - mul(off_z, off_z);
+    vec2 e3 = mul(mul(off_x, off_y), off_z);
+    return mul(ONE + mul(mul(C1, e2) - C2 - mul(C3, e3), e2) + mul(C4, e3), rcp(csqrt(avg)));
+}
+
+// inverse sine (Carlson 1995, equation 4.18)
+vec2 casin(vec2 z) {
+    vec2 z_sq = mul(z, z);
+    return mul(z, RF(ONE - z_sq, ONE, ONE));
+}
 
 // --- minkowski geometry ---
 
@@ -34,16 +151,62 @@ vec3 mreflect(vec3 v, vec3 mirror) {
   return v - 2*mprod(v, mirror)*mirror;
 }
 
+// --- covering ---
+
+/*[TEMP] should make size adjustable*/
+vec2 apply_series(float[20] series, vec2 w, int order) {
+  // write cover(w) as w * deformation(w)
+  vec2 deformation = vec2(0.);
+  vec2 w_order = cpow(w, order);
+  vec2 w_power = ONE;
+  for (int n = 0; n < 20; n++) {
+    deformation += series[n] * w_power;
+    w_power = mul(w_order, w_power);
+  }
+  return mul(w, deformation);
+}
+
+vec2 cover(vec3 v) {
+  vec3 v_shift = shift * v;
+  if (v.z < v_shift.z) {
+    // v is closer to the time axis (this comparison works because v and v_shift
+    // are on the forward -1 hyperboloid)
+    vec2 w = v.xy / (1. + v.z);
+    vec2 s = apply_series(cover_a, w / K_a, p);
+    return cpow(s, p);
+  } else {
+    vec2 w_shift = v_shift.xy / (1. + v_shift.z);
+    vec2 s = apply_series(cover_b, w_shift / K_b, q);
+    return ONE - cpow(s, q);
+  }
+}
+
+// --- strip coloring ---
+
+const float PI = 3.141592653589793;
+
+vec3 strip_color(vec2 z) {
+  vec2 h = 8./PI * casin(z);
+  h.y = abs(h.y);
+  vec3 color = vec3(0.5);
+  if (h.y < 0.5) {
+    return vec3(h.x < 0. ? 0. : 1.);
+  } else {
+    float off = mod(h.y, 1.);
+    return (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
+  }
+}
+
 // --- tiling ---
 
 const float VIEW = 1.2;
 const float SQRT2 = 1.4142135623730951;
 
-vec3 sample(vec2 coord) {
-  vec2 u = VIEW*(2.*coord - resolution) / shortdim;
+void main_none() {
+  vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
   if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq);
+    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0;
     while (flips < 40) {
@@ -55,84 +218,18 @@ vec3 sample(vec2 coord) {
         } else {
           onsides += 1;
           if (onsides >= 3) {
-            return vec3(mod(flips, 2));
-          }
-        }
-      }
-    }
-  }
-  return vec3(0.25, 0.15, 0.35);
-}
-
-void main_none() {
-  gl_FragColor = vec4(sample(gl_FragCoord.xy), 1.);
-}
-
-void main_multi4x() {
-  // mix subpixels
-  vec2 jiggle = vec2(0.25);
-  vec3 color_sum = vec3(0.);
-  for (int sgn_x = 0; sgn_x < 2; sgn_x++) {
-    for (int sgn_y = 0; sgn_y < 2; sgn_y++) {
-      color_sum += sample(gl_FragCoord.xy + jiggle);
-      jiggle.y = -jiggle.y;
-    }
-    jiggle.x = -jiggle.x;
-  }
-  gl_FragColor = vec4(0.25*color_sum, 1.);
-}
-
-void main_multi9x() {
-  vec3 color_sum = vec3(0.);
-  for (int jiggle_x = -1; jiggle_x < 2; jiggle_x++) {
-    for (int jiggle_y = -1; jiggle_y < 2; jiggle_y++) {
-      color_sum += sample(gl_FragCoord.xy + vec2(jiggle_x, jiggle_y)/3.);
-    }
-  }
-  gl_FragColor = vec4(color_sum / 9., 1.);
-}
-
-void main_linramp() {
-  // find screen coordinate
-  vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
-  float r_sq = dot(u, u);
-  
-  // find pixel radius, for antialiasing
-  float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
-  float r_px = 2.*r_px_screen / (1.-r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
-  
-  // reduce to fundamental domain
-  float mirror_prod [3];
-  if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
-    int flips = 0;
-    int onsides = 0; // how many times in a row we've been on the negative side of a mirror
-    while (flips < 40) {
-      for (int k = 0; k < 3; k++) {
-        mirror_prod[k] = mprod(v, mirrors[k]);
-        if (mirror_prod[k] > 0.) {
-          v -= 2.*mirror_prod[k]*mirrors[k];
-          flips += 1;
-          onsides = 0;
-        } else {
-          onsides += 1;
-          if (onsides >= 3) {
-            // we're in the fundamental domain, on the negative side of every mirror
-            
-            // get the distance to the nearest mirror
-            float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
-            
-            // estimate how much of our pixel is on the negative side of the nearest mirror
-            float coverage = 0.5 + 0.5*min(mirror_dist / r_px, 1.);
-            
-            float pos_color = mod(flips, 2);
-            float px_color = mix(1.-pos_color, pos_color, coverage);
-            gl_FragColor = vec4(vec3(px_color), 1.);
+            vec2 z = cover(v);
+            vec3 color = strip_color(2.*z - ONE);
+            /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
+            vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
+            gl_FragColor = vec4(color, 1.);
             return;
           }
         }
       }
     }
+    gl_FragColor = vec4(0., 1., 0., 1.); #[DEBUG] real axis speckles
+    return; #[DEBUG] real axis speckles
   }
   gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
 }
@@ -190,91 +287,14 @@ void main_gauss() {
         }
       }
     }
-  }
-  gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
-}
-
-void main_box() {
-  // find screen coordinate
-  vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
-  float r_sq = dot(u, u);
-  
-  // find pixel bounds, for antialiasing
-  float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
-  float r_px = 2.*r_px_screen / (1.-r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
-  vec2 dir_px = vec2(1., 0.); // the direction toward the east edge of our pixel, represented as a vector in the x, y plane
-  
-  // reduce to fundamental domain
-  float mirror_prod [3];
-  if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
-    int flips = 0;
-    int onsides = 0; // how many times in a row we've been on the negative side of a mirror
-    while (flips < 40) {
-      for (int k = 0; k < 3; k++) {
-        mirror_prod[k] = mprod(v, mirrors[k]);
-        if (mirror_prod[k] > 0.) {
-          v -= 2.*mirror_prod[k]*mirrors[k];
-          dir_px -= 2.*dot(dir_px, mirrors[k].xy)*mirrors[k].xy;
-          flips += 1;
-          onsides = 0;
-        } else {
-          onsides += 1;
-          if (onsides >= 3) {
-            // we're in the fundamental domain, on the negative side of every mirror
-            
-            // find the nearest mirror
-            int near;
-            if (mirror_prod[0] >= mirror_prod[1] && mirror_prod[0] >= mirror_prod[2]) {
-              near = 0;
-            } else if (mirror_prod[1] >= mirror_prod[2]) {
-              near = 1;
-            } else {
-              near = 2;
-            }
-            
-            // find the distance to the nearest mirror, in pixel radii, and the
-            // the pixel direction in the frame where the mirror normal
-            // direction is (1, 0)
-            float rel_dist = -SQRT2 * mirror_prod[near] / r_px;
-            vec2 rel_dir = abs(vec2(
-              dir_px.x * mirrors[near].x + dir_px.y * mirrors[near].y,
-              -dir_px.x * mirrors[near].y + dir_px.y * mirrors[near].x
-            ));
-            if (rel_dir.y > rel_dir.x) rel_dir = rel_dir.yx;
-            rel_dir /= length(rel_dir);
-            
-            // estimate how much of our pixel is on the positive side of the nearest mirror
-            float overflow;
-            dir_px /= length(dir_px);
-            if (rel_dist >= rel_dir.x + rel_dir.y) {
-              overflow = 0.;
-            } else if (rel_dist >= rel_dir.x - rel_dir.y) {
-              float lap = rel_dir.x + rel_dir.y - rel_dist;
-              overflow = lap*lap / (8.*rel_dir.x*rel_dir.y);
-            } else {
-              overflow = 0.5*(1. - rel_dist/rel_dir.x);
-            }
-            
-            float pos_color = mod(flips, 2);
-            float px_color = mix(pos_color, 1.-pos_color, overflow);
-            gl_FragColor = vec4(vec3(px_color), 1.);
-            return;
-          }
-        }
-      }
-    }
+    gl_FragColor = vec4(0., 1., 0., 1.); #[DEBUG] real axis speckles
+    return; #[DEBUG] real axis speckles
   }
   gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
 }
 
 void main() {
-  if (aa_method == 0) main_none();
-  else if (aa_method == 1) main_multi4x();
-  else if (aa_method == 2) main_multi9x();
-  else if (aa_method == 3) main_linramp();
-  else if (aa_method == 4) main_gauss();
-  else if (aa_method == 5) main_box();
+  if (antialias) main_gauss(); else main_none();
 }
 ''')
 
@@ -291,21 +311,14 @@ class TilingCanvas(app.Canvas):
     
     # initialize settings
     self.update_resolution()
-    self.set_aa_method(4)
+    self.program['antialias'] = False
     self.set_tiling(p, q, r)
     self.update_title()
   
   def update_title(self):
     tiling_name = 'Tiling {} {} {}'.format(*self.orders)
-    aa_name = [
-      'no AA',
-      '4x MSAA',
-      '9x MSAA',
-      'linear ramp AA',
-      'Gaussian AA',
-      'box AA'
-    ][self.aa_method]
-    self.title = tiling_name + ' | ' + aa_name
+    aa_ind = 'antialiased' if self.program['antialias'] else 'no antialiasing'
+    self.title = tiling_name + ' | ' + aa_ind
   
   def update_resolution(self):
     width, height = self.physical_size
@@ -313,9 +326,8 @@ class TilingCanvas(app.Canvas):
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
   
-  def set_aa_method(self, aa_method):
-    self.aa_method = aa_method
-    self.program['aa_method'] = aa_method
+  def toggle_antialiasing(self):
+    self.program['antialias'] = not self.program['antialias']
   
   def set_tiling(self, p, q, r):
     # store and display vertex orders
@@ -328,13 +340,24 @@ class TilingCanvas(app.Canvas):
     cr = cos(pi/r)
     
     # find the side normals of the fundamental triangle, scaled to unit norm
-    self.program['mirrors[0]'] = (1, 0, 0)
-    self.program['mirrors[1]'] = (-cp, sp, 0)
+    self.program['mirrors[0]'] = (0, 1, 0)
+    self.program['mirrors[1]'] = (-sp, -cp, 0)
     self.program['mirrors[2]'] = (
+      (cp*cq + cr) / sp,
       -cq,
-      -(cp*cq + cr) / sp,
       sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
     )
+    
+    # find the covering map to CP^1
+    bel = covering.Covering(p, q, r, 20)
+    self.program['shift'] = bel.shift
+    self.program['p'] = bel.p
+    self.program['q'] = bel.q
+    self.program['K_a'] = bel.K_a;
+    self.program['K_b'] = bel.K_b;
+    for n in range(len(bel.cover_a)):
+      self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
+      self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
   
   def on_draw(self, event):
     self.program.draw()
@@ -345,18 +368,13 @@ class TilingCanvas(app.Canvas):
   def on_key_press(self, event):
     # update tiling
     p, q, r = self.orders
-    if event.text == 'j': p -= 1
+    if   event.text == 'j': p -= 1
     elif event.text == 'u': p += 1
     elif event.text == 'k': q -= 1
     elif event.text == 'i': q += 1
     elif event.text == 'l': r -= 1
     elif event.text == 'o': r += 1
-    elif event.text == 'q': self.set_aa_method(0)
-    elif event.text == 'w': self.set_aa_method(1)
-    elif event.text == 'e': self.set_aa_method(2)
-    elif event.text == 'a': self.set_aa_method(3)
-    elif event.text == 's': self.set_aa_method(4)
-    elif event.text == 'd': self.set_aa_method(5)
+    elif event.text == 'a': self.toggle_antialiasing()
     
     if (q*r + r*p + p*q < p*q*r):
       self.set_tiling(p, q, r)
@@ -367,11 +385,10 @@ class TilingCanvas(app.Canvas):
 if __name__ == '__main__' and sys.flags.interactive == 0:
   # show controls
   print('''
-  qwe  select multisampled antialiasing methods
-  asd  select area-sampled antialiasing methods
-  
   uio  raise vertex orders
   jkl  lower vertex orders
+  
+  a    toggle antialiasing
   ''')
   
   orders = (2, 3, 7)
