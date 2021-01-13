@@ -28,7 +28,7 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
-uniform int color_machine [112];
+uniform int color_machine [88];
 
 // --- complex arithmetic ---
 
@@ -385,38 +385,28 @@ class TilingCanvas(app.Canvas):
     err = 4
     color_machine = [
       [ 0,  0,  0, none],
-      [ 2, 18,  0, all],
-      [27,  3,  0, all],
-      [ 4, 27,  0, left],
-      [27,  5,  0, left],
+      [ 2, 12,  0, all],
+      [21,  3,  0, all],
+      [ 4, 21,  0, left],
+      [21,  5,  0, left],
       [ 6, 27,  8, all],
-      [27, 11,  7, all],
-      [ 0,  0, 27, right],
-      [ 9,  0, 27, right],
-      [27,  0, 10, right],
-      [ 0,  0, 27, right],
-      [ 0, 27,  0, left],
-      [27, 27, 27, err],
-      [27, 27, 27, err],
-      [27, 27, 27, err],
-      [27, 28, 27, err],
-      [27, 27, 27, err],
-      [27, 27, 27, err],
-      [19, 27, 24, all],
-      [27, 20, 23, all],
-      [21, 27,  0, left],
-      [27, 22,  0, left],
-      [ 0, 27,  0, left],
-      [ 0,  0, 27, right],
-      [25,  0, 27, all],
-      [27,  0, 26, all],
+      [21, 11,  7, all],
+      [ 0,  0, 21, right],
+      [ 9,  0, 21, right],
+      [21,  0, 10, right],
+      [ 0,  0, 21, right],
+      [ 0, 21,  0, left],
+      [13, 21, 18, all],
+      [21, 14, 17, all],
+      [15, 21,  0, left],
+      [21, 16,  0, left],
+      [ 0, 21,  0, left],
+      [ 0,  0, 21, right],
+      [19,  0, 21, all],
+      [21,  0, 20, all],
       [ 0,  0, 27, right],
       [27, 27, 27, err]
     ]
-    ##color_machine = [
-    ##  [0, 0, 0, none],
-    ##  [0, 0, 0, all]
-    ##]
     for state in range(len(color_machine)):
       for input in range(4):
         self.program['color_machine[{}]'.format(4*state + input)] = color_machine[state][input];
