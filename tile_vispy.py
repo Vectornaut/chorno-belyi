@@ -28,6 +28,7 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
+uniform int color_machine [112];
 
 // --- complex arithmetic ---
 
@@ -185,15 +186,25 @@ vec2 cover(vec3 v) {
 
 const float PI = 3.141592653589793;
 
-vec3 strip_color(vec2 z) {
+const int NONE = 0;
+const int LEFT = 1;
+const int RIGHT = 2;
+const int ALL = 3;
+
+vec3 strip_color(vec2 z, int part) {
   vec2 h = 8./PI * casin(z);
   h.y = abs(h.y);
-  vec3 color = vec3(0.5);
+  vec3 color;
   if (h.y < 0.5) {
-    return vec3(h.x < 0. ? 0. : 1.);
+    color = vec3(h.x < 0. ? 0. : 1.);
   } else {
     float off = mod(h.y, 1.);
-    return (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
+    color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
+  }
+  if (part == NONE || part == LEFT && h.x > 0. || part == RIGHT && h.x < 0.) {
+    return mix(color, vec3(0.5), 0.8);
+  } else {
+    return color;
   }
 }
 
@@ -209,19 +220,26 @@ void main_none() {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0;
+    int state = 1;
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
         if (mprod(mirrors[k], v) > 0.) {
           v = mreflect(v, mirrors[k]);
           flips += 1;
           onsides = 0;
+          state = color_machine[4*state + k];
         } else {
           onsides += 1;
           if (onsides >= 3) {
             vec2 z = cover(v);
-            vec3 color = strip_color(2.*z - ONE);
+            vec3 color = strip_color(2.*z - ONE, color_machine[4*state + 3]);
             /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
             vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
+            /*if (color_machine[4*state + 3] == 0) {
+              color = mix(color, vec3(0.5), 0.8);
+            } else if (color_machine[4*state + 3] == 5) {
+              color = mix(color, vec3(0., 1., 0.), 0.8);
+            }*/
             gl_FragColor = vec4(color, 1.);
             return;
           }
@@ -358,6 +376,50 @@ class TilingCanvas(app.Canvas):
     for n in range(len(bel.cover_a)):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
+    
+    # load the coloring machine
+    none = 0
+    left = 1
+    right = 2
+    all = 3
+    err = 4
+    color_machine = [
+      [ 0,  0,  0, none],
+      [ 2, 18,  0, all],
+      [27,  3,  0, all],
+      [ 4, 27,  0, left],
+      [27,  5,  0, left],
+      [ 6, 27,  8, all],
+      [27, 11,  7, all],
+      [ 0,  0, 27, right],
+      [ 9,  0, 27, right],
+      [27,  0, 10, right],
+      [ 0,  0, 27, right],
+      [ 0, 27,  0, left],
+      [27, 27, 27, err],
+      [27, 27, 27, err],
+      [27, 27, 27, err],
+      [27, 28, 27, err],
+      [27, 27, 27, err],
+      [27, 27, 27, err],
+      [19, 27, 24, all],
+      [27, 20, 23, all],
+      [21, 27,  0, left],
+      [27, 22,  0, left],
+      [ 0, 27,  0, left],
+      [ 0,  0, 27, right],
+      [25,  0, 27, all],
+      [27,  0, 26, all],
+      [ 0,  0, 27, right],
+      [27, 27, 27, err]
+    ]
+    ##color_machine = [
+    ##  [0, 0, 0, none],
+    ##  [0, 0, 0, all]
+    ##]
+    for state in range(len(color_machine)):
+      for input in range(4):
+        self.program['color_machine[{}]'.format(4*state + input)] = color_machine[state][input];
   
   def on_draw(self, event):
     self.program.draw()
@@ -391,6 +453,6 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   a    toggle antialiasing
   ''')
   
-  orders = (2, 3, 7)
+  orders = (6, 3, 4)
   TilingCanvas(*orders, size = (500, 500)).show()
   app.run()
