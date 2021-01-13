@@ -28,7 +28,7 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
-uniform int color_machine [88];
+uniform int color_machine [110];
 
 // --- complex arithmetic ---
 
@@ -187,21 +187,54 @@ vec2 cover(vec3 v) {
 const float PI = 3.141592653589793;
 
 const int NONE = 0;
-const int LEFT = 1;
-const int RIGHT = 2;
-const int ALL = 3;
+const int L_HALF = 1;
+const int R_HALF = 2;
+const int L_WHOLE = 3;
+const int R_WHOLE = 4;
+const int WHOLE = 5;
+const int ERROR = 6;
 
-vec3 strip_color(vec2 z, int part) {
+vec3 strip_color(vec2 z, int part, int edge) {
+  // set up edge palette
+  vec3 edge_palette [6];
+  edge_palette[0] = vec3(1.00, 0.43, 0.00);
+  edge_palette[1] = vec3(1.00, 0.87, 0.21);
+  edge_palette[2] = vec3(0.92, 0.67, 0.96);
+  edge_palette[3] = vec3(0.64, 0.07, 0.73);
+  edge_palette[4] = vec3(0.40, 0.00, 0.29);
+  edge_palette[5] = vec3(0.30, 0.11, 0.68);
+  
+  // get strip coordinate
   vec2 h = 8./PI * casin(z);
   h.y = abs(h.y);
+  
+  // draw ribbon graph
   vec3 color;
   if (h.y < 0.5) {
+    // draw ribbon
     color = vec3(h.x < 0. ? 0. : 1.);
   } else {
-    float off = mod(h.y, 1.);
-    color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
+    // draw sky
+    if (
+      part == L_HALF && -0.5 < h.x && h.x < 0. ||
+      part == R_HALF && 0. < h.x && h.x < 0.5 ||
+      part == L_WHOLE && h.x > 3.5 ||
+      part == R_WHOLE && -h.x > 3.5
+    ) {
+      // draw edge identification tab
+      color = edge_palette[edge];
+    } else {
+      float off = mod(h.y, 1.);
+      color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
+    }
   }
-  if (part == NONE || part == LEFT && h.x > 0. || part == RIGHT && h.x < 0.) {
+  
+  // highlight fundamental domain
+  if (
+    part == NONE ||
+    part == L_HALF && h.x > 0. ||
+    part == R_HALF && h.x < 0.
+  ) {
     return mix(color, vec3(0.5), 0.8);
   } else {
     return color;
@@ -227,19 +260,18 @@ void main_none() {
           v = mreflect(v, mirrors[k]);
           flips += 1;
           onsides = 0;
-          state = color_machine[4*state + k];
+          state = color_machine[5*state + k];
         } else {
           onsides += 1;
           if (onsides >= 3) {
             vec2 z = cover(v);
-            vec3 color = strip_color(2.*z - ONE, color_machine[4*state + 3]);
+            vec3 color = strip_color(
+              2.*z - ONE,
+              color_machine[5*state + 3],
+              color_machine[5*state + 4]
+            );
             /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
             vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
-            /*if (color_machine[4*state + 3] == 0) {
-              color = mix(color, vec3(0.5), 0.8);
-            } else if (color_machine[4*state + 3] == 5) {
-              color = mix(color, vec3(0., 1., 0.), 0.8);
-            }*/
             gl_FragColor = vec4(color, 1.);
             return;
           }
@@ -378,38 +410,40 @@ class TilingCanvas(app.Canvas):
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
     
     # load the coloring machine
-    none = 0
-    left = 1
-    right = 2
-    all = 3
-    err = 4
+    NONE = 0
+    L_HALF = 1
+    R_HALF = 2
+    L_WHOLE = 3
+    R_WHOLE = 4
+    WHOLE = 5
+    ERROR = 6
     color_machine = [
-      [ 0,  0,  0, none],
-      [ 2, 12,  0, all],
-      [21,  3,  0, all],
-      [ 4, 21,  0, left],
-      [21,  5,  0, left],
-      [ 6, 27,  8, all],
-      [21, 11,  7, all],
-      [ 0,  0, 21, right],
-      [ 9,  0, 21, right],
-      [21,  0, 10, right],
-      [ 0,  0, 21, right],
-      [ 0, 21,  0, left],
-      [13, 21, 18, all],
-      [21, 14, 17, all],
-      [15, 21,  0, left],
-      [21, 16,  0, left],
-      [ 0, 21,  0, left],
-      [ 0,  0, 21, right],
-      [19,  0, 21, all],
-      [21,  0, 20, all],
-      [ 0,  0, 27, right],
-      [27, 27, 27, err]
+      [ 0,  0,  0, NONE,    -1],
+      [ 2, 12,  0, L_WHOLE,  0],
+      [21,  3,  0, L_WHOLE,  0],
+      [ 4, 21,  0, L_HALF,   1],
+      [21,  5,  0, L_HALF,   1],
+      [ 6, 27,  8, WHOLE,   -1],
+      [21, 11,  7, WHOLE,   -1],
+      [ 0,  0, 21, R_HALF,   2],
+      [ 9,  0, 21, R_HALF,   1],
+      [21,  0, 10, R_HALF,   1],
+      [ 0,  0, 21, R_HALF,   2],
+      [ 0, 21,  0, L_HALF,   2],
+      [13, 21, 18, WHOLE,   -1],
+      [21, 14, 17, WHOLE,   -1],
+      [15, 21,  0, L_HALF,   3],
+      [21, 16,  0, L_HALF,   3],
+      [ 0, 21,  0, L_HALF,   2],
+      [ 0,  0, 21, R_HALF,   3],
+      [19,  0, 21, R_WHOLE,  4],
+      [21,  0, 20, R_WHOLE,  4],
+      [ 0,  0, 27, R_HALF,   3],
+      [27, 27, 27, ERROR,   -1]
     ]
     for state in range(len(color_machine)):
-      for input in range(4):
-        self.program['color_machine[{}]'.format(4*state + input)] = color_machine[state][input];
+      for input in range(5):
+        self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
   
   def on_draw(self, event):
     self.program.draw()
