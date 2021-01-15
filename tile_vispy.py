@@ -4,6 +4,7 @@
 import sys
 from vispy import app, gloo
 from math import sqrt, cos, sin, pi
+from numpy import array, dot
 
 import covering
 
@@ -248,8 +249,11 @@ const float EPS = 1e-6;
 const float SQRT2 = 1.4142135623730951;
 
 void main_none() {
+  // find screen coordinate
   vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
+  
+  // reduce to fundamental domain
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
@@ -349,6 +353,10 @@ void main() {
 }
 ''')
 
+# the minkowski bilinear form
+def mprod(v, w):
+  return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
+
 class TilingCanvas(app.Canvas):
   def __init__(self, p, q, r, *args, **kwargs):
     app.Canvas.__init__(self, *args, **kwargs)
@@ -391,13 +399,17 @@ class TilingCanvas(app.Canvas):
     cr = cos(pi/r)
     
     # find the side normals of the fundamental triangle, scaled to unit norm
-    self.program['mirrors[0]'] = (0, 1, 0)
-    self.program['mirrors[1]'] = (-sp, -cp, 0)
-    self.program['mirrors[2]'] = (
-      (cp*cq + cr) / sp,
-      -cq,
-      sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
-    )
+    self.mirrors = [
+      array([0, 1, 0]),
+      array([-sp, -cp, 0]),
+      array([
+        (cp*cq + cr) / sp,
+        -cq,
+        sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
+      ])
+    ]
+    for k in range(3):
+      self.program['mirrors[{}]'.format(k)] = self.mirrors[k]
     
     # find the covering map to CP^1
     bel = covering.Covering(p, q, r, 20)
@@ -468,6 +480,35 @@ class TilingCanvas(app.Canvas):
     
     self.update_title()
     self.update()
+  
+  def on_mouse_release(self, event):
+    # find screen coordinate
+    VIEW = 1.2
+    u = VIEW*(2*array(event.pos) - self.program['resolution']) / self.program['shortdim']
+    r_sq = dot(u, u)
+    
+    # reduce to fundamental domain
+    EPS = 1e-6
+    if r_sq <= 1:
+      v = array([2*u[0], 2*u[1], 1+r_sq]) / (1-r_sq)
+      flips = ''
+      onsides = 0 # how many times in a row we've been in the desired half-plane
+      while len(flips) < 40:
+        for k in range(3):
+          sep = mprod(v, self.mirrors[k])
+          if sep > EPS:
+            v -= 2*sep*self.mirrors[k]
+            flips += str(k)
+            onsides = 0
+          else:
+            onsides += 1
+            if onsides >= 3:
+              if (flips == ''):
+                print('base')
+              else:
+                print(flips)
+              return
+      print('too far out')
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   # show controls
