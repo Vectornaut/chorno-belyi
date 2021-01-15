@@ -244,6 +244,7 @@ vec3 strip_color(vec2 z, int part, int edge) {
 // --- tiling ---
 
 const float VIEW = 1.2;
+const float EPS = 1e-6;
 const float SQRT2 = 1.4142135623730951;
 
 void main_none() {
@@ -256,7 +257,7 @@ void main_none() {
     int state = 1;
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
-        if (mprod(mirrors[k], v) > 0.) {
+        if (mprod(mirrors[k], v) > EPS) {
           v = mreflect(v, mirrors[k]);
           flips += 1;
           onsides = 0;
@@ -314,7 +315,7 @@ void main_gauss() {
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
         mirror_prod[k] = mprod(v, mirrors[k]);
-        if (mirror_prod[k] > 0.) {
+        if (mirror_prod[k] > EPS) {
           v -= 2.*mirror_prod[k]*mirrors[k];
           flips += 1;
           onsides = 0;
