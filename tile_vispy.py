@@ -472,16 +472,15 @@ class TilingCanvas(app.Canvas):
     ##    self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
   
   def load_tri_tree(self):
-    self.tri_tree.flatten()
+    self.tri_tree.flatten(1)
     for tri in self.tri_tree.list:
-      index_sh = tri.index+1
       for k in range(3):
         if tri.children[k] != None:
-          self.program[tri_tree_key(index_sh, k)] = tri.children[k].index+1
+          self.program[tri_tree_key(tri.index, k)] = tri.children[k].index
         else:
-          self.program[tri_tree_key(index_sh, k)] = 0
-      self.program[tri_tree_key(index_sh, 3)] = tri.highlight
-      self.program[tri_tree_key(index_sh, 4)] = tri.color
+          self.program[tri_tree_key(tri.index, k)] = 0
+      self.program[tri_tree_key(tri.index, 3)] = tri.highlight
+      self.program[tri_tree_key(tri.index, 4)] = tri.color
   
   def on_draw(self, event):
     self.program.draw()
