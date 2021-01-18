@@ -17,7 +17,7 @@ class TriangleTree:
   
   def show(self, k, level):
     text = level*' ' + '{} ({}, {})'.format(k, self.highlight, self.color)
-    if self.index != None:
+    if hasattr(self, 'index') and self.index != None:
       text += ' #' + str(self.index)
     for k in range(3):
       if self.children[k] != None:
@@ -35,23 +35,23 @@ class TriangleTree:
       if self.children[k] == None: self.children[k] = TriangleTree()
       self.children[k].store(address[1:], highlight, color)
   
-  # list the tree's nodes, depth first
-  def list_down(self):
-    list = [self]
+  # list the tree's nodes, depth first, and give each node an `index` attribute
+  # that hold its list index plus the given offset. if `list` is provided,
+  # append the list of nodes to it. otherwise, store the list of nodes in the
+  # `list` attribute of the root node
+  def flatten(self, offset=0, list=None):
+    # start a node list, if none is provided
+    if list == None:
+      list = []
+      self.list = list
+    
+    # list this node
+    self.index = len(list) + offset
+    list += [self]
+    
     for k in range(3):
       if self.children[k] != None:
-        list += self.children[k].list_down()
-    return list
-  
-  # index each node with an integer in the order of a depth-first traversal,
-  # starting at the given index. return the index after the last one used
-  def index_down(self, index=0):
-    self.index = index
-    index += 1
-    for k in range(3):
-      if self.children[k] != None:
-        index = self.children[k].index_down(index)
-    return index
+        self.children[k].flatten(offset, list)
 
 if __name__ == '__main__':
   tree = TriangleTree()
@@ -61,8 +61,8 @@ if __name__ == '__main__':
   tree.store([2, 0, 1], 9201)
   tree.store([2], 92)
   
+  tree.flatten()
   print(tree)
   print('')
-  
-  for node in tree.list():
+  for node in tree.list:
     print(node.highlight)

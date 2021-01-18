@@ -358,8 +358,8 @@ void main() {
 def mprod(v, w):
   return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
 
-def tri_tree_key(index, field):
-  return 'tri_tree[{}]'.format(5*index + field)
+def tri_tree_key(index, attr):
+  return 'tri_tree[{}]'.format(5*index + attr)
 
 class TilingCanvas(app.Canvas):
   def __init__(self, p, q, r, *args, **kwargs):
@@ -468,8 +468,8 @@ class TilingCanvas(app.Canvas):
     ##    self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
   
   def load_tri_tree(self):
-    self.tri_tree.index_down()
-    for tri in self.tri_tree.list_down():
+    self.tri_tree.flatten()
+    for tri in self.tri_tree.list:
       index_sh = tri.index+1
       for k in range(3):
         if tri.children[k] != None:
