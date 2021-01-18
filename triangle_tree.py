@@ -26,10 +26,10 @@ class TriangleTree:
   
   # store the given highlight and color data at the given address, creating any
   # nodes on the way to the address that don't exist already
-  def store(self, address, highlight, color=0):
+  def store(self, address, highlight=None, color=None):
     if address == []:
-      self.highlight = highlight
-      self.color = color
+      if highlight != None: self.highlight = highlight
+      if color != None: self.color = color
     else:
       k = address[0]
       if self.children[k] == None: self.children[k] = TriangleTree()
@@ -55,14 +55,14 @@ class TriangleTree:
 
 if __name__ == '__main__':
   tree = TriangleTree()
-  tree.store([0, 0, 0], 9000)
-  tree.store([0, 1], 901)
-  tree.store([0, 1, 1], 9011)
-  tree.store([2, 0, 1], 9201)
-  tree.store([2], 92)
+  tree.store([0, 0, 0], highlight=9000)
+  tree.store([0, 1], highlight=901)
+  tree.store([0, 1, 1], highlight=9011)
+  tree.store([2, 0, 1], highlight=9201)
+  tree.store([2], color=92)
   
   tree.flatten()
   print(tree)
   print('')
   for node in tree.list:
-    print(node.highlight)
+    print('({}, {})'.format(node.highlight, node.color))

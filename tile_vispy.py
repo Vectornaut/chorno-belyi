@@ -3,6 +3,7 @@
 
 import sys
 from vispy import app, gloo
+import vispy.util.keys as keys
 from math import sqrt, cos, sin, pi
 from numpy import array, dot
 
@@ -382,6 +383,9 @@ class TilingCanvas(app.Canvas):
     self.tri_tree = triangle_tree.TriangleTree()
     for m in range(1000):
       self.program['tri_tree[{}]'.format(m)] = 0
+    
+    # initialize triangle selection
+    self.selection = []
   
   def update_title(self):
     tiling_name = 'Tiling {} {} {}'.format(*self.orders)
@@ -486,18 +490,36 @@ class TilingCanvas(app.Canvas):
     self.update_resolution()
   
   def on_key_press(self, event):
-    # update tiling
+    # update tiling and coloring
     p, q, r = self.orders
-    if   event.text == 'j': p -= 1
-    elif event.text == 'u': p += 1
-    elif event.text == 'k': q -= 1
-    elif event.text == 'i': q += 1
-    elif event.text == 'l': r -= 1
-    elif event.text == 'o': r += 1
-    elif event.text == 'a': self.toggle_antialiasing()
+    highlight = None
+    color = None
+    if   event.key == 'j': p -= 1
+    elif event.key == 'u': p += 1
+    elif event.key == 'k': q -= 1
+    elif event.key == 'i': q += 1
+    elif event.key == 'l': r -= 1
+    elif event.key == 'o': r += 1
+    elif event.key == 'a': self.toggle_antialiasing()
+    elif event.key == keys.UP: highlight = triangle_tree.WHOLE
+    elif event.key == keys.LEFT:
+      if keys.SHIFT in event.modifiers:
+        highlight=triangle_tree.L_WHOLE
+      else:
+        highlight=triangle_tree.L_HALF
+    elif event.key == keys.RIGHT:
+      if keys.SHIFT in event.modifiers:
+        highlight=triangle_tree.R_WHOLE
+      else:
+        highlight=triangle_tree.R_HALF
+    elif event.text.isdigit(): color = int(event.text)
     
-    if (q*r + r*p + p*q < p*q*r):
+    if q*r + r*p + p*q < p*q*r:
       self.set_tiling(p, q, r)
+    
+    if highlight != None or color != None:
+      self.tri_tree.store(self.selection, highlight, color)
+      self.load_tri_tree()
     
     self.update_title()
     self.update()
@@ -524,16 +546,8 @@ class TilingCanvas(app.Canvas):
           else:
             onsides += 1
             if onsides >= 3:
-              # change the highlighting of the triangle that was clicked
-              self.tri_tree.store(address, triangle_tree.WHOLE, -1)
-              self.load_tri_tree()
-              self.update()
-              
-              # print the address of the triangle that was clicked
-              if (address == []):
-                print('base')
-              else:
-                print(''.join(map(str, address)))
+              # save the address of the selected triangle
+              self.selection = address
               return
       print('too far out')
 
