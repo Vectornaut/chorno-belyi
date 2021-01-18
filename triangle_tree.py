@@ -11,7 +11,6 @@ class TriangleTree:
     self.children = [None, None, None]
     self.highlight = NONE
     self.color = 0
-    self.index = None
   
   def __str__(self):
     return self.show('*', 0)
@@ -36,6 +35,14 @@ class TriangleTree:
       if self.children[k] == None: self.children[k] = TriangleTree()
       self.children[k].store(address[1:], highlight, color)
   
+  # list the tree's nodes, depth first
+  def list_down(self):
+    list = [self]
+    for k in range(3):
+      if self.children[k] != None:
+        list += self.children[k].list_down()
+    return list
+  
   # index each node with an integer in the order of a depth-first traversal,
   # starting at the given index. return the index after the last one used
   def index_down(self, index=0):
@@ -53,3 +60,9 @@ if __name__ == '__main__':
   tree.store([0, 1, 1], 9011)
   tree.store([2, 0, 1], 9201)
   tree.store([2], 92)
+  
+  print(tree)
+  print('')
+  
+  for node in tree.list():
+    print(node.highlight)

@@ -7,6 +7,7 @@ from math import sqrt, cos, sin, pi
 from numpy import array, dot
 
 import covering
+import triangle_tree
 
 vertex = '''
 attribute vec2 position;
@@ -29,7 +30,7 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
-uniform int color_machine [110];
+uniform int tri_tree [1000];
 
 // --- complex arithmetic ---
 
@@ -258,22 +259,22 @@ void main_none() {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0;
-    int state = 1;
+    int index = 1;
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
         if (mprod(mirrors[k], v) > EPS) {
           v = mreflect(v, mirrors[k]);
           flips += 1;
           onsides = 0;
-          state = color_machine[5*state + k];
+          index = tri_tree[5*index + k];
         } else {
           onsides += 1;
           if (onsides >= 3) {
             vec2 z = cover(v);
             vec3 color = strip_color(
               2.*z - ONE,
-              color_machine[5*state + 3],
-              color_machine[5*state + 4]
+              tri_tree[5*index + 3],
+              tri_tree[5*index + 4]
             );
             /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
             vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
@@ -357,6 +358,9 @@ void main() {
 def mprod(v, w):
   return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
 
+def tri_tree_key(index, field):
+  return 'tri_tree[{}]'.format(5*index + field)
+
 class TilingCanvas(app.Canvas):
   def __init__(self, p, q, r, *args, **kwargs):
     app.Canvas.__init__(self, *args, **kwargs)
@@ -373,6 +377,11 @@ class TilingCanvas(app.Canvas):
     self.program['antialias'] = False
     self.set_tiling(p, q, r)
     self.update_title()
+    
+    # initialize triangle tree
+    self.tri_tree = triangle_tree.TriangleTree()
+    for m in range(1000):
+      self.program['tri_tree[{}]'.format(m)] = 0
   
   def update_title(self):
     tiling_name = 'Tiling {} {} {}'.format(*self.orders)
@@ -422,41 +431,53 @@ class TilingCanvas(app.Canvas):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
     
-    # load the coloring machine
-    NONE = 0
-    L_HALF = 1
-    R_HALF = 2
-    L_WHOLE = 3
-    R_WHOLE = 4
-    WHOLE = 5
-    ERROR = 6
-    color_machine = [
-      [ 0,  0,  0, NONE,    -1],
-      [ 2, 12,  0, L_WHOLE,  0],
-      [21,  3,  0, L_WHOLE,  0],
-      [ 4, 21,  0, L_HALF,   1],
-      [21,  5,  0, L_HALF,   1],
-      [ 6, 27,  8, WHOLE,   -1],
-      [21, 11,  7, WHOLE,   -1],
-      [ 0,  0, 21, R_HALF,   2],
-      [ 9,  0, 21, R_HALF,   1],
-      [21,  0, 10, R_HALF,   1],
-      [ 0,  0, 21, R_HALF,   2],
-      [ 0, 21,  0, L_HALF,   2],
-      [13, 21, 18, WHOLE,   -1],
-      [21, 14, 17, WHOLE,   -1],
-      [15, 21,  0, L_HALF,   3],
-      [21, 16,  0, L_HALF,   3],
-      [ 0, 21,  0, L_HALF,   2],
-      [ 0,  0, 21, R_HALF,   3],
-      [19,  0, 21, R_WHOLE,  4],
-      [21,  0, 20, R_WHOLE,  4],
-      [ 0,  0, 27, R_HALF,   3],
-      [27, 27, 27, ERROR,   -1]
-    ]
-    for state in range(len(color_machine)):
-      for input in range(5):
-        self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
+    ## load the coloring machine
+    ##NONE = 0
+    ##L_HALF = 1
+    ##R_HALF = 2
+    ##L_WHOLE = 3
+    ##R_WHOLE = 4
+    ##WHOLE = 5
+    ##ERROR = 6
+    ##color_machine = [
+    ##  [ 0,  0,  0, NONE,    -1],
+    ##  [ 2, 12,  0, L_WHOLE,  0],
+    ##  [21,  3,  0, L_WHOLE,  0],
+    ##  [ 4, 21,  0, L_HALF,   1],
+    ##  [21,  5,  0, L_HALF,   1],
+    ##  [ 6, 27,  8, WHOLE,   -1],
+    ##  [21, 11,  7, WHOLE,   -1],
+    ##  [ 0,  0, 21, R_HALF,   2],
+    ##  [ 9,  0, 21, R_HALF,   1],
+    ##  [21,  0, 10, R_HALF,   1],
+    ##  [ 0,  0, 21, R_HALF,   2],
+    ##  [ 0, 21,  0, L_HALF,   2],
+    ##  [13, 21, 18, WHOLE,   -1],
+    ##  [21, 14, 17, WHOLE,   -1],
+    ##  [15, 21,  0, L_HALF,   3],
+    ##  [21, 16,  0, L_HALF,   3],
+    ##  [ 0, 21,  0, L_HALF,   2],
+    ##  [ 0,  0, 21, R_HALF,   3],
+    ##  [19,  0, 21, R_WHOLE,  4],
+    ##  [21,  0, 20, R_WHOLE,  4],
+    ##  [ 0,  0, 27, R_HALF,   3],
+    ##  [27, 27, 27, ERROR,   -1]
+    ##]
+    ##for state in range(len(color_machine)):
+    ##  for input in range(5):
+    ##    self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
+  
+  def load_tri_tree(self):
+    self.tri_tree.index_down()
+    for tri in self.tri_tree.list_down():
+      index_sh = tri.index+1
+      for k in range(3):
+        if tri.children[k] != None:
+          self.program[tri_tree_key(index_sh, k)] = tri.children[k].index+1
+        else:
+          self.program[tri_tree_key(index_sh, k)] = 0
+      self.program[tri_tree_key(index_sh, 3)] = tri.highlight
+      self.program[tri_tree_key(index_sh, 4)] = tri.color
   
   def on_draw(self, event):
     self.program.draw()
@@ -490,23 +511,29 @@ class TilingCanvas(app.Canvas):
     # reduce to fundamental domain
     EPS = 1e-6
     if r_sq <= 1:
-      v = array([2*u[0], 2*u[1], 1+r_sq]) / (1-r_sq)
-      flips = ''
+      v = array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
+      address = []
       onsides = 0 # how many times in a row we've been in the desired half-plane
-      while len(flips) < 40:
+      while len(address) < 40:
         for k in range(3):
           sep = mprod(v, self.mirrors[k])
           if sep > EPS:
             v -= 2*sep*self.mirrors[k]
-            flips += str(k)
+            address += [k]
             onsides = 0
           else:
             onsides += 1
             if onsides >= 3:
-              if (flips == ''):
+              # change the highlighting of the triangle that was clicked
+              self.tri_tree.store(address, triangle_tree.WHOLE, -1)
+              self.load_tri_tree()
+              self.update()
+              
+              # print the address of the triangle that was clicked
+              if (address == []):
                 print('base')
               else:
-                print(flips)
+                print(''.join(map(str, address)))
               return
       print('too far out')
 
