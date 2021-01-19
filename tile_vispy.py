@@ -1,7 +1,7 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
 # <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
-import sys
+import sys, os, re, pickle
 from vispy import app, gloo
 import vispy.util.keys as keys
 from math import sqrt, cos, sin, pi
@@ -373,19 +373,23 @@ class TilingCanvas(app.Canvas):
       (-1, -1), (1, 1), (1, -1)  # southeast triangle
     ]
     
-    # initialize settings
-    self.update_resolution()
-    self.program['antialias'] = False
-    self.set_tiling(p, q, r)
-    self.update_title()
-    
-    # initialize triangle tree
-    self.tri_tree = triangle_tree.TriangleTree()
+    # set up triangle trees
+    self.working = True
+    self.tree_choice = 0
+    self.working_trees = {}
+    self.saved_trees = {}
+    self.open_tri_trees()
     for m in range(1000):
       self.program['tri_tree[{}]'.format(m)] = 0
     
     # initialize triangle selection
     self.selection = []
+    
+    # initialize tiling and other settings
+    self.update_resolution()
+    self.program['antialias'] = False
+    self.set_tiling(p, q, r)
+    self.update_title()
   
   def update_title(self):
     tiling_name = 'Tiling {} {} {}'.format(*self.orders)
@@ -435,6 +439,9 @@ class TilingCanvas(app.Canvas):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
     
+    # load the working tree or the 0th saved tree for the current tiling
+    self.load_tree_by_mode()
+    
     ## load the coloring machine
     ##NONE = 0
     ##L_HALF = 1
@@ -471,9 +478,13 @@ class TilingCanvas(app.Canvas):
     ##  for input in range(5):
     ##    self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
   
-  def load_tri_tree(self):
-    self.tri_tree.flatten(1)
-    for tri in self.tri_tree.list:
+  def load_empty_tree(self):
+    for attr in range(5):
+      self.program[tri_tree_key(1, attr)] = 0
+  
+  def load_tri_tree(self, tree):
+    tree.flatten(1)
+    for tri in tree.list:
       for k in range(3):
         if tri.children[k] != None:
           self.program[tri_tree_key(tri.index, k)] = tri.children[k].index
@@ -481,6 +492,41 @@ class TilingCanvas(app.Canvas):
           self.program[tri_tree_key(tri.index, k)] = 0
       self.program[tri_tree_key(tri.index, 3)] = tri.highlight
       self.program[tri_tree_key(tri.index, 4)] = tri.color
+  
+  def load_tree_by_mode(self):
+    if not self.working and self.orders in self.saved_trees:
+      self.tree_choice = 0
+      self.load_tri_tree(self.saved_trees[self.orders][0])
+    else:
+      if self.orders in self.working_trees:
+        self.load_tri_tree(self.working_trees[self.orders])
+      else:
+        self.load_empty_tree()
+  
+  def save_tri_tree(self):
+    ##name = input('save as (enter empty name to cancel):\n')
+    name = 'domain-{}_{}_{}-test'.format(*self.orders)
+    if name != '':
+      with open('domains/' + name + '.pickle', 'wb') as file:
+        pickle.dump(self.working_trees[self.orders], file)
+        print('Saved {} {} {} domain:'.format(*self.orders))
+        print(self.working_trees[self.orders])
+  
+  def open_tri_trees(self):
+    name_format = 'domain\-(\d+)[\.\d]*_(\d+)[\.\d]*_(\d+)[\.\d]*\-(.*)\.pickle'
+    for filename in os.listdir('domains'):
+      if name_info := re.search(name_format, filename):
+        orders = tuple(int(name_info.group(k)) for k in range(1, 4))
+        print('Found {} {} {} domain:'.format(*orders), end = ' ')
+        try:
+          with open('domains/' + filename, 'rb') as file:
+            tree = pickle.load(file)
+        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
+          print(ex)
+        else:
+          print('Opened successfully')
+          if not (orders in self.saved_trees): self.saved_trees[orders] = []
+          self.saved_trees[orders].append(tree)
   
   def on_draw(self, event):
     self.program.draw()
@@ -499,26 +545,40 @@ class TilingCanvas(app.Canvas):
     elif event.key == 'i': q += 1
     elif event.key == 'l': r -= 1
     elif event.key == 'o': r += 1
-    elif event.key == 'a': self.toggle_antialiasing()
-    elif event.key == keys.UP: highlight = triangle_tree.WHOLE
-    elif event.key == keys.LEFT:
-      if keys.SHIFT in event.modifiers:
-        highlight=triangle_tree.L_WHOLE
-      else:
-        highlight=triangle_tree.L_HALF
-    elif event.key == keys.RIGHT:
-      if keys.SHIFT in event.modifiers:
-        highlight=triangle_tree.R_WHOLE
-      else:
-        highlight=triangle_tree.R_HALF
-    elif event.text.isdigit(): color = int(event.text)
+    elif event.key == ';': self.toggle_antialiasing()
+    elif event.key == keys.SPACE:
+      self.working = not self.working
+      self.load_tree_by_mode()
+    elif self.working:
+      if event.key == 's': highlight = triangle_tree.WHOLE
+      elif event.key == 'a':
+        if keys.SHIFT in event.modifiers:
+          highlight=triangle_tree.L_WHOLE
+        else:
+          highlight=triangle_tree.L_HALF
+      elif event.key == 'd':
+        if keys.SHIFT in event.modifiers:
+          highlight=triangle_tree.R_WHOLE
+        else:
+          highlight=triangle_tree.R_HALF
+      elif event.text.isdigit(): color = int(event.text)
+      elif event.key == keys.ENTER: self.save_tri_tree()
+    else:
+      if event.key == keys.UP:
+        self.tree_choice = min(self.tree_choice + 1, len(self.saved_trees[self.orders]) - 1)
+        self.load_tri_tree(self.saved_trees[self.orders][self.tree_choice])
+      elif event.key == keys.DOWN:
+        self.tree_choice = max(self.tree_choice - 1, 0)
+        self.load_tri_tree(self.saved_trees[self.orders][self.tree_choice])
     
-    if q*r + r*p + p*q < p*q*r:
+    if q*r + r*p + p*q < p*q*r and self.orders != (p, q, r):
       self.set_tiling(p, q, r)
     
     if highlight != None or color != None:
-      self.tri_tree.store(self.selection, highlight, color)
-      self.load_tri_tree()
+      if not (self.orders in self.working_trees):
+        self.working_trees[self.orders] = triangle_tree.TriangleTree()
+      self.working_trees[self.orders].store(self.selection, highlight, color)
+      self.load_tri_tree(self.working_trees[self.orders])
     
     self.update_title()
     self.update()
@@ -556,7 +616,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   uio  raise vertex orders
   jkl  lower vertex orders
   
-  a    toggle antialiasing
+  ;    toggle antialiasing
   ''')
   
   orders = (6, 3, 4)

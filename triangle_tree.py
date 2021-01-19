@@ -47,7 +47,7 @@ class TriangleTree:
     
     # list this node
     self.index = len(list) + offset
-    list += [self]
+    list.append(self)
     
     for k in range(3):
       if self.children[k] != None:
