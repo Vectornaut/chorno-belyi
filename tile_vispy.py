@@ -551,6 +551,7 @@ class TilingCanvas(app.Canvas):
       self.load_tree_by_mode()
     elif self.working:
       if event.key == 's': highlight = triangle_tree.WHOLE
+      elif event.key == 'q': highlight = triangle_tree.NONE
       elif event.key == 'a':
         if keys.SHIFT in event.modifiers:
           highlight=triangle_tree.L_WHOLE
