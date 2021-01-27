@@ -7,13 +7,19 @@
 
 <style>
 .row {
+  display: flex;
   width: 100%;
   height: 100px;
   margin-bottom: 20px;
   border: 1px solid #999999;
 }
 
-.box {
+.row > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-size: 40px;
   width: 80px;
   height: 80px;
   margin-top: 10px;
@@ -56,9 +62,9 @@ for (i = 0; i < 3; i++) {
 // create boxes
 row = document.getElementById('row-0');
 for (i = 0; i < orbits.length; i++) {
-  box = document.createElement('img');
+  box = document.createElement('div');
   box.id = 'box-' + i;
-  box.className = 'box';
+  box.innerHTML = i;
   row.appendChild(box);
 }
 setOrbitDisplay();
