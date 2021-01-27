@@ -1,12 +1,8 @@
 <!DOCTYPE html>
 
-<!--
-based on w3schools drag-and-drop tutorial
-https://www.w3schools.com/HTML/html5_draganddrop.asp
--->
-
 <html>
 <head>
+<meta charset="utf-8">
 <title>Orbit sorting</title>
 
 <style>
@@ -25,30 +21,25 @@ https://www.w3schools.com/HTML/html5_draganddrop.asp
 }
 </style>
 
-<script>
-function allowDrop(event) {
-  event.preventDefault();
-}
+<!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
-function drag(event) {
-  event.dataTransfer.setData("item-id", event.target.id);
-}
-
-function drop(event) {
-  event.preventDefault();
-  var itemId = event.dataTransfer.getData("item-id");
-  event.target.appendChild(document.getElementById(itemId));
-}
-</script>
 </head>
 
 <body>
-<div id="row-1" class="row" ondragover="allowDrop(event)" ondrop="drop(event)">
-  <img id="box-1" class="box", draggable="true" ondragstart="drag(event)" style="background-color:#bb4477"/>
-  <img id="box-2" class="box", draggable="true" ondragstart="drag(event)" style="background-color:#33cc55"/>
-  <img id="box-3" class="box", draggable="true" ondragstart="drag(event)" style="background-color:#9955bb"/>
+<div id="row-0" class="row">
+  <img class="box" style="background-color:#bb4477"/>
+  <img class="box" style="background-color:#33cc55"/>
+  <img class="box" style="background-color:#9955bb"/>
 </div>
-<div id="row-2" class="row" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
-<div id="row-3" class="row" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+<div id="row-1" class="row"></div>
+<div id="row-2" class="row"></div>
+
+<script>
+var i;
+for (i = 0; i < 3; i++) {
+  new Sortable(document.getElementById('row-' + i), {group: 'shared', animation: 150});
+}
+</script>
 </body>
 </html>
