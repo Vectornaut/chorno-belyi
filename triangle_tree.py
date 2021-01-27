@@ -35,6 +35,34 @@ class TriangleTree:
       if self.children[k] == None: self.children[k] = TriangleTree()
       self.children[k].store(address[1:], highlight, color)
   
+  def drop(self, address):
+    if address == []:
+      if all(child == None for child in self.children):
+        # this node can be severed from the tree
+        return True
+      else:
+        # this node can't be severed, so just clear its highlighting and tell
+        # the nodes above to do nothing
+        self.highlight = NONE
+        self.color = 0
+        return False
+    else:
+      k = address[0]
+      if self.children[k] == None:
+        # there's nothing stored at the address provided, so tell the nodes
+        # above to do nothing
+        return False
+      elif self.children[k].drop(address[1:]):
+        # child `k` can be severed from the tree
+        self.children[k] = None
+        if (
+          self.children[(k+1)%3] == None
+          and self.children[(k+2)%3] == None
+          and self.highlight == NONE
+        ):
+          # this node can be severed too
+          return True
+  
   # list the tree's nodes, depth first, and give each node an `index` attribute
   # that hold its list index plus the given offset. if `list` is provided,
   # append the list of nodes to it. otherwise, store the list of nodes in the
@@ -58,6 +86,7 @@ if __name__ == '__main__':
   tree.store([0, 0, 0], highlight=9000)
   tree.store([0, 1], highlight=901)
   tree.store([0, 1, 1], highlight=9011)
+  ##tree.store([0, 1, 2], highlight=9012)
   tree.store([2, 0, 1], highlight=9201)
   tree.store([2], color=92)
   
@@ -66,3 +95,13 @@ if __name__ == '__main__':
   print('')
   for node in tree.list:
     print('({}, {})'.format(node.highlight, node.color))
+  print('')
+  
+  for address in [[0, 1], [0, 0, 0], [0, 1, 1], [2, 0], [2, 0, 1]]:
+    tree.drop(address)
+    print('drop ' + ''.join(map(str, address)))
+    print(tree)
+    print('')
+  
+  print('note that node 2 is severable because its highlight mode is 0, even though its color is nonzero')
+  print('')

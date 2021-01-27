@@ -551,7 +551,6 @@ class TilingCanvas(app.Canvas):
       self.load_tree_by_mode()
     elif self.working:
       if event.key == 's': highlight = triangle_tree.WHOLE
-      elif event.key == 'q': highlight = triangle_tree.NONE
       elif event.key == 'a':
         if keys.SHIFT in event.modifiers:
           highlight=triangle_tree.L_WHOLE
@@ -562,6 +561,9 @@ class TilingCanvas(app.Canvas):
           highlight=triangle_tree.R_WHOLE
         else:
           highlight=triangle_tree.R_HALF
+      elif event.key == 'q' and self.orders in self.working_trees:
+        self.working_trees[self.orders].drop(self.selection)
+        self.load_tri_tree(self.working_trees[self.orders])
       elif event.text.isdigit(): color = int(event.text)
       elif event.key == keys.ENTER: self.save_tri_tree()
     else:
