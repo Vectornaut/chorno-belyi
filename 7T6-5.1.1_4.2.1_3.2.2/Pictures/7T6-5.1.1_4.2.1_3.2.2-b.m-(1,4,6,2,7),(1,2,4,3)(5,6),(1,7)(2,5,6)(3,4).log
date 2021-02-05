@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.4.7)  5 FEB 2021 03:26
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.4.7)  5 FEB 2021 03:28
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
-**7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).tex
-(./7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).tex
+**7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).tex
+(./7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).tex
 LaTeX2e <2020-02-02> patch level 5
 L3 programming layer <2020-03-06>
 (/usr/local/texlive/2020/texmf-dist/tex/latex/base/article.cls
@@ -237,13 +237,13 @@ Package: etexcmds 2019/12/15 v1.7 Avoid name clashes with e-TeX commands (HO)
 (/usr/local/texlive/2020/texmf-dist/tex/generic/iftex/ifluatex.sty
 Package: ifluatex 2019/10/25 v1.5 ifluatex legacy package. Use iftex instead.
 )
-runsystem(uname -s > "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2
-)(3,5,4)(6,7).w18")...executed.
+runsystem(uname -s > "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7
+)(2,5,6)(3,4).w18")...executed.
 
 
-(./7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).w18)
-runsystem(rm -- "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5
-,4)(6,7).w18")...executed.
+(./7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).w18)
+runsystem(rm -- "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5
+,6)(3,4).w18")...executed.
 
 )
 \c@app@runs=\count272
@@ -255,22 +255,22 @@ runsystem(echo "auto-pst-pdf: Auxiliary LaTeX compilation")...executed.
 
 runsystem(echo "-------------------------------------------------")...executed.
 
-runsystem(latex -no-shell-escape -jobname="7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3
-),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-autopp" -interaction=batchmode  "\let \APPma
-kepictures \empty \input  7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),
-(1,2)(3,5,4)(6,7).tex")...executed.
+runsystem(latex -no-shell-escape -jobname="7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7
+),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-autopp" -interaction=batchmode  "\let \APPma
+kepictures \empty \input  7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),
+(1,7)(2,5,6)(3,4).tex")...executed.
 
-runsystem(dvips -Ppdf -o "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),
-(1,2)(3,5,4)(6,7)-autopp.ps" "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5
-,6),(1,2)(3,5,4)(6,7)-autopp.dvi")...executed.
+runsystem(dvips -Ppdf -o "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),
+(1,7)(2,5,6)(3,4)-autopp.ps" "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5
+,6),(1,7)(2,5,6)(3,4)-autopp.dvi")...executed.
 
-runsystem(ps2pdf -dAutoRotatePages=/None "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3)
-,(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-autopp.ps" "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,
-6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-autopp.pdf")...executed.
+runsystem(ps2pdf -dAutoRotatePages=/None "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7)
+,(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-autopp.ps" "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,
+2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-autopp.pdf")...executed.
 
-runsystem(pdfcrop  "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(
-3,5,4)(6,7)-autopp.pdf" "7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(
-1,2)(3,5,4)(6,7)-pics.pdf")...executed.
+runsystem(pdfcrop  "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(
+2,5,6)(3,4)-autopp.pdf" "7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(
+1,7)(2,5,6)(3,4)-pics.pdf")...executed.
 
 runsystem(echo "-------------------------------------------------")...executed.
 
@@ -354,9 +354,10 @@ File: l3backend-pdfmode.def 2020-03-12 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count279
 \l__pdf_internal_box=\box50
 )
-(./7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).aux)
-\openout1 = `7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(
-6,7).aux'.
+No file 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).
+aux.
+\openout1 = `7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(
+3,4).aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
@@ -372,7 +373,6 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
-
 (/usr/local/texlive/2020/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count280
@@ -389,14 +389,14 @@ LaTeX Font Info:    ... okay on input line 5.
 )
 Preview: Fontsize 10pt
 Preview: PDFoutput 1
-<7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-pics.pd
+<7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-pics.pd
 f, id=2, page=1, 399.4925pt x 399.4925pt>
-File: 7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-pi
+File: 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-pi
 cs.pdf Graphic file (type pdf)
-<use 7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-pic
+<use 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-pic
 s.pdf, page 1>
-Package pdftex.def Info: 7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(
-1,2)(3,5,4)(6,7)-pics.pdf , page1 used on input line 9.
+Package pdftex.def Info: 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(
+1,7)(2,5,6)(3,4)-pics.pdf , page1 used on input line 9.
 (pdftex.def)             Requested size: 399.49152pt x 399.49152pt.
 
 Overfull \hbox (54.49152pt too wide) in paragraph at lines 9--376
@@ -417,13 +417,13 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 <special> ps:tx@Dict begin  gsave STV CP T /ps@refangle 0.  def grestore  e...
 {/usr/local/texlive/2020/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./7T6-5
-.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-pics.pdf>]
-(./7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).aux) 
+.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-pics.pdf>]
+(./7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).aux) 
 ) 
 Here is how much of TeX's memory you used:
- 8981 strings out of 480608
- 163140 string characters out of 5903631
- 404390 words of memory out of 5000000
+ 8978 strings out of 480608
+ 162989 string characters out of 5903631
+ 404414 words of memory out of 5000000
  24744 multiletter control sequences out of 15000+600000
  532338 words of font info for 24 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -433,8 +433,8 @@ Here is how much of TeX's memory you used:
 usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></us
 r/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/l
 ocal/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on 7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,
-5,4)(6,7).pdf (1 page, 54766 bytes).
+Output written on 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,
+5,6)(3,4).pdf (1 page, 54943 bytes).
 PDF statistics:
  50 PDF objects out of 1000 (max. 8388607)
  32 compressed objects within 1 object stream

@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=latex 2020.4.7)  5 FEB 2021 03:26
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=latex 2020.4.7)  5 FEB 2021 03:28
 entering extended mode
  %&-line parsing enabled.
-**\let \APPmakepictures \empty \input  7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1
-,2,3,4)(5,6),(1,2)(3,5,4)(6,7).tex
-(./7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).tex (
+**\let \APPmakepictures \empty \input  7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1
+,2,4,3)(5,6),(1,7)(2,5,6)(3,4).tex
+(./7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).tex (
 /usr/local/texlive/2020/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
 (/usr/local/texlive/2020/texmf-dist/tex/latex/base/size10.clo
@@ -288,7 +288,7 @@ File: l3backend-dvips.def 2020-03-12 L3 backend support: dvips
 \g__pdf_backend_link_int=\count282
 \g__pdf_backend_link_sf_int=\count283
 )
-No file 7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7)-
+No file 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4)-
 autopp.aux.
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
@@ -306,9 +306,9 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
 Preview: Fontsize 10pt
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 233.
+(Font)              <7> on input line 232.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 233.
+(Font)              <5> on input line 232.
 
 Overfull \hbox (53.33856pt too wide) in paragraph at lines 375--375
 [][] 
@@ -323,11 +323,11 @@ Package pst-pdf Warning: Picture container needs cropping..
 Here is how much of TeX's memory you used:
  8601 strings out of 480609
  157015 string characters out of 5903657
- 415741 words of memory out of 5000000
+ 415777 words of memory out of 5000000
  24393 multiletter control sequences out of 15000+600000
  532338 words of font info for 24 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  45i,8n,55p,513b,514s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on 7T6-5.1.1_4.2.1_3.2.2-a.m-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,
-5,4)(6,7)-autopp.dvi (1 page, 36144 bytes).
+Output written on 7T6-5.1.1_4.2.1_3.2.2-b.m-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,
+5,6)(3,4)-autopp.dvi (1 page, 36180 bytes).
