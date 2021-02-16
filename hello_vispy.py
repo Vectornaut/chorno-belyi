@@ -31,7 +31,7 @@
 # on Ubuntu 18.04
 
 import sys
-from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import *
 from vispy import app, gloo
 
 app.use_app(backend_name='PyQt5', call_reuse=True)
@@ -84,18 +84,34 @@ class HelloCanvas(app.Canvas):
   def on_resize(self, event):
     self.set_resolution()
 
-class HelloWindow(QtWidgets.QMainWindow):
+class HelloWindow(QMainWindow):
   def __init__(self, *args, **kwargs):
-    QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
+    QMainWindow.__init__(self, *args, **kwargs)
     self.resize(500, 500)
     self.setWindowTitle('Hello, Vispy!')
     
-    # put a Vispy canvas in our central widget
+    # set up central panel
+    central = QWidget()
+    central.setLayout(QVBoxLayout())
+    self.setCentralWidget(central)
+    
+    # add GL canvas
     canvas = HelloCanvas()
-    self.setCentralWidget(canvas.native)
+    central.layout().addWidget(canvas.native)
+    
+    # add vertex order spinners
+    orderPanel = QWidget()
+    orderPanel.setLayout(QHBoxLayout())
+    orderSpinners = []
+    for order in [6, 4, 3]:
+      spinner = QSpinBox()
+      spinner.setValue(order)
+      orderPanel.layout().addWidget(spinner)
+      orderSpinners.append(spinner)
+    central.layout().addWidget(orderPanel)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
-  mainApp = QtWidgets.QApplication(sys.argv)
+  mainApp = QApplication(sys.argv)
   window = HelloWindow()
   window.show()
   mainApp.exec_()
