@@ -628,19 +628,44 @@ class TilingWindow(qt.QMainWindow):
     
     # add tiling canvas
     orders = (6, 4, 3)
-    canvas = TilingCanvas(*orders, size = (700, 700))
-    central.layout().addWidget(canvas.native)
+    self.canvas = TilingCanvas(*orders, size = (700, 700))
+    central.layout().addWidget(self.canvas.native)
     
     # add vertex order spinners
     order_panel = qt.QWidget()
     order_panel.setLayout(qt.QHBoxLayout())
-    order_spinners = []
+    self.order_spinners = []
     for n in orders:
       spinner = qt.QSpinBox()
       spinner.setValue(n)
+      spinner.valueChanged.connect(self.change_tiling)
       order_panel.layout().addWidget(spinner)
-      order_spinners.append(spinner)
+      self.order_spinners.append(spinner)
     central.layout().addWidget(order_panel)
+  
+  def change_tiling(self):
+    # the tiling is hyperbolic if and only if hypeness > 0
+    orders = [spinner.value() for spinner in self.order_spinners]
+    p, q, r = orders
+    hypeness = p*q*r - q*r - r*p - p*q
+    
+    # work out how much hypeness would drop if we decremented each order
+    drops = [
+      q*r - q - r,
+      r*p - r - p,
+      p*q - p - q
+    ]
+    
+    # allow only spinner decrements that keep hypeness above zero
+    for drop, order, spinner in zip(drops, orders, self.order_spinners):
+      if drop >= hypeness:
+        spinner.setMinimum(order)
+      else:
+        spinner.setMinimum(0)
+    
+    # pass new vertex orders to shader
+    self.canvas.set_tiling(p, q, r)
+    self.canvas.update()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   main_app = qt.QApplication(sys.argv)
