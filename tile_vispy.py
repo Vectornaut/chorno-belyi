@@ -2,6 +2,7 @@
 # <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
 import sys, os, re, pickle
+import PyQt5.QtWidgets as qt
 from vispy import app, gloo
 import vispy.util.keys as keys
 from math import sqrt, cos, sin, pi
@@ -9,6 +10,8 @@ from numpy import array, dot
 
 import covering
 import triangle_tree
+
+app.use_app(backend_name = 'PyQt5', call_reuse = True)
 
 vertex = '''
 attribute vec2 position;
@@ -613,7 +616,38 @@ class TilingCanvas(app.Canvas):
               return
       print('too far out')
 
+class TilingWindow(qt.QMainWindow):
+  def __init__(self, *args, **kwargs):
+    qt.QMainWindow.__init__(self, *args, **kwargs)
+    self.setWindowTitle('Chorno-Belyi')
+    
+    # set up central panel
+    central = qt.QWidget()
+    central.setLayout(qt.QVBoxLayout())
+    self.setCentralWidget(central)
+    
+    # add tiling canvas
+    orders = (6, 4, 3)
+    canvas = TilingCanvas(*orders, size = (700, 700))
+    central.layout().addWidget(canvas.native)
+    
+    # add vertex order spinners
+    order_panel = qt.QWidget()
+    order_panel.setLayout(qt.QHBoxLayout())
+    order_spinners = []
+    for n in orders:
+      spinner = qt.QSpinBox()
+      spinner.setValue(n)
+      order_panel.layout().addWidget(spinner)
+      order_spinners.append(spinner)
+    central.layout().addWidget(order_panel)
+
 if __name__ == '__main__' and sys.flags.interactive == 0:
+  main_app = qt.QApplication(sys.argv)
+  window = TilingWindow()
+  window.show()
+  main_app.exec_()
+  
   # show controls
   print('''
   uio  raise vertex orders
@@ -621,7 +655,3 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   
   ;    toggle antialiasing
   ''')
-  
-  orders = (6, 3, 4)
-  TilingCanvas(*orders, size = (500, 500)).show()
-  app.run()
