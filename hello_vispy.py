@@ -31,7 +31,10 @@
 # on Ubuntu 18.04
 
 import sys
+from PyQt5 import QtWidgets
 from vispy import app, gloo
+
+app.use_app(backend_name='PyQt5', call_reuse=True)
 
 vertex = '''
 attribute vec2 position;
@@ -81,6 +84,18 @@ class HelloCanvas(app.Canvas):
   def on_resize(self, event):
     self.set_resolution()
 
+class HelloWindow(QtWidgets.QMainWindow):
+  def __init__(self, *args, **kwargs):
+    QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
+    self.resize(500, 500)
+    self.setWindowTitle('Hello, Vispy!')
+    
+    # put a Vispy canvas in our central widget
+    canvas = HelloCanvas()
+    self.setCentralWidget(canvas.native)
+
 if __name__ == '__main__' and sys.flags.interactive == 0:
-  HelloCanvas(size = (500, 500), title = 'Hello, Vispy!').show()
-  app.run()
+  mainApp = QtWidgets.QApplication(sys.argv)
+  window = HelloWindow()
+  window.show()
+  mainApp.exec_()
