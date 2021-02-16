@@ -3,20 +3,25 @@ Code for drawing the ribbon graphs and Strebel differentials associated with alg
 
 ## Working languages
 
-Python 3 and Sage, maybe calling GLSL (through Vispy) for real-time visualization.
+Python 3, Sage, GLSL.
 
 ## How to run `tile_vispy.py`
 
 ### Install dependencies
 1. Install [Vispy](http://vispy.org/installation.html) in your Python 3 distribution by calling `pip3 install vispy`.
-2. Give your machine a backend window manager for Vispy to use. I'm using GLFW; its Ubuntu 18.04 packages are `libglfw3` and `libglfw3-dev` (I'm not sure the dev package is necessary). You can also use other window managers, listed at the link above.
+2. Install Qt5 and Qt OpenGL.
+  - Their Ubuntu 20.04 packages are `python3-pyqt5` and `python3-pyqt5.qtopengl`.
+  - Install their Python bindings by calling `pip3 install PyQt5`.
+
 ### Run program
-1. Call `python3 tile_vispy.py`. A window with a tiling should appear. I don't recommend leaving it open in the background, because it's working your GPU pretty hard, rendering the tiling in realtime.
+1. Call `sage -python tile_vispy.py`. A window with a tiling should appear. I don't recommend leaving it open in the background, because it's working your GPU pretty hard, rendering the tiling in realtime.
+  - If there's trouble, call `sage -python --version` to make sure your Sage has Python 3 or above.
 
 ## How to run `tile.py`
 
 ### Install dependencies
 1. Install [Pillow](https://pillow.readthedocs.io/en/stable/installation.html) in your Python 3 distribution by calling `pip3 install Pillow` (unless you have PIL installed; you can check by calling `pip3 show PIL`).
+
 ### Run program
 1. Go to the folder where you want output to appear.
 1. Launch the REPL by calling `python3`.
