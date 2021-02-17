@@ -16,3 +16,6 @@
       ~2. Make mock-up~
       3. Realize mock-up in HTML / CSS / JavaScript.
       4. Keep writing [copy](https://www.overleaf.com/project/602d325ad20f545c8b297465).
+   3. Make images to populate web page
+      1. Color 0 white and 1 black.
+      1. Describe domain-finding algorithm, at least informally (to standardize our work).
