@@ -392,12 +392,6 @@ class TilingCanvas(app.Canvas):
     self.update_resolution()
     self.program['antialias'] = False
     self.set_tiling(p, q, r)
-    self.update_title()
-  
-  def update_title(self):
-    tiling_name = 'Tiling {} {} {}'.format(*self.orders)
-    aa_ind = 'antialiased' if self.program['antialias'] else 'no antialiasing'
-    self.title = tiling_name + ' | ' + aa_ind
   
   def update_resolution(self):
     width, height = self.physical_size
@@ -538,17 +532,10 @@ class TilingCanvas(app.Canvas):
     self.update_resolution()
   
   def on_key_press(self, event):
-    # update tiling and coloring
-    p, q, r = self.orders
+    # update coloring
     highlight = None
     color = None
-    if   event.key == 'j': p -= 1
-    elif event.key == 'u': p += 1
-    elif event.key == 'k': q -= 1
-    elif event.key == 'i': q += 1
-    elif event.key == 'l': r -= 1
-    elif event.key == 'o': r += 1
-    elif event.key == ';': self.toggle_antialiasing()
+    if event.key == ';': self.toggle_antialiasing()
     elif event.key == keys.SPACE:
       self.working = not self.working
       self.load_tree_by_mode()
@@ -577,16 +564,12 @@ class TilingCanvas(app.Canvas):
         self.tree_choice = max(self.tree_choice - 1, 0)
         self.load_tri_tree(self.saved_trees[self.orders][self.tree_choice])
     
-    if q*r + r*p + p*q < p*q*r and self.orders != (p, q, r):
-      self.set_tiling(p, q, r)
-    
     if highlight != None or color != None:
       if not (self.orders in self.working_trees):
         self.working_trees[self.orders] = triangle_tree.TriangleTree()
       self.working_trees[self.orders].store(self.selection, highlight, color)
       self.load_tri_tree(self.working_trees[self.orders])
     
-    self.update_title()
     self.update()
   
   def on_mouse_release(self, event):
@@ -674,9 +657,4 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   main_app.exec_()
   
   # show controls
-  print('''
-  uio  raise vertex orders
-  jkl  lower vertex orders
-  
-  ;    toggle antialiasing
-  ''')
+  print(';    toggle antialiasing')
