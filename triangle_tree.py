@@ -1,3 +1,6 @@
+from sage.all import PermutationGroup
+from sage.groups.perm_gps.permgroup import PermutationGroup_generic
+
 # highlight styles
 NONE = 0
 L_HALF = 1
@@ -81,7 +84,41 @@ class TriangleTree:
       if self.children[k] != None:
         self.children[k].flatten(offset, list)
 
-if __name__ == '__main__':
+class DessinDomain:
+  # if `group` isn't a PermutationGroup, it'll be passed to the PermutationGroup
+  # constructor
+  def __init__(self, group, orbit, tag = None):
+    # store metadata
+    if isinstance(group, PermutationGroup_generic):
+      self.group = group
+    else:
+      self.group = PermutationGroup(group, canonicalize = False)
+    self.degree = self.group.degree()
+    self.t_number = self.group.gap().TransitiveIdentification()
+    self.orders = tuple(s.order() for s in self.group.gens())
+    self.orbit = orbit
+    self.tag = tag
+    
+    # store passport
+    label = 'T'.join(map(str, [self.degree, self.t_number]))
+    partition_str = '_'.join([
+      '.'.join(map(str, s.cycle_type()))
+      for s in self.group.gens()
+    ])
+    self.passport = '-'.join([label, partition_str])
+    
+    # start a triangle tree
+    self.tree = TriangleTree()
+  
+  def name(self):
+    permutation_str = ','.join([s.cycle_string() for s in self.group.gens()])
+    all_but_tag = '-'.join([self.passport, self.orbit, permutation_str])
+    if self.tag == None:
+      return all_but_tag
+    else:
+      return '-'.join([all_but_tag, tag])
+
+def tree_test():
   tree = TriangleTree()
   tree.store([0, 0, 0], highlight=9000)
   tree.store([0, 1], highlight=901)
@@ -105,3 +142,12 @@ if __name__ == '__main__':
   
   print('note that node 2 is severable because its highlight mode is 0, even though its color is nonzero')
   print('')
+
+def domain_test():
+  permutations = [
+    [(1, 4, 5, 2, 6, 7)],
+    [(2, 7, 6), (3, 5, 4)],
+    [(1, 2, 3, 4)]
+  ]
+  dom = DessinDomain(permutations, 'a')
+  return dom.name() == '7T7-6.1_3.3.1_4.1.1.1-a-(1,4,5,2,6,7),(2,7,6)(3,5,4),(1,2,3,4)'
