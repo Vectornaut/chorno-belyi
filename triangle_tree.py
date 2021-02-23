@@ -1,5 +1,6 @@
 from sage.all import PermutationGroup
 from sage.groups.perm_gps.permgroup import PermutationGroup_generic
+import os, re, pickle ## for adding metadata to existing domains
 
 # highlight styles
 NONE = 0
@@ -117,6 +118,39 @@ class DessinDomain:
       return all_but_tag
     else:
       return '-'.join([all_but_tag, tag])
+
+def add_metadata(dry_run = True):
+    old_name_format = 'domain\\-.*-(.)-(\\(.*\\)),(\\(.*\\)),(\\(.*\\))\\.pickle'
+    print('')
+    for filename in os.listdir('domains/old'):
+      if info := re.search(old_name_format, filename):
+        # get metadata
+        domain = DessinDomain(info.groups()[1:], info.groups()[0])
+        new_name = domain.name() + '.pickle'
+        print(filename + '\n-> ' + new_name + '\n')
+        
+        # add fundamental domain tree
+        try:
+          with open('domains/old/' + filename, 'rb') as file:
+            domain.tree = pickle.load(file)
+        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
+          print(ex)
+        
+        if not dry_run:
+          try:
+            with open('domains/' + new_name, 'wb') as file:
+              pickle.dump(domain, file)
+          except pickle.PicklingError as ex:
+            print(ex)
+
+def metadata_test():
+  old_name_format = 'domain\\-.*-(.)-(\\(.*\\)),(\\(.*\\)),(\\(.*\\))\\.pickle'
+  for filename in [
+    'domain-5_4_6-5.1.1_4.2.1_3.2.2-a-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).pickle',
+    'domain-6.1_3.3.1_4.1.1.1-a-(1,4,5,2,6,7),(2,7,6)(3,5,4),(1,2,3,4).pickle'
+  ]:
+    print(re.search(old_name_format, filename).groups())
+  
 
 def tree_test():
   tree = TriangleTree()
