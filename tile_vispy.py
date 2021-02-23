@@ -390,8 +390,8 @@ class TilingCanvas(app.Canvas):
     # initialize triangle-coloring tree
     for m in range(1000):
       self.program['tri_tree[{}]'.format(m)] = 0
-    for index in range(2):
-      self.program[tri_tree_key(index, 3)] = highlight
+    if highlight == WHOLE:
+      self.load_empty_tree(WHOLE)
     
     # initialize triangle selection
     self.selection = []
@@ -438,10 +438,19 @@ class TilingCanvas(app.Canvas):
     for n in range(len(bel.cover_a)):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
+    
+    # update display
+    self.update()
   
-  def load_empty_tree(self):
-    for attr in range(5):
-      self.program[tri_tree_key(1, attr)] = 0
+  def load_empty_tree(self, highlight=NONE):
+    if highlight == WHOLE:
+      for attr in range(3):
+        self.program[tri_tree_key(1, attr)] = 1
+      self.program[tri_tree_key(1, 3)] = WHOLE
+      self.program[tri_tree_key(1, 4)] = 0
+    else:
+      for attr in range(5):
+        self.program[tri_tree_key(1, attr)] = 0
   
   def load_tri_tree(self, tree):
     tree.flatten(1)
@@ -453,6 +462,16 @@ class TilingCanvas(app.Canvas):
           self.program[tri_tree_key(tri.index, k)] = 0
       self.program[tri_tree_key(tri.index, 3)] = tri.highlight
       self.program[tri_tree_key(tri.index, 4)] = tri.color
+  
+  def set_domain(self, domain, highlight=NONE):
+    self.domain = domain
+    if domain:
+      self.load_tri_tree(domain.tree)
+      if domain.orders != self.orders:
+        self.set_tiling(*domain.orders)
+    else:
+      self.load_empty_tree(highlight)
+      self.update()
   
   def load_tree_by_mode(self):
     if not self.working and self.orders in self.saved_trees:
@@ -534,6 +553,7 @@ class TilingCanvas(app.Canvas):
       self.working_trees[self.orders].store(self.selection, highlight, color)
       self.load_tri_tree(self.working_trees[self.orders])
     
+    # update display
     self.update()
   
   def on_mouse_release(self, event):
@@ -563,33 +583,37 @@ class TilingCanvas(app.Canvas):
               return
       print('too far out')
 
-class PermutationValidator(QValidator):
-  pmt_format = QRegExp(r'(\((\d+,)*\d+\))+')
-  
-  def __init__(self, *args, **kwargs):
-    QValidator.__init__(self, *args, *kwargs)
-  
-  def validate(self, input, pos):
-    if self.pmt_format.exactMatch(input):
-      return (self.Acceptable, input, pos)
-    else:
-      return (self.Intermediate, input, pos)
-
-class TilingPanel(qt.QWidget):
-  def __init__(self, canvas, has_control = False, *args, **kwargs):
+class DessinControlPanel(qt.QWidget):
+  def __init__(self, canvas, *args, **kwargs):
     qt.QWidget.__init__(self, *args, **kwargs)
-    self.setLayout(qt.QHBoxLayout())
     
     # store a pointer to the TilingCanvas this panel controls
     self.canvas = canvas
-    self.has_control = has_control
+  
+  def showing(self):
+    if hasattr(self.parentWidget(), 'currentWidget'):
+      return self == self.parentWidget().currentWidget()
+    else:
+      return True
+  
+  def change_controls(self):
+    if self.showing():
+      self.take_the_canvas()
+  
+  def take_the_canvas(self):
+    pass
+
+class TilingPanel(DessinControlPanel):
+  def __init__(self, canvas, *args, **kwargs):
+    DessinControlPanel.__init__(self, canvas, *args, **kwargs)
+    self.setLayout(qt.QHBoxLayout())
     
     # add order spinners
     self.order_spinners = []
     for n in canvas.orders:
       spinner = qt.QSpinBox()
       spinner.setValue(n)
-      spinner.valueChanged.connect(self.change_tiling)
+      spinner.valueChanged.connect(self.change_controls)
       self.layout().addWidget(spinner)
       self.order_spinners.append(spinner)
     self.set_minimums()
@@ -619,12 +643,114 @@ class TilingPanel(qt.QWidget):
       n = orders[(k+2)%3]
       self.order_spinners[k].setMinimum(floor(1 + m*n / (m*n - m - n)))
   
-  def change_tiling(self):
+  def change_controls(self):
+    super().change_controls()
     self.set_minimums()
-    if self.has_control:
-      orders = [spinner.value() for spinner in self.order_spinners]
-      self.canvas.set_tiling(*orders)
-      self.canvas.update()
+  
+  def take_the_canvas(self):
+    self.canvas.load_empty_tree(WHOLE)
+    self.canvas.set_tiling(*[
+      spinner.value()
+      for spinner in self.order_spinners
+    ])
+
+class PermutationValidator(QValidator):
+  pmt_format = QRegExp(r'(\((\d+,)*\d+\))+')
+  
+  def __init__(self, *args, **kwargs):
+    QValidator.__init__(self, *args, *kwargs)
+  
+  def validate(self, input, pos):
+    if self.pmt_format.exactMatch(input):
+      return (self.Acceptable, input, pos)
+    else:
+      return (self.Intermediate, input, pos)
+
+class WorkingPanel(DessinControlPanel):
+  def __init__(self, canvas, *args, **kwargs):
+    DessinControlPanel.__init__(self, canvas, *args, **kwargs)
+    self.setLayout(qt.QVBoxLayout())
+    
+    # start list of working domains
+    self.domains = []
+    
+    # add domain entry bar
+    entry_bar = qt.QWidget()
+    entry_bar.setLayout(qt.QHBoxLayout())
+    self.pmt_fields = []
+    pmt_validator = PermutationValidator()
+    for n in range(3):
+      field = qt.QLineEdit()
+      field.setValidator(pmt_validator)
+      field.textChanged.connect(self.check_entry_format)
+      field.returnPressed.connect(self.new_domain)
+      self.pmt_fields.append(field)
+      entry_bar.layout().addWidget(field)
+    self.orbit_field = qt.QLineEdit()
+    self.orbit_field.setMaximumWidth(30)
+    self.orbit_field.textChanged.connect(self.check_entry_format)
+    self.orbit_field.returnPressed.connect(self.new_domain)
+    self.tag_field = qt.QLineEdit()
+    self.tag_field.returnPressed.connect(self.new_domain)
+    self.new_button = qt.QPushButton('New')
+    self.new_button.setEnabled(False)
+    self.new_button.clicked.connect(self.new_domain)
+    entry_bar.layout().addWidget(self.orbit_field)
+    entry_bar.layout().addWidget(self.tag_field)
+    entry_bar.layout().addWidget(self.new_button)
+    self.layout().addWidget(entry_bar)
+    
+    # add domain chooser bar
+    chooser_bar = qt.QWidget()
+    chooser_bar.setLayout(qt.QHBoxLayout())
+    save_button = qt.QPushButton('Save')
+    self.domain_box = qt.QComboBox()
+    self.domain_box.currentIndexChanged.connect(self.change_controls)
+    self.domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
+    chooser_bar.layout().addWidget(save_button)
+    chooser_bar.layout().addWidget(self.domain_box)
+    self.layout().addWidget(chooser_bar)
+    
+    # create error dialog
+    self.error_dialog = qt.QMessageBox()
+  
+  def check_entry_format(self):
+    self.new_button.setEnabled(
+      all([field.hasAcceptableInput() for field in self.pmt_fields])
+      and self.orbit_field.text() != ''
+    )
+  
+  def new_domain(self):
+    try:
+      cycle_strs = [field.text() for field in self.pmt_fields]
+      orbit = self.orbit_field.text()
+      tag = self.tag_field.text()
+      domain = DessinDomain(cycle_strs, orbit, tag if tag else None)
+    except Exception as ex:
+      self.error_dialog.setText("Error computing dessin metadata.")
+      self.error_dialog.setDetailedText(str(ex))
+      self.error_dialog.exec()
+    else:
+      p, q, r = domain.orders
+      if p*q*r - q*r - r*p - p*q > 0:
+        # add new domain
+        self.domains.append(domain)
+        box = self.domain_box
+        box.addItem(domain.name())
+        
+        # choose new domain
+        box.setCurrentIndex(box.count()-1)
+        self.change_controls()
+      else:
+        self.error_dialog.setText('Order triple {}, {}, {} not of hyperbolic type.'.format(p, q, r))
+        self.error_dialog.setDetailedText(None)
+        self.error_dialog.exec()
+  
+  def take_the_canvas(self):
+    index = self.domain_box.currentIndex()
+    self.canvas.set_domain(
+      self.domains[index] if index >= 0 else None
+    )
 
 class TilingWindow(qt.QMainWindow):
   def __init__(self, *args, **kwargs):
@@ -642,51 +768,14 @@ class TilingWindow(qt.QMainWindow):
     central.layout().addWidget(self.canvas.native)
     
     # set up tiling-mode control panel
-    tiling_panel = TilingPanel(self.canvas, has_control = True)
+    tiling_panel = TilingPanel(self.canvas)
     
     # add domain editing area
     edit_panel = qt.QWidget()
     edit_panel.setLayout(qt.QVBoxLayout())
     
-    # add domain entry panel
-    entry_panel = qt.QWidget()
-    entry_panel.setLayout(qt.QHBoxLayout())
-    self.entry_pmt_fields = []
-    pmt_validator = PermutationValidator()
-    for n in range(3):
-      field = qt.QLineEdit()
-      field.setValidator(pmt_validator)
-      field.textChanged.connect(self.check_entry_format)
-      field.returnPressed.connect(self.new_domain)
-      self.entry_pmt_fields.append(field)
-      entry_panel.layout().addWidget(field)
-    self.entry_orbit_field = qt.QLineEdit()
-    self.entry_orbit_field.setMaximumWidth(30)
-    self.entry_orbit_field.textChanged.connect(self.check_entry_format)
-    self.entry_orbit_field.returnPressed.connect(self.new_domain)
-    self.entry_tag_field = qt.QLineEdit()
-    self.entry_tag_field.returnPressed.connect(self.new_domain)
-    self.new_button = qt.QPushButton('New')
-    self.new_button.setEnabled(False)
-    self.new_button.clicked.connect(self.new_domain)
-    entry_panel.layout().addWidget(self.entry_orbit_field)
-    entry_panel.layout().addWidget(self.entry_tag_field)
-    entry_panel.layout().addWidget(self.new_button)
-    edit_panel.layout().addWidget(entry_panel)
-    
-    # add working domain panel
-    working_panel = qt.QWidget()
-    working_panel.setLayout(qt.QHBoxLayout())
-    save_button = qt.QPushButton('Save')
-    self.working_domain_box = qt.QComboBox()
-    self.working_domain_box.currentIndexChanged.connect(self.show_working_domain)
-    self.working_domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
-    working_panel.layout().addWidget(save_button)
-    working_panel.layout().addWidget(self.working_domain_box)
-    edit_panel.layout().addWidget(working_panel)
-    
-    # start list of working domains
-    self.working_domains = []
+    # set up working-mode control panel
+    working_panel = WorkingPanel(self.canvas)
     
     # add saved domain menu
     domain_panel = qt.QWidget()
@@ -727,48 +816,12 @@ class TilingWindow(qt.QMainWindow):
     self.list_passports()
     
     # add mode tabs
-    mode_tabs = qt.QTabWidget()
-    mode_tabs.addTab(tiling_panel, "Tiling")
-    mode_tabs.addTab(edit_panel, "Working domain")
-    mode_tabs.addTab(domain_panel, "Saved domain")
-    mode_tabs.currentChanged.connect(self.show_domain)
-    central.layout().addWidget(mode_tabs)
-    
-    # set up error dialog
-    self.error_dialog = qt.QMessageBox()
-  
-  def check_entry_format(self):
-    self.new_button.setEnabled(
-      all([field.hasAcceptableInput() for field in self.entry_pmt_fields])
-      and self.entry_orbit_field.text() != ''
-    )
-  
-  def new_domain(self):
-    try:
-      cycle_strs = [field.text() for field in self.entry_pmt_fields]
-      orbit = self.entry_orbit_field.text()
-      tag = self.entry_tag_field.text()
-      domain = DessinDomain(cycle_strs, orbit, tag if tag else None)
-    except Exception as ex:
-      self.error_dialog.setText("Error computing dessin metadata.")
-      self.error_dialog.setDetailedText(str(ex))
-      self.error_dialog.exec()
-    else:
-      p, q, r = domain.orders
-      if p*q*r - q*r - r*p - p*q > 0:
-        # add new domain
-        self.working_domains.append(domain)
-        box = self.working_domain_box
-        box.addItem(domain.name())
-        box.setCurrentIndex(box.count() - 1)
-        
-        # adjust vertex orders
-        self.set_orders(domain.orders)
-        self.canvas.update()
-      else:
-        self.error_dialog.setText('Order triple {}, {}, {} not of hyperbolic type.'.format(p, q, r))
-        self.error_dialog.setDetailedText(None)
-        self.error_dialog.exec()
+    self.mode_tabs = qt.QTabWidget()
+    self.mode_tabs.addTab(tiling_panel, "Tiling")
+    self.mode_tabs.addTab(working_panel, "Working domain")
+    self.mode_tabs.addTab(domain_panel, "Saved domain")
+    self.mode_tabs.currentChanged.connect(self.change_mode)
+    central.layout().addWidget(self.mode_tabs)
   
   def list_passports(self):
     self.passport_box.clear()
@@ -803,20 +856,8 @@ class TilingWindow(qt.QMainWindow):
         else:
           self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
   
-  def show_domain(self, index):
-    if index == 0:
-      self.show_working_domain(self.working_domain_box.currentIndex())
-    else:
-      self.show_saved_domain(self.domain_box.currentIndex())
-  
-  def show_working_domain(self, index):
-    if index == -1:
-      self.canvas.load_empty_tree()
-      self.canvas.update()
-    else:
-      domain = self.working_domains[index]
-      self.canvas.load_tri_tree(domain.tree)
-      self.canvas.update()
+  def change_mode(self, index):
+    self.mode_tabs.currentWidget().take_the_canvas()
   
   def show_saved_domain(self, index):
     if index == -1:
