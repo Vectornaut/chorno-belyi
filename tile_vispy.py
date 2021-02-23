@@ -7,7 +7,7 @@ from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QValidator
 from vispy import app, gloo
 import vispy.util.keys as keys
-from math import sqrt, cos, sin, pi
+from math import sqrt, cos, sin, pi, floor
 from numpy import array, dot
 
 import covering
@@ -369,7 +369,7 @@ def tri_tree_key(index, attr):
   return 'tri_tree[{}]'.format(5*index + attr)
 
 class TilingCanvas(app.Canvas):
-  def __init__(self, p, q, r, *args, **kwargs):
+  def __init__(self, p, q, r, highlight=WHOLE, *args, **kwargs):
     app.Canvas.__init__(self, *args, **kwargs)
     self.program = gloo.Program(vertex, fragment, count = 6) # we'll always send 6 vertices
     
@@ -379,22 +379,22 @@ class TilingCanvas(app.Canvas):
       (-1, -1), (1, 1), (1, -1)  # southeast triangle
     ]
     
-    # set up triangle trees
-    self.working = True
-    self.tree_choice = 0
-    self.working_trees = {}
-    self.saved_trees = {}
-    self.open_tri_trees()
+    # initialize resolution and antialiasing mode
+    self.update_resolution()
+    self.program['antialias'] = False
+    
+    # initialize tiling and fundamental domain
+    self.set_tiling(p, q, r)
+    self.domain = None
+    
+    # initialize triangle-coloring tree
     for m in range(1000):
       self.program['tri_tree[{}]'.format(m)] = 0
+    for index in range(2):
+      self.program[tri_tree_key(index, 3)] = highlight
     
     # initialize triangle selection
     self.selection = []
-    
-    # initialize tiling and other settings
-    self.update_resolution()
-    self.program['antialias'] = False
-    self.set_tiling(p, q, r)
   
   def update_resolution(self):
     width, height = self.physical_size
@@ -406,7 +406,7 @@ class TilingCanvas(app.Canvas):
     self.program['antialias'] = not self.program['antialias']
   
   def set_tiling(self, p, q, r):
-    # store and display vertex orders
+    # save vertex orders
     self.orders = (p, q, r)
     
     # get vertex cosines
@@ -438,45 +438,6 @@ class TilingCanvas(app.Canvas):
     for n in range(len(bel.cover_a)):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
-    
-    # load the working tree or the 0th saved tree for the current tiling
-    self.load_tree_by_mode()
-    
-    ## load the coloring machine
-    ##NONE = 0
-    ##L_HALF = 1
-    ##R_HALF = 2
-    ##L_WHOLE = 3
-    ##R_WHOLE = 4
-    ##WHOLE = 5
-    ##ERROR = 6
-    ##color_machine = [
-    ##  [ 0,  0,  0, NONE,    -1],
-    ##  [ 2, 12,  0, L_WHOLE,  0],
-    ##  [21,  3,  0, L_WHOLE,  0],
-    ##  [ 4, 21,  0, L_HALF,   1],
-    ##  [21,  5,  0, L_HALF,   1],
-    ##  [ 6, 27,  8, WHOLE,   -1],
-    ##  [21, 11,  7, WHOLE,   -1],
-    ##  [ 0,  0, 21, R_HALF,   2],
-    ##  [ 9,  0, 21, R_HALF,   1],
-    ##  [21,  0, 10, R_HALF,   1],
-    ##  [ 0,  0, 21, R_HALF,   2],
-    ##  [ 0, 21,  0, L_HALF,   2],
-    ##  [13, 21, 18, WHOLE,   -1],
-    ##  [21, 14, 17, WHOLE,   -1],
-    ##  [15, 21,  0, L_HALF,   3],
-    ##  [21, 16,  0, L_HALF,   3],
-    ##  [ 0, 21,  0, L_HALF,   2],
-    ##  [ 0,  0, 21, R_HALF,   3],
-    ##  [19,  0, 21, R_WHOLE,  4],
-    ##  [21,  0, 20, R_WHOLE,  4],
-    ##  [ 0,  0, 27, R_HALF,   3],
-    ##  [27, 27, 27, ERROR,   -1]
-    ##]
-    ##for state in range(len(color_machine)):
-    ##  for input in range(5):
-    ##    self.program['color_machine[{}]'.format(5*state + input)] = color_machine[state][input];
   
   def load_empty_tree(self):
     for attr in range(5):
@@ -614,6 +575,57 @@ class PermutationValidator(QValidator):
     else:
       return (self.Intermediate, input, pos)
 
+class TilingPanel(qt.QWidget):
+  def __init__(self, canvas, has_control = False, *args, **kwargs):
+    qt.QWidget.__init__(self, *args, **kwargs)
+    self.setLayout(qt.QHBoxLayout())
+    
+    # store a pointer to the TilingCanvas this panel controls
+    self.canvas = canvas
+    self.has_control = has_control
+    
+    # add order spinners
+    self.order_spinners = []
+    for n in canvas.orders:
+      spinner = qt.QSpinBox()
+      spinner.setValue(n)
+      spinner.valueChanged.connect(self.change_tiling)
+      self.layout().addWidget(spinner)
+      self.order_spinners.append(spinner)
+    self.set_minimums()
+  
+  # set the spinner minimums so that any allowed change to a single spinner will
+  # keep the tiling hyperbolic. the hyperbolicity condition is
+  #
+  #   p*q*r - q*r - r*p - p*q > 0
+  #
+  # for vertex orders p, q, r
+  def set_minimums(self):
+    # to keep the tiling hyperbolic, each vertex order has to stay above
+    #
+    #   m*n / (m*n - m - n),
+    #
+    # where `m` and `n` are the orders of the other two vertices. we set its
+    # minimum to the smallest integer greater than this value. the `floor` in
+    # our implementation is safe for integer ratios because IEEE floating-point
+    # division is exact for all integers from 0 to 2^(# significand bits)
+    #
+    #   Daniel Lemire, "Fast exact integer divisions using floating-point operations"
+    #   https://lemire.me/blog/2017/11/16/fast-exact-integer-divisions-using-floating-point-operations/
+    #
+    orders = [spinner.value() for spinner in self.order_spinners]
+    for k in range(3):
+      m = orders[(k+1)%3]
+      n = orders[(k+2)%3]
+      self.order_spinners[k].setMinimum(floor(1 + m*n / (m*n - m - n)))
+  
+  def change_tiling(self):
+    self.set_minimums()
+    if self.has_control:
+      orders = [spinner.value() for spinner in self.order_spinners]
+      self.canvas.set_tiling(*orders)
+      self.canvas.update()
+
 class TilingWindow(qt.QMainWindow):
   def __init__(self, *args, **kwargs):
     qt.QMainWindow.__init__(self, *args, **kwargs)
@@ -629,17 +641,8 @@ class TilingWindow(qt.QMainWindow):
     self.canvas = TilingCanvas(6, 4, 3)
     central.layout().addWidget(self.canvas.native)
     
-    # add vertex order spinners
-    order_panel = qt.QWidget()
-    order_panel.setLayout(qt.QHBoxLayout())
-    self.order_spinners = []
-    for n in self.canvas.orders:
-      spinner = qt.QSpinBox()
-      spinner.setValue(n)
-      spinner.valueChanged.connect(self.change_tiling)
-      order_panel.layout().addWidget(spinner)
-      self.order_spinners.append(spinner)
-    central.layout().addWidget(order_panel)
+    # set up tiling-mode control panel
+    tiling_panel = TilingPanel(self.canvas, has_control = True)
     
     # add domain editing area
     edit_panel = qt.QWidget()
@@ -723,49 +726,16 @@ class TilingWindow(qt.QMainWindow):
     # list passports of saved domains
     self.list_passports()
     
-    # add domain tabs
-    domain_tabs = qt.QTabWidget()
-    domain_tabs.addTab(edit_panel, "Working")
-    domain_tabs.addTab(domain_panel, "Saved")
-    domain_tabs.currentChanged.connect(self.show_domain)
-    central.layout().addWidget(domain_tabs)
+    # add mode tabs
+    mode_tabs = qt.QTabWidget()
+    mode_tabs.addTab(tiling_panel, "Tiling")
+    mode_tabs.addTab(edit_panel, "Working domain")
+    mode_tabs.addTab(domain_panel, "Saved domain")
+    mode_tabs.currentChanged.connect(self.show_domain)
+    central.layout().addWidget(mode_tabs)
     
     # set up error dialog
     self.error_dialog = qt.QMessageBox()
-  
-  def change_tiling(self):
-    # the tiling is hyperbolic if and only if hypeness > 0
-    orders = [spinner.value() for spinner in self.order_spinners]
-    p, q, r = orders
-    hypeness = p*q*r - q*r - r*p - p*q
-    
-    # work out how much hypeness would drop if we decremented each order
-    drops = [
-      q*r - q - r,
-      r*p - r - p,
-      p*q - p - q
-    ]
-    
-    # allow only spinner decrements that keep hypeness above zero
-    for drop, order, spinner in zip(drops, orders, self.order_spinners):
-      if drop >= hypeness:
-        spinner.setMinimum(order)
-      else:
-        spinner.setMinimum(0)
-    
-    # pass new vertex orders to shader
-    self.canvas.set_tiling(p, q, r)
-    self.canvas.update()
-    
-    # list passports of saved domains
-    self.list_passports()
-  
-  def set_orders(self, orders):
-    for order, spinner in zip(orders, self.order_spinners):
-      spinner.blockSignals(True)
-      spinner.setValue(order)
-      spinner.blockSignals(False)
-    self.canvas.set_tiling(*orders)
   
   def check_entry_format(self):
     self.new_button.setEnabled(
