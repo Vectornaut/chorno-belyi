@@ -3,6 +3,8 @@
 
 import sys, os, re, pickle
 import PyQt5.QtWidgets as qt
+from PyQt5.QtCore import QRegExp
+from PyQt5.QtGui import QValidator
 from vispy import app, gloo
 import vispy.util.keys as keys
 from math import sqrt, cos, sin, pi
@@ -600,10 +602,23 @@ class TilingCanvas(app.Canvas):
               return
       print('too far out')
 
+class PermutationValidator(QValidator):
+  pmt_format = QRegExp(r'(\((\d+,)*\d+\))+')
+  
+  def __init__(self, *args, **kwargs):
+    QValidator.__init__(self, *args, *kwargs)
+  
+  def validate(self, input, pos):
+    if self.pmt_format.exactMatch(input):
+      return (self.Acceptable, input, pos)
+    else:
+      return (self.Intermediate, input, pos)
+
 class TilingWindow(qt.QMainWindow):
   def __init__(self, *args, **kwargs):
     qt.QMainWindow.__init__(self, *args, **kwargs)
     self.setWindowTitle('Chorno-Belyi')
+    self.resize(700, 900)
     
     # set up central panel
     central = qt.QWidget()
@@ -611,7 +626,7 @@ class TilingWindow(qt.QMainWindow):
     self.setCentralWidget(central)
     
     # add tiling canvas
-    self.canvas = TilingCanvas(6, 4, 3, size = (700, 700))
+    self.canvas = TilingCanvas(6, 4, 3)
     central.layout().addWidget(self.canvas.native)
     
     # add vertex order spinners
@@ -626,7 +641,51 @@ class TilingWindow(qt.QMainWindow):
       self.order_spinners.append(spinner)
     central.layout().addWidget(order_panel)
     
-    # add domain menu
+    # add domain editing area
+    edit_panel = qt.QWidget()
+    edit_panel.setLayout(qt.QVBoxLayout())
+    central.layout().addWidget(edit_panel)
+    
+    # add domain entry panel
+    entry_panel = qt.QWidget()
+    entry_panel.setLayout(qt.QHBoxLayout())
+    self.entry_pmt_fields = []
+    pmt_validator = PermutationValidator()
+    for n in range(3):
+      field = qt.QLineEdit()
+      field.setValidator(pmt_validator)
+      field.textChanged.connect(self.check_entry_format)
+      field.returnPressed.connect(self.new_domain)
+      self.entry_pmt_fields.append(field)
+      entry_panel.layout().addWidget(field)
+    self.entry_orbit_field = qt.QLineEdit()
+    self.entry_orbit_field.setMaximumWidth(30)
+    self.entry_orbit_field.textChanged.connect(self.check_entry_format)
+    self.entry_orbit_field.returnPressed.connect(self.new_domain)
+    self.entry_tag_field = qt.QLineEdit()
+    self.entry_tag_field.returnPressed.connect(self.new_domain)
+    self.new_button = qt.QPushButton('New')
+    self.new_button.setEnabled(False)
+    self.new_button.clicked.connect(self.new_domain)
+    entry_panel.layout().addWidget(self.entry_orbit_field)
+    entry_panel.layout().addWidget(self.entry_tag_field)
+    entry_panel.layout().addWidget(self.new_button)
+    edit_panel.layout().addWidget(entry_panel)
+    
+    # add working domain panel
+    working_panel = qt.QWidget()
+    working_panel.setLayout(qt.QHBoxLayout())
+    save_button = qt.QPushButton('Save')
+    self.working_domain_box = qt.QComboBox()
+    self.working_domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
+    working_panel.layout().addWidget(save_button)
+    working_panel.layout().addWidget(self.working_domain_box)
+    edit_panel.layout().addWidget(working_panel)
+    
+    # start list of working domains
+    self.working_domains = []
+    
+    # add saved domain menu
     domain_panel = qt.QWidget()
     domain_panel.setLayout(qt.QHBoxLayout())
     self.passport_box = qt.QComboBox()
@@ -645,25 +704,28 @@ class TilingWindow(qt.QMainWindow):
     central.layout().addWidget(domain_panel)
     
     # open saved domains
-    self.domains = {}
+    self.saved_domains = {}
     for filename in os.listdir('domains'):
-      if re.search('.*\\.pickle', filename):
+      if re.match(r'.*\.pickle$', filename):
         try:
           with open('domains/' + filename, 'rb') as file:
             dom = pickle.load(file)
         except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
           print(ex)
         else:
-          if not dom.orders in self.domains:
-            self.domains[dom.orders] = {}
-          if not dom.passport in self.domains[dom.orders]:
-            self.domains[dom.orders][dom.passport] = {}
-          if not dom.orbit in self.domains[dom.orders][dom.passport]:
-            self.domains[dom.orders][dom.passport][dom.orbit] = []
-          self.domains[dom.orders][dom.passport][dom.orbit].append(dom)
+          if not dom.orders in self.saved_domains:
+            self.saved_domains[dom.orders] = {}
+          if not dom.passport in self.saved_domains[dom.orders]:
+            self.saved_domains[dom.orders][dom.passport] = {}
+          if not dom.orbit in self.saved_domains[dom.orders][dom.passport]:
+            self.saved_domains[dom.orders][dom.passport][dom.orbit] = []
+          self.saved_domains[dom.orders][dom.passport][dom.orbit].append(dom)
     
     # list passports of saved domains
     self.list_passports()
+    
+    # set up error dialog
+    self.error_dialog = qt.QMessageBox()
   
   def change_tiling(self):
     # the tiling is hyperbolic if and only if hypeness > 0
@@ -692,13 +754,48 @@ class TilingWindow(qt.QMainWindow):
     # list passports of saved domains
     self.list_passports()
   
+  def check_entry_format(self):
+    self.new_button.setEnabled(
+      all([field.hasAcceptableInput() for field in self.entry_pmt_fields])
+      and self.entry_orbit_field.text() != ''
+    )
+  
+  def new_domain(self):
+    try:
+      cycle_strs = [field.text() for field in self.entry_pmt_fields]
+      orbit = self.entry_orbit_field.text()
+      tag = self.entry_tag_field.text()
+      domain = DessinDomain(cycle_strs, orbit, tag if tag else None)
+    except Exception as ex:
+      self.error_dialog.setText("Error computing dessin metadata.")
+      self.error_dialog.setDetailedText(str(ex))
+      self.error_dialog.exec()
+    else:
+      p, q, r = domain.orders
+      if p*q*r - q*r - r*p - p*q > 0:
+        # add new domain
+        self.working_domains.append(domain)
+        self.working_domain_box.addItem(domain.name())
+        
+        # adjust vertex orders
+        for order, spinner in zip(domain.orders, self.order_spinners):
+          spinner.blockSignals(True)
+          spinner.setValue(order)
+          spinner.blockSignals(False)
+        self.canvas.set_tiling(p, q, r)
+        self.canvas.update()
+      else:
+        self.error_dialog.setText('Order triple {}, {}, {} not of hyperbolic type.'.format(p, q, r))
+        self.error_dialog.setDetailedText(None)
+        self.error_dialog.exec()
+  
   def list_passports(self):
     self.passport_box.clear()
     orders = self.canvas.orders
-    if orders in self.domains:
-      for passport in self.domains[orders]:
+    if orders in self.saved_domains:
+      for passport in self.saved_domains[orders]:
         self.passport_box.addItem(passport)
-      first_passport = next(iter(self.domains[orders]))
+      first_passport = next(iter(self.saved_domains[orders]))
       self.list_orbits(first_passport)
     else:
       self.orbit_box.clear()
@@ -708,9 +805,9 @@ class TilingWindow(qt.QMainWindow):
     self.orbit_box.clear()
     if passport:
       orders = self.canvas.orders
-      for orbit in self.domains[orders][passport]:
+      for orbit in self.saved_domains[orders][passport]:
         self.orbit_box.addItem(orbit)
-      first_orbit = next(iter(self.domains[orders][passport]))
+      first_orbit = next(iter(self.saved_domains[orders][passport]))
       self.list_domains(first_orbit)
   
   def list_domains(self, orbit):
@@ -718,7 +815,7 @@ class TilingWindow(qt.QMainWindow):
     if orbit:
       orders = self.canvas.orders
       passport = self.passport_box.currentText()
-      for domain in self.domains[orders][passport][orbit]:
+      for domain in self.saved_domains[orders][passport][orbit]:
         permutation_str = ','.join([s.cycle_string() for s in domain.group.gens()])
         if domain.tag == None:
           self.domain_box.addItem(permutation_str)
@@ -730,7 +827,7 @@ class TilingWindow(qt.QMainWindow):
       orders = self.canvas.orders
       passport = self.passport_box.currentText()
       orbit = self.orbit_box.currentText()
-      domain = self.domains[orders][passport][orbit][index]
+      domain = self.saved_domains[orders][passport][orbit][index]
       self.canvas.load_tri_tree(domain.tree)
       self.canvas.update()
 
@@ -739,6 +836,3 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   window = TilingWindow()
   window.show()
   main_app.exec_()
-  
-  # show controls
-  print(';    toggle antialiasing')

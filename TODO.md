@@ -6,7 +6,9 @@
 3. Modify coset representative code
    1. Package original code to make it more usable
    2. Figure out how to reassemble the fundamental domain to put all the vertices inside
-4. *(Long-term test application.)* Take a bunch of Belyi maps with the same passport, draw dessins for all of them, and look for similarities between the dessins of the Galois-conjugate maps
+4. Polishing
+   1. For orders 3, 6, 4, we exceed maximum reflection iterations around edges.
+5. *(Long-term test application.)* Take a bunch of Belyi maps with the same passport, draw dessins for all of them, and look for similarities between the dessins of the Galois-conjugate maps
    1. Draw fundamental domains for:
       1. ~~[Passport 7T6-7_5.1.1_5.1.1](https://beta.lmfdb.org/Belyi/7T6/7/5.1.1/5.1.1/)~~
       2. [Passport 7T6-5.1.1_4.2.1_3.2.2](https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/)
