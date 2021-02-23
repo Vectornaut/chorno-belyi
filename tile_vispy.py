@@ -9,7 +9,7 @@ from math import sqrt, cos, sin, pi
 from numpy import array, dot
 
 import covering
-import triangle_tree
+from triangle_tree import *
 
 app.use_app(backend_name = 'PyQt5', call_reuse = True)
 
@@ -625,6 +625,42 @@ class TilingWindow(qt.QMainWindow):
       order_panel.layout().addWidget(spinner)
       self.order_spinners.append(spinner)
     central.layout().addWidget(order_panel)
+    
+    # add domain menu
+    domain_panel = qt.QWidget()
+    domain_panel.setLayout(qt.QHBoxLayout())
+    self.passport_box = qt.QComboBox()
+    self.orbit_box = qt.QComboBox()
+    self.domain_box = qt.QComboBox()
+    self.passport_box.setMinimumContentsLength(18)
+    self.passport_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
+    self.orbit_box.setMinimumContentsLength(1)
+    self.orbit_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
+    self.domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
+    for box in [self.passport_box, self.orbit_box, self.domain_box]:
+      domain_panel.layout().addWidget(box)
+    central.layout().addWidget(domain_panel)
+    
+    # open saved domains
+    self.domains = {}
+    for filename in os.listdir('domains'):
+      if re.search('.*\\.pickle', filename):
+        try:
+          with open('domains/' + filename, 'rb') as file:
+            dom = pickle.load(file)
+        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
+          print(ex)
+        else:
+          if not dom.orders in self.domains:
+            self.domains[dom.orders] = {}
+          if not dom.passport in self.domains[dom.orders]:
+            self.domains[dom.orders][dom.passport] = {}
+          if not dom.orbit in self.domains[dom.orders][dom.passport]:
+            self.domains[dom.orders][dom.passport][dom.orbit] = []
+          self.domains[dom.orders][dom.passport][dom.orbit].append(dom)
+    
+    # list passports of saved domains
+    self.list_passports(orders)
   
   def change_tiling(self):
     # the tiling is hyperbolic if and only if hypeness > 0
@@ -649,6 +685,36 @@ class TilingWindow(qt.QMainWindow):
     # pass new vertex orders to shader
     self.canvas.set_tiling(p, q, r)
     self.canvas.update()
+    
+    # list passports of saved domains
+    self.list_passports(tuple(orders))
+  
+  def list_passports(self, orders):
+    self.passport_box.clear()
+    if orders in self.domains:
+      for passport in self.domains[orders]:
+        self.passport_box.addItem(passport)
+      first_passport = next(iter(self.domains[orders]))
+      self.list_orbits(orders, first_passport)
+    else:
+      self.orbit_box.clear()
+      self.domain_box.clear()
+  
+  def list_orbits(self, orders, passport):
+    self.orbit_box.clear()
+    for orbit in self.domains[orders][passport]:
+      self.orbit_box.addItem(orbit)
+    first_orbit = next(iter(self.domains[orders][passport]))
+    self.list_domains(orders, passport, first_orbit)
+  
+  def list_domains(self, orders, passport, orbit):
+    self.domain_box.clear()
+    for domain in self.domains[orders][passport][orbit]:
+      permutation_str = ','.join([s.cycle_string() for s in domain.group.gens()])
+      if domain.tag == None:
+        self.domain_box.addItem(permutation_str)
+      else:
+        self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   main_app = qt.QApplication(sys.argv)
