@@ -9,6 +9,7 @@ from math import sqrt, cos, sin, pi
 from numpy import array, dot
 
 import covering
+import triangle_tree
 from triangle_tree import *
 
 app.use_app(backend_name = 'PyQt5', call_reuse = True)
@@ -610,15 +611,14 @@ class TilingWindow(qt.QMainWindow):
     self.setCentralWidget(central)
     
     # add tiling canvas
-    orders = (6, 4, 3)
-    self.canvas = TilingCanvas(*orders, size = (700, 700))
+    self.canvas = TilingCanvas(6, 4, 3, size = (700, 700))
     central.layout().addWidget(self.canvas.native)
     
     # add vertex order spinners
     order_panel = qt.QWidget()
     order_panel.setLayout(qt.QHBoxLayout())
     self.order_spinners = []
-    for n in orders:
+    for n in self.canvas.orders:
       spinner = qt.QSpinBox()
       spinner.setValue(n)
       spinner.valueChanged.connect(self.change_tiling)
@@ -632,6 +632,9 @@ class TilingWindow(qt.QMainWindow):
     self.passport_box = qt.QComboBox()
     self.orbit_box = qt.QComboBox()
     self.domain_box = qt.QComboBox()
+    self.passport_box.currentTextChanged.connect(self.list_orbits)
+    self.orbit_box.currentTextChanged.connect(self.list_domains)
+    self.domain_box.currentIndexChanged.connect(self.choose_domain)
     self.passport_box.setMinimumContentsLength(18)
     self.passport_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
     self.orbit_box.setMinimumContentsLength(1)
@@ -660,7 +663,7 @@ class TilingWindow(qt.QMainWindow):
           self.domains[dom.orders][dom.passport][dom.orbit].append(dom)
     
     # list passports of saved domains
-    self.list_passports(orders)
+    self.list_passports()
   
   def change_tiling(self):
     # the tiling is hyperbolic if and only if hypeness > 0
@@ -687,34 +690,49 @@ class TilingWindow(qt.QMainWindow):
     self.canvas.update()
     
     # list passports of saved domains
-    self.list_passports(tuple(orders))
+    self.list_passports()
   
-  def list_passports(self, orders):
+  def list_passports(self):
     self.passport_box.clear()
+    orders = self.canvas.orders
     if orders in self.domains:
       for passport in self.domains[orders]:
         self.passport_box.addItem(passport)
       first_passport = next(iter(self.domains[orders]))
-      self.list_orbits(orders, first_passport)
+      self.list_orbits(first_passport)
     else:
       self.orbit_box.clear()
       self.domain_box.clear()
   
-  def list_orbits(self, orders, passport):
+  def list_orbits(self, passport):
     self.orbit_box.clear()
-    for orbit in self.domains[orders][passport]:
-      self.orbit_box.addItem(orbit)
-    first_orbit = next(iter(self.domains[orders][passport]))
-    self.list_domains(orders, passport, first_orbit)
+    if passport:
+      orders = self.canvas.orders
+      for orbit in self.domains[orders][passport]:
+        self.orbit_box.addItem(orbit)
+      first_orbit = next(iter(self.domains[orders][passport]))
+      self.list_domains(first_orbit)
   
-  def list_domains(self, orders, passport, orbit):
+  def list_domains(self, orbit):
     self.domain_box.clear()
-    for domain in self.domains[orders][passport][orbit]:
-      permutation_str = ','.join([s.cycle_string() for s in domain.group.gens()])
-      if domain.tag == None:
-        self.domain_box.addItem(permutation_str)
-      else:
-        self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
+    if orbit:
+      orders = self.canvas.orders
+      passport = self.passport_box.currentText()
+      for domain in self.domains[orders][passport][orbit]:
+        permutation_str = ','.join([s.cycle_string() for s in domain.group.gens()])
+        if domain.tag == None:
+          self.domain_box.addItem(permutation_str)
+        else:
+          self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
+  
+  def choose_domain(self, index):
+    if index != -1:
+      orders = self.canvas.orders
+      passport = self.passport_box.currentText()
+      orbit = self.orbit_box.currentText()
+      domain = self.domains[orders][passport][orbit][index]
+      self.canvas.load_tri_tree(domain.tree)
+      self.canvas.update()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   main_app = qt.QApplication(sys.argv)
