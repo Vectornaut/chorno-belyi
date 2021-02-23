@@ -644,7 +644,6 @@ class TilingWindow(qt.QMainWindow):
     # add domain editing area
     edit_panel = qt.QWidget()
     edit_panel.setLayout(qt.QVBoxLayout())
-    central.layout().addWidget(edit_panel)
     
     # add domain entry panel
     entry_panel = qt.QWidget()
@@ -677,6 +676,7 @@ class TilingWindow(qt.QMainWindow):
     working_panel.setLayout(qt.QHBoxLayout())
     save_button = qt.QPushButton('Save')
     self.working_domain_box = qt.QComboBox()
+    self.working_domain_box.currentIndexChanged.connect(self.show_working_domain)
     self.working_domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
     working_panel.layout().addWidget(save_button)
     working_panel.layout().addWidget(self.working_domain_box)
@@ -693,7 +693,7 @@ class TilingWindow(qt.QMainWindow):
     self.domain_box = qt.QComboBox()
     self.passport_box.currentTextChanged.connect(self.list_orbits)
     self.orbit_box.currentTextChanged.connect(self.list_domains)
-    self.domain_box.currentIndexChanged.connect(self.choose_domain)
+    self.domain_box.currentIndexChanged.connect(self.show_saved_domain)
     self.passport_box.setMinimumContentsLength(18)
     self.passport_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
     self.orbit_box.setMinimumContentsLength(1)
@@ -701,7 +701,6 @@ class TilingWindow(qt.QMainWindow):
     self.domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
     for box in [self.passport_box, self.orbit_box, self.domain_box]:
       domain_panel.layout().addWidget(box)
-    central.layout().addWidget(domain_panel)
     
     # open saved domains
     self.saved_domains = {}
@@ -723,6 +722,13 @@ class TilingWindow(qt.QMainWindow):
     
     # list passports of saved domains
     self.list_passports()
+    
+    # add domain tabs
+    domain_tabs = qt.QTabWidget()
+    domain_tabs.addTab(edit_panel, "Working")
+    domain_tabs.addTab(domain_panel, "Saved")
+    domain_tabs.currentChanged.connect(self.show_domain)
+    central.layout().addWidget(domain_tabs)
     
     # set up error dialog
     self.error_dialog = qt.QMessageBox()
@@ -754,6 +760,13 @@ class TilingWindow(qt.QMainWindow):
     # list passports of saved domains
     self.list_passports()
   
+  def set_orders(self, orders):
+    for order, spinner in zip(orders, self.order_spinners):
+      spinner.blockSignals(True)
+      spinner.setValue(order)
+      spinner.blockSignals(False)
+    self.canvas.set_tiling(*orders)
+  
   def check_entry_format(self):
     self.new_button.setEnabled(
       all([field.hasAcceptableInput() for field in self.entry_pmt_fields])
@@ -775,14 +788,12 @@ class TilingWindow(qt.QMainWindow):
       if p*q*r - q*r - r*p - p*q > 0:
         # add new domain
         self.working_domains.append(domain)
-        self.working_domain_box.addItem(domain.name())
+        box = self.working_domain_box
+        box.addItem(domain.name())
+        box.setCurrentIndex(box.count() - 1)
         
         # adjust vertex orders
-        for order, spinner in zip(domain.orders, self.order_spinners):
-          spinner.blockSignals(True)
-          spinner.setValue(order)
-          spinner.blockSignals(False)
-        self.canvas.set_tiling(p, q, r)
+        self.set_orders(domain.orders)
         self.canvas.update()
       else:
         self.error_dialog.setText('Order triple {}, {}, {} not of hyperbolic type.'.format(p, q, r))
@@ -822,8 +833,26 @@ class TilingWindow(qt.QMainWindow):
         else:
           self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
   
-  def choose_domain(self, index):
-    if index != -1:
+  def show_domain(self, index):
+    if index == 0:
+      self.show_working_domain(self.working_domain_box.currentIndex())
+    else:
+      self.show_saved_domain(self.domain_box.currentIndex())
+  
+  def show_working_domain(self, index):
+    if index == -1:
+      self.canvas.load_empty_tree()
+      self.canvas.update()
+    else:
+      domain = self.working_domains[index]
+      self.canvas.load_tri_tree(domain.tree)
+      self.canvas.update()
+  
+  def show_saved_domain(self, index):
+    if index == -1:
+      self.canvas.load_empty_tree()
+      self.canvas.update()
+    else:
       orders = self.canvas.orders
       passport = self.passport_box.currentText()
       orbit = self.orbit_box.currentText()
