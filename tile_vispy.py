@@ -370,7 +370,7 @@ def tri_tree_key(index, attr):
 
 class TilingCanvas(app.Canvas):
   def __init__(self, p, q, r, highlight=WHOLE, *args, **kwargs):
-    app.Canvas.__init__(self, *args, **kwargs)
+    super().__init__(*args, **kwargs)
     self.program = gloo.Program(vertex, fragment, count = 6) # we'll always send 6 vertices
     
     # draw a rectangle that covers the canvas
@@ -585,7 +585,7 @@ class TilingCanvas(app.Canvas):
 
 class DessinControlPanel(qt.QWidget):
   def __init__(self, canvas, *args, **kwargs):
-    qt.QWidget.__init__(self, *args, **kwargs)
+    super().__init__(*args, **kwargs)
     
     # store a pointer to the TilingCanvas this panel controls
     self.canvas = canvas
@@ -605,7 +605,7 @@ class DessinControlPanel(qt.QWidget):
 
 class TilingPanel(DessinControlPanel):
   def __init__(self, canvas, *args, **kwargs):
-    DessinControlPanel.__init__(self, canvas, *args, **kwargs)
+    super().__init__(canvas, *args, **kwargs)
     self.setLayout(qt.QHBoxLayout())
     
     # add order spinners
@@ -658,7 +658,7 @@ class PermutationValidator(QValidator):
   pmt_format = QRegExp(r'(\((\d+,)*\d+\))+')
   
   def __init__(self, *args, **kwargs):
-    QValidator.__init__(self, *args, *kwargs)
+    super().__init__(*args, *kwargs)
   
   def validate(self, input, pos):
     if self.pmt_format.exactMatch(input):
@@ -668,7 +668,7 @@ class PermutationValidator(QValidator):
 
 class WorkingPanel(DessinControlPanel):
   def __init__(self, canvas, *args, **kwargs):
-    DessinControlPanel.__init__(self, canvas, *args, **kwargs)
+    super().__init__(canvas, *args, **kwargs)
     self.setLayout(qt.QVBoxLayout())
     
     # start list of working domains
@@ -754,7 +754,7 @@ class WorkingPanel(DessinControlPanel):
 
 class TilingWindow(qt.QMainWindow):
   def __init__(self, *args, **kwargs):
-    qt.QMainWindow.__init__(self, *args, **kwargs)
+    super().__init__(*args, **kwargs)
     self.setWindowTitle('Chorno-Belyi')
     self.resize(700, 900)
     
