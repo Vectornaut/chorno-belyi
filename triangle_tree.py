@@ -1,5 +1,6 @@
 from sage.all import PermutationGroup
 from sage.groups.perm_gps.permgroup import PermutationGroup_generic
+import json
 import os, re, pickle ## for adding metadata to existing domains
 
 # highlight styles
@@ -84,6 +85,23 @@ class TriangleTree:
     for k in range(3):
       if self.children[k] != None:
         self.children[k].flatten(offset, list)
+  
+  def dumps(self, **kwargs):
+    return json.dumps(self, default=lambda obj: obj.__dict__, **kwargs)
+  
+  # for JSON deserialization, build a TriangleTree recursively from nested dicts
+  #
+  #   StackOverflow user martineau
+  #   https://stackoverflow.com/a/23597335/1644283
+  #
+  @staticmethod
+  def from_dict(di):
+    tree = TriangleTree()
+    for k in range(3):
+      if child := di['children'][k]:
+        tree.children[k] = TriangleTree.from_dict(child)
+    tree.highlight = di['highlight']
+    tree.color = di['color']
 
 class DessinDomain:
   # if `group` isn't a PermutationGroup, it'll be passed to the PermutationGroup
@@ -150,7 +168,6 @@ def metadata_test():
     'domain-6.1_3.3.1_4.1.1.1-a-(1,4,5,2,6,7),(2,7,6)(3,5,4),(1,2,3,4).pickle'
   ]:
     print(re.search(old_name_format, filename).groups())
-  
 
 def tree_test():
   tree = TriangleTree()
@@ -176,6 +193,16 @@ def tree_test():
   
   print('note that node 2 is severable because its highlight mode is 0, even though its color is nonzero')
   print('')
+
+def json_test():
+  tree = TriangleTree()
+  tree.store([0, 0, 0], highlight=9000)
+  tree.store([0, 1], highlight=901)
+  tree.store([0, 1, 1], highlight=9011)
+  tree.store([2, 0, 1], highlight=9201)
+  tree.store([2], color=92)
+  
+  print(tree.dumps(indent=2))
 
 def domain_test():
   permutations = [
