@@ -701,11 +701,13 @@ class WorkingPanel(DessinControlPanel):
     # add domain chooser bar
     chooser_bar = qt.QWidget()
     chooser_bar.setLayout(qt.QHBoxLayout())
-    save_button = qt.QPushButton('Save')
+    self.save_button = qt.QPushButton('Save')
+    self.save_button.setEnabled(False)
     self.domain_box = qt.QComboBox()
-    self.domain_box.currentIndexChanged.connect(self.change_controls)
+    self.save_button.clicked.connect(self.save_domain)
+    self.domain_box.currentTextChanged.connect(self.change_controls)
     self.domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
-    chooser_bar.layout().addWidget(save_button)
+    chooser_bar.layout().addWidget(self.save_button)
     chooser_bar.layout().addWidget(self.domain_box)
     self.layout().addWidget(chooser_bar)
     
@@ -744,11 +746,26 @@ class WorkingPanel(DessinControlPanel):
         self.error_dialog.setDetailedText(None)
         self.error_dialog.exec()
   
+  def change_controls(self):
+    super().change_controls()
+    self.save_button.setEnabled(self.domain_box.currentText() != '')
+  
   def take_the_canvas(self):
     index = self.domain_box.currentIndex()
     self.canvas.set_domain(
       self.domains[index] if index >= 0 else None
     )
+  
+  def save_domain(self):
+    index = self.domain_box.currentIndex()
+    domain = self.domains[index]
+    try:
+      with open('domains/' + domain.name() + '.pickle', 'wb') as file:
+        pickle.dump(domain, file)
+    except (PicklingError, OSError) as ex:
+      self.error_dialog.setText('Error saving file.')
+      self.error_dialog.setDetailedText(str(PicklingError))
+      self.error_dialog.exec()
 
 class SavedPanel(DessinControlPanel):
   def __init__(self, canvas, *args, **kwargs):
@@ -761,7 +778,7 @@ class SavedPanel(DessinControlPanel):
     self.domain_box = qt.QComboBox()
     self.passport_box.currentTextChanged.connect(self.list_orbits)
     self.orbit_box.currentTextChanged.connect(self.list_domains)
-    self.domain_box.currentIndexChanged.connect(self.change_controls)
+    self.domain_box.currentTextChanged.connect(self.change_controls)
     self.passport_box.setMinimumContentsLength(18)
     self.passport_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
     self.orbit_box.setMinimumContentsLength(1)
