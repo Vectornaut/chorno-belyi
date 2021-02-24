@@ -5,6 +5,17 @@ import numpy as np
 from numpy import pi
 from scipy.special import gamma
 
+##[TEMP] should make size adjustable
+def apply_series(series, w, order):
+  # write cover(w) as w * deformation(w)
+  deformation = 0
+  w_order = w**order
+  w_power = 1
+  for coeff in series:
+    deformation += coeff * w_power
+    w_power *= w_order
+  return w * deformation
+
 # a covering map from the Poincaré disk to CP^1 which maps the vertices of the
 # p, q, r triangulation to 0, 1, infinity. the order-p vertex `a` is at 0, and
 # the order-q vertex `b` is on the positive real axis. we encode the covering
@@ -102,11 +113,38 @@ class Covering():
       np.array(lift.reverse().coefficients())
       for lift in [lift_0, lift_1]
     ]
+  
+  def apply(self, v):
+    v_shift = np.matmul(self.shift, v)
+    if v[2] < v_shift[2]:
+      # v is closer to the time axis (this comparison works because v and
+      # v_shift are on the forward -1 hyperboloid)
+      w = (v[0] + 1j*v[1]) / (1 + v[2])
+      s = apply_series(self.cover_a, w / self.K_a, self.p)
+      return s**self.p
+    else:
+      w_shift = (v_shift[0] + 1j*v_shift[1]) / (1 + v_shift[2]);
+      s = apply_series(self.cover_b, w_shift / self.K_b, self.q);
+      return 1 - s**self.q
+
+##[TEST]
+def test_covering(u):
+  r_sq = np.dot(u, u)
+  v = np.array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
+  print(str(u) + ' -> ' + str(bel.apply(v)))
+
+##[TEST]
+from math import cos, sin
 
 if __name__ == '__main__':
-  bel = Covering(5, 4, 3, 3)
+  bel = Covering(5, 4, 3, 4)
   print(bel.shift)
   print()
   print(bel.cover_a)
   print()
   print(bel.cover_b)
+  print()
+  test_covering(0.1*np.array([1, 0]))
+  test_covering(0.4*np.array([1, 0]))
+  test_covering(0.6*np.array([1, 0]))
+  test_covering(0.4*np.array([cos(pi/5), sin(pi/5)]))

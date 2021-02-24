@@ -394,7 +394,9 @@ class TilingCanvas(app.Canvas):
       self.load_empty_tree(WHOLE)
     
     # initialize triangle selection
-    self.selection = []
+    self.working = False
+    self.selection_display = None
+    self.set_selection(None)
   
   def update_resolution(self):
     width, height = self.physical_size
@@ -429,15 +431,15 @@ class TilingCanvas(app.Canvas):
       self.program['mirrors[{}]'.format(k)] = self.mirrors[k]
     
     # find the covering map to CP^1
-    bel = covering.Covering(p, q, r, 20)
-    self.program['shift'] = bel.shift
-    self.program['p'] = bel.p
-    self.program['q'] = bel.q
-    self.program['K_a'] = bel.K_a;
-    self.program['K_b'] = bel.K_b;
-    for n in range(len(bel.cover_a)):
-      self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
-      self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
+    self.bel = covering.Covering(p, q, r, 20)
+    self.program['shift'] = self.bel.shift
+    self.program['p'] = self.bel.p
+    self.program['q'] = self.bel.q
+    self.program['K_a'] = self.bel.K_a;
+    self.program['K_b'] = self.bel.K_b;
+    for n in range(len(self.bel.cover_a)):
+      self.program['cover_a[{}]'.format(n)] = self.bel.cover_a[n]
+      self.program['cover_b[{}]'.format(n)] = self.bel.cover_b[n]
   
   def load_empty_tree(self, highlight=NONE):
     if highlight == WHOLE:
@@ -460,7 +462,7 @@ class TilingCanvas(app.Canvas):
       self.program[tri_tree_key(tri.index, 3)] = tri.highlight
       self.program[tri_tree_key(tri.index, 4)] = tri.color
   
-  def set_domain(self, domain, highlight=NONE):
+  def set_domain(self, domain, highlight=NONE, working=None):
     self.domain = domain
     if domain:
       self.load_tri_tree(domain.tree)
@@ -469,41 +471,12 @@ class TilingCanvas(app.Canvas):
     else:
       self.load_empty_tree(highlight)
     self.update()
-  
-  def load_tree_by_mode(self):
-    if not self.working and self.orders in self.saved_trees:
-      self.tree_choice = 0
-      self.load_tri_tree(self.saved_trees[self.orders][0])
-    else:
-      if self.orders in self.working_trees:
-        self.load_tri_tree(self.working_trees[self.orders])
-      else:
-        self.load_empty_tree()
-  
-  def save_tri_tree(self):
-    ##name = input('save as (enter empty name to cancel):\n')
-    name = 'domain-{}_{}_{}-test'.format(*self.orders)
-    if name != '':
-      with open('domains/' + name + '.pickle', 'wb') as file:
-        pickle.dump(self.working_trees[self.orders], file)
-        print('Saved {} {} {} domain:'.format(*self.orders))
-        print(self.working_trees[self.orders])
-  
-  def open_tri_trees(self):
-    name_format = 'domain\-(\d+)[\.\d]*_(\d+)[\.\d]*_(\d+)[\.\d]*\-(.*)\.pickle'
-    for filename in os.listdir('domains'):
-      if name_info := re.search(name_format, filename):
-        orders = tuple(int(name_info.group(k)) for k in range(1, 4))
-        print('Found {} {} {} domain:'.format(*orders), end = ' ')
-        try:
-          with open('domains/' + filename, 'rb') as file:
-            tree = pickle.load(file)
-        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
-          print(ex)
-        else:
-          print('Opened successfully')
-          if not (orders in self.saved_trees): self.saved_trees[orders] = []
-          self.saved_trees[orders].append(tree)
+    
+    self.set_selection(None)
+    if domain == None:
+      self.working = False
+    elif working != None:
+      self.working = working
   
   def on_draw(self, event):
     self.program.draw()
@@ -516,9 +489,6 @@ class TilingCanvas(app.Canvas):
     highlight = None
     color = None
     if event.key == ';': self.toggle_antialiasing()
-    elif event.key == keys.SPACE:
-      self.working = not self.working
-      self.load_tree_by_mode()
     elif self.working:
       if event.key == 's': highlight = triangle_tree.WHOLE
       elif event.key == 'a':
@@ -576,9 +546,21 @@ class TilingCanvas(app.Canvas):
             onsides += 1
             if onsides >= 3:
               # save the address of the selected triangle
-              self.selection = address
+              z = self.bel.apply(v)
+              self.set_selection(address, 0 if z.real < 0.5 else 1)
               return
-      print('too far out')
+    self.set_selection(None)
+    
+  def set_selection(self, address, side=None):
+    self.selection = address
+    self.selection_side = side
+    if self.selection_display:
+      if address == None:
+        self.selection_display.setText(None)
+      else:
+        self.selection_display.setText(
+          'Side {} of triangle {}'.format(self.selection_side, self.selection)
+        )
 
 class DessinControlPanel(qt.QWidget):
   def __init__(self, canvas, *args, **kwargs):
@@ -650,6 +632,8 @@ class TilingPanel(DessinControlPanel):
       spinner.value()
       for spinner in self.order_spinners
     ])
+    self.canvas.set_selection(None)
+    self.canvas.working = False
     self.canvas.update()
 
 class PermutationValidator(QValidator):
@@ -752,9 +736,10 @@ class WorkingPanel(DessinControlPanel):
   
   def take_the_canvas(self):
     index = self.domain_box.currentIndex()
-    self.canvas.set_domain(
-      self.domains[index] if index >= 0 else None
-    )
+    if index < 0:
+      self.canvas.set_domain(None, False)
+    else:
+      self.canvas.set_domain(self.domains[index], True)
   
   def save_domain(self):
     index = self.domain_box.currentIndex()
@@ -838,7 +823,7 @@ class SavedPanel(DessinControlPanel):
     if passport:
       orbit = self.orbit_box.currentText()
       index = self.domain_box.currentIndex()
-      self.canvas.set_domain(self.domains[passport][orbit][index])
+      self.canvas.set_domain(self.domains[passport][orbit][index], working=False)
     else:
       self.canvas.set_domain(None)
 
@@ -856,6 +841,10 @@ class TilingWindow(qt.QMainWindow):
     # add tiling canvas
     self.canvas = TilingCanvas(4, 4, 3)
     central.layout().addWidget(self.canvas.native)
+    
+    # add selection display
+    self.canvas.selection_display = qt.QLabel()
+    central.layout().addWidget(self.canvas.selection_display)
     
     # set up control panels for tilings, working domains, and saved domains
     tiling_panel = TilingPanel(self.canvas)
