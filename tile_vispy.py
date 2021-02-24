@@ -369,6 +369,15 @@ def tri_tree_key(index, attr):
   return 'tri_tree[{}]'.format(5*index + attr)
 
 class TilingCanvas(app.Canvas):
+  edge_palette = [
+    '#ff6e00',
+    '#ffde36',
+    '#ebabf5',
+    '#a312ba',
+    '#66004a',
+    '#4c1cad'
+  ]
+  
   def __init__(self, p, q, r, highlight=WHOLE, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.program = gloo.Program(vertex, fragment, count = 6) # we'll always send 6 vertices
@@ -394,9 +403,10 @@ class TilingCanvas(app.Canvas):
       self.load_empty_tree(WHOLE)
     
     # initialize work state
-    self.working_indicator = None
+    self.paint_display = None
     self.selection_display = None
     self.set_working(False)
+    self.set_paint_color(0)
     self.set_selection(None)
   
   def update_resolution(self):
@@ -497,13 +507,15 @@ class TilingCanvas(app.Canvas):
       elif event.key == 'x': highlight = L_HALF + self.selection_side
       elif event.key == 's': highlight = L_WHOLE + self.selection_side
       elif event.key == 'z': highlight = NONE
-      elif event.text.isdigit(): color = int(event.text)
+      elif event.text.isdigit(): self.set_paint_color(int(event.text))
       
-      if self.domain and (highlight != None or color != None):
+      if self.domain and highlight != None:
         if highlight == NONE:
           self.domain.tree.drop(self.selection)
+        elif highlight == WHOLE:
+          self.domain.tree.store(self.selection, highlight)
         else:
-          self.domain.tree.store(self.selection, highlight, color)
+          self.domain.tree.store(self.selection, highlight, self.paint_color)
         self.load_tri_tree(self.domain.tree)
         self.update()
   
@@ -534,7 +546,26 @@ class TilingCanvas(app.Canvas):
               self.set_selection(address, 0 if z.real < 0.5 else 1)
               return
     self.set_selection(None)
-    
+  
+  def set_working(self, working):
+    self.working = working
+    if working: self.set_paint_color()
+    elif self.paint_display: self.paint_display.setText(None)
+  
+  def set_paint_color(self, color=None):
+    if color != None: self.paint_color = color
+    if self.paint_display:
+      self.paint_display.setText(str(self.paint_color))
+      if self.paint_color < len(self.edge_palette):
+        textcolor = 'black' if self.paint_color < 3 else 'white'
+        bgcolor = self.edge_palette[self.paint_color]
+      else:
+        textcolor = 'black'
+        bgcolor = 'none'
+      self.paint_display.setStyleSheet(
+        'color: {}; background-color: {};'.format(textcolor, bgcolor)
+      )
+  
   def set_selection(self, address, side=None):
     self.selection = address
     self.selection_side = side
@@ -545,11 +576,6 @@ class TilingCanvas(app.Canvas):
         self.selection_display.setText(
           'Side {} of triangle {}'.format(self.selection_side, self.selection)
         )
-  
-  def set_working(self, working):
-    self.working = working
-    if self.working_indicator:
-      self.working_indicator.setText('Editing' if working else None)
 
 class DessinControlPanel(qt.QWidget):
   def __init__(self, canvas, *args, **kwargs):
@@ -835,10 +861,12 @@ class TilingWindow(qt.QMainWindow):
     work_info_bar = qt.QWidget()
     work_info_bar.setLayout(qt.QHBoxLayout())
     self.canvas.selection_display = qt.QLabel()
-    self.canvas.working_indicator = qt.QLabel()
-    self.canvas.working_indicator.setAlignment(Qt.AlignRight)
+    self.canvas.paint_display = qt.QLabel()
+    self.canvas.paint_display.setMaximumWidth(40)
+    self.canvas.paint_display.setAlignment(Qt.AlignCenter)
+    self.canvas.paint_display.setTextFormat(Qt.RichText)
     work_info_bar.layout().addWidget(self.canvas.selection_display)
-    work_info_bar.layout().addWidget(self.canvas.working_indicator)
+    work_info_bar.layout().addWidget(self.canvas.paint_display)
     central.layout().addWidget(work_info_bar)
     
     # set up control panels for tilings, working domains, and saved domains
