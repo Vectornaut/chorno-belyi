@@ -438,9 +438,6 @@ class TilingCanvas(app.Canvas):
     for n in range(len(bel.cover_a)):
       self.program['cover_a[{}]'.format(n)] = bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = bel.cover_b[n]
-    
-    # update display
-    self.update()
   
   def load_empty_tree(self, highlight=NONE):
     if highlight == WHOLE:
@@ -471,7 +468,7 @@ class TilingCanvas(app.Canvas):
         self.set_tiling(*domain.orders)
     else:
       self.load_empty_tree(highlight)
-      self.update()
+    self.update()
   
   def load_tree_by_mode(self):
     if not self.working and self.orders in self.saved_trees:
@@ -591,10 +588,10 @@ class DessinControlPanel(qt.QWidget):
     self.canvas = canvas
   
   def showing(self):
-    if hasattr(self.parentWidget(), 'currentWidget'):
-      return self == self.parentWidget().currentWidget()
-    else:
-      return True
+    return (
+      hasattr(self.parentWidget(), 'currentWidget')
+      and self == self.parentWidget().currentWidget()
+    )
   
   def change_controls(self):
     if self.showing():
@@ -653,6 +650,7 @@ class TilingPanel(DessinControlPanel):
       spinner.value()
       for spinner in self.order_spinners
     ])
+    self.canvas.update()
 
 class PermutationValidator(QValidator):
   pmt_format = QRegExp(r'(\((\d+,)*\d+\))+')
@@ -752,6 +750,81 @@ class WorkingPanel(DessinControlPanel):
       self.domains[index] if index >= 0 else None
     )
 
+class SavedPanel(DessinControlPanel):
+  def __init__(self, canvas, *args, **kwargs):
+    super().__init__(canvas, *args, **kwargs)
+    self.setLayout(qt.QHBoxLayout())
+    
+    # add domain chooser bar
+    self.passport_box = qt.QComboBox()
+    self.orbit_box = qt.QComboBox()
+    self.domain_box = qt.QComboBox()
+    self.passport_box.currentTextChanged.connect(self.list_orbits)
+    self.orbit_box.currentTextChanged.connect(self.list_domains)
+    self.domain_box.currentIndexChanged.connect(self.change_controls)
+    self.passport_box.setMinimumContentsLength(18)
+    self.passport_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
+    self.orbit_box.setMinimumContentsLength(1)
+    self.orbit_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
+    self.domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
+    for box in [self.passport_box, self.orbit_box, self.domain_box]:
+      self.layout().addWidget(box)
+    
+    # open saved domains
+    self.domains = {}
+    for filename in os.listdir('domains'):
+      if re.match(r'.*\.pickle$', filename):
+        try:
+          with open('domains/' + filename, 'rb') as file:
+            dom = pickle.load(file)
+        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
+          print(ex)
+        else:
+          if not dom.passport in self.domains:
+            self.domains[dom.passport] = {}
+          if not dom.orbit in self.domains[dom.passport]:
+            self.domains[dom.passport][dom.orbit] = []
+          self.domains[dom.passport][dom.orbit].append(dom)
+    
+    # list passports. when we add the first one, the resulting
+    # `currentTextChanged` signal will call `list_orbits`
+    for passport in self.domains:
+      self.passport_box.addItem(passport)
+  
+  def list_orbits(self, passport):
+    self.orbit_box.blockSignals(True)
+    self.orbit_box.clear()
+    self.orbit_box.blockSignals(False)
+    
+    # when we add the first orbit to `orbit_box`, the resulting
+    # `currentTextChanged` signal will call `list_domains`
+    if passport:
+      for orbit in self.domains[passport]:
+        self.orbit_box.addItem(orbit)
+  
+  def list_domains(self, orbit):
+    self.domain_box.blockSignals(True)
+    self.domain_box.clear()
+    self.domain_box.blockSignals(False)
+    
+    if orbit:
+      passport = self.passport_box.currentText()
+      for domain in self.domains[passport][orbit]:
+        permutation_str = ','.join([s.cycle_string() for s in domain.group.gens()])
+        if domain.tag == None:
+          self.domain_box.addItem(permutation_str)
+        else:
+          self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
+  
+  def take_the_canvas(self):
+    passport = self.passport_box.currentText()
+    if passport:
+      orbit = self.orbit_box.currentText()
+      index = self.domain_box.currentIndex()
+      self.canvas.set_domain(self.domains[passport][orbit][index])
+    else:
+      self.canvas.set_domain(None)
+
 class TilingWindow(qt.QMainWindow):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -764,112 +837,24 @@ class TilingWindow(qt.QMainWindow):
     self.setCentralWidget(central)
     
     # add tiling canvas
-    self.canvas = TilingCanvas(6, 4, 3)
+    self.canvas = TilingCanvas(4, 4, 3)
     central.layout().addWidget(self.canvas.native)
     
-    # set up tiling-mode control panel
+    # set up control panels for tilings, working domains, and saved domains
     tiling_panel = TilingPanel(self.canvas)
-    
-    # add domain editing area
-    edit_panel = qt.QWidget()
-    edit_panel.setLayout(qt.QVBoxLayout())
-    
-    # set up working-mode control panel
     working_panel = WorkingPanel(self.canvas)
-    
-    # add saved domain menu
-    domain_panel = qt.QWidget()
-    domain_panel.setLayout(qt.QHBoxLayout())
-    self.passport_box = qt.QComboBox()
-    self.orbit_box = qt.QComboBox()
-    self.domain_box = qt.QComboBox()
-    self.passport_box.currentTextChanged.connect(self.list_orbits)
-    self.orbit_box.currentTextChanged.connect(self.list_domains)
-    self.domain_box.currentIndexChanged.connect(self.show_saved_domain)
-    self.passport_box.setMinimumContentsLength(18)
-    self.passport_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
-    self.orbit_box.setMinimumContentsLength(1)
-    self.orbit_box.setSizeAdjustPolicy(qt.QComboBox.AdjustToMinimumContentsLength)
-    self.domain_box.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Maximum)
-    for box in [self.passport_box, self.orbit_box, self.domain_box]:
-      domain_panel.layout().addWidget(box)
-    
-    # open saved domains
-    self.saved_domains = {}
-    for filename in os.listdir('domains'):
-      if re.match(r'.*\.pickle$', filename):
-        try:
-          with open('domains/' + filename, 'rb') as file:
-            dom = pickle.load(file)
-        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
-          print(ex)
-        else:
-          if not dom.orders in self.saved_domains:
-            self.saved_domains[dom.orders] = {}
-          if not dom.passport in self.saved_domains[dom.orders]:
-            self.saved_domains[dom.orders][dom.passport] = {}
-          if not dom.orbit in self.saved_domains[dom.orders][dom.passport]:
-            self.saved_domains[dom.orders][dom.passport][dom.orbit] = []
-          self.saved_domains[dom.orders][dom.passport][dom.orbit].append(dom)
-    
-    # list passports of saved domains
-    self.list_passports()
+    saved_panel = SavedPanel(self.canvas)
     
     # add mode tabs
-    self.mode_tabs = qt.QTabWidget()
-    self.mode_tabs.addTab(tiling_panel, "Tiling")
-    self.mode_tabs.addTab(working_panel, "Working domain")
-    self.mode_tabs.addTab(domain_panel, "Saved domain")
-    self.mode_tabs.currentChanged.connect(self.change_mode)
-    central.layout().addWidget(self.mode_tabs)
-  
-  def list_passports(self):
-    self.passport_box.clear()
-    orders = self.canvas.orders
-    if orders in self.saved_domains:
-      for passport in self.saved_domains[orders]:
-        self.passport_box.addItem(passport)
-      first_passport = next(iter(self.saved_domains[orders]))
-      self.list_orbits(first_passport)
-    else:
-      self.orbit_box.clear()
-      self.domain_box.clear()
-  
-  def list_orbits(self, passport):
-    self.orbit_box.clear()
-    if passport:
-      orders = self.canvas.orders
-      for orbit in self.saved_domains[orders][passport]:
-        self.orbit_box.addItem(orbit)
-      first_orbit = next(iter(self.saved_domains[orders][passport]))
-      self.list_domains(first_orbit)
-  
-  def list_domains(self, orbit):
-    self.domain_box.clear()
-    if orbit:
-      orders = self.canvas.orders
-      passport = self.passport_box.currentText()
-      for domain in self.saved_domains[orders][passport][orbit]:
-        permutation_str = ','.join([s.cycle_string() for s in domain.group.gens()])
-        if domain.tag == None:
-          self.domain_box.addItem(permutation_str)
-        else:
-          self.domain_box.addItem('-'.join([permutation_str, domain.tag]))
+    self.control_panels = qt.QTabWidget()
+    self.control_panels.addTab(tiling_panel, "Tiling")
+    self.control_panels.addTab(working_panel, "Working domain")
+    self.control_panels.addTab(saved_panel, "Saved domain")
+    self.control_panels.currentChanged.connect(self.change_mode)
+    central.layout().addWidget(self.control_panels)
   
   def change_mode(self, index):
-    self.mode_tabs.currentWidget().take_the_canvas()
-  
-  def show_saved_domain(self, index):
-    if index == -1:
-      self.canvas.load_empty_tree()
-      self.canvas.update()
-    else:
-      orders = self.canvas.orders
-      passport = self.passport_box.currentText()
-      orbit = self.orbit_box.currentText()
-      domain = self.saved_domains[orders][passport][orbit][index]
-      self.canvas.load_tri_tree(domain.tree)
-      self.canvas.update()
+    self.control_panels.currentWidget().take_the_canvas()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   main_app = qt.QApplication(sys.argv)
