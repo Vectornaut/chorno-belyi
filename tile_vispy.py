@@ -854,7 +854,8 @@ class TilingWindow(qt.QMainWindow):
     self.setCentralWidget(central)
     
     # add tiling canvas
-    self.canvas = TilingCanvas(4, 4, 3)
+    self.canvas = TilingCanvas(4, 4, 3, size=(1200, 1200))
+    self.canvas.native.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
     central.layout().addWidget(self.canvas.native)
     
     # add work info bar
@@ -864,7 +865,6 @@ class TilingWindow(qt.QMainWindow):
     self.canvas.paint_display = qt.QLabel()
     self.canvas.paint_display.setMaximumWidth(40)
     self.canvas.paint_display.setAlignment(Qt.AlignCenter)
-    self.canvas.paint_display.setTextFormat(Qt.RichText)
     work_info_bar.layout().addWidget(self.canvas.selection_display)
     work_info_bar.layout().addWidget(self.canvas.paint_display)
     central.layout().addWidget(work_info_bar)
