@@ -3,7 +3,7 @@
 
 import sys, os, re, pickle
 import PyQt5.QtWidgets as qt
-from PyQt5.QtCore import QRegExp
+from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QValidator
 from vispy import app, gloo
 import vispy.util.keys as keys
@@ -393,9 +393,10 @@ class TilingCanvas(app.Canvas):
     if highlight == WHOLE:
       self.load_empty_tree(WHOLE)
     
-    # initialize triangle selection
-    self.working = False
+    # initialize work state
+    self.working_indicator = None
     self.selection_display = None
+    self.set_working(False)
     self.set_selection(None)
   
   def update_resolution(self):
@@ -472,11 +473,11 @@ class TilingCanvas(app.Canvas):
       self.load_empty_tree(highlight)
     self.update()
     
-    self.set_selection(None)
     if domain == None:
-      self.working = False
+      self.set_working(False)
     elif working != None:
-      self.working = working
+      self.set_working(working)
+    self.set_selection(None)
   
   def on_draw(self, event):
     self.program.draw()
@@ -488,40 +489,23 @@ class TilingCanvas(app.Canvas):
     # update coloring
     highlight = None
     color = None
-    if event.key == ';': self.toggle_antialiasing()
+    if event.key == ';':
+      self.toggle_antialiasing()
+      self.update()
     elif self.working:
-      if event.key == 's': highlight = triangle_tree.WHOLE
-      elif event.key == 'a':
-        if keys.SHIFT in event.modifiers:
-          highlight=triangle_tree.L_WHOLE
-        else:
-          highlight=triangle_tree.L_HALF
-      elif event.key == 'd':
-        if keys.SHIFT in event.modifiers:
-          highlight=triangle_tree.R_WHOLE
-        else:
-          highlight=triangle_tree.R_HALF
-      elif event.key == 'q' and self.orders in self.working_trees:
-        self.working_trees[self.orders].drop(self.selection)
-        self.load_tri_tree(self.working_trees[self.orders])
+      if event.key == 'c': highlight = triangle_tree.WHOLE
+      elif event.key == 'x': highlight = L_HALF + self.selection_side
+      elif event.key == 's': highlight = L_WHOLE + self.selection_side
+      elif event.key == 'z': highlight = NONE
       elif event.text.isdigit(): color = int(event.text)
-      elif event.key == keys.ENTER: self.save_tri_tree()
-    else:
-      if event.key == keys.UP:
-        self.tree_choice = min(self.tree_choice + 1, len(self.saved_trees[self.orders]) - 1)
-        self.load_tri_tree(self.saved_trees[self.orders][self.tree_choice])
-      elif event.key == keys.DOWN:
-        self.tree_choice = max(self.tree_choice - 1, 0)
-        self.load_tri_tree(self.saved_trees[self.orders][self.tree_choice])
-    
-    if highlight != None or color != None:
-      if not (self.orders in self.working_trees):
-        self.working_trees[self.orders] = triangle_tree.TriangleTree()
-      self.working_trees[self.orders].store(self.selection, highlight, color)
-      self.load_tri_tree(self.working_trees[self.orders])
-    
-    # update display
-    self.update()
+      
+      if self.domain and (highlight != None or color != None):
+        if highlight == NONE:
+          self.domain.tree.drop(self.selection)
+        else:
+          self.domain.tree.store(self.selection, highlight, color)
+        self.load_tri_tree(self.domain.tree)
+        self.update()
   
   def on_mouse_release(self, event):
     # find screen coordinate
@@ -561,6 +545,11 @@ class TilingCanvas(app.Canvas):
         self.selection_display.setText(
           'Side {} of triangle {}'.format(self.selection_side, self.selection)
         )
+  
+  def set_working(self, working):
+    self.working = working
+    if self.working_indicator:
+      self.working_indicator.setText('Editing' if working else None)
 
 class DessinControlPanel(qt.QWidget):
   def __init__(self, canvas, *args, **kwargs):
@@ -632,8 +621,8 @@ class TilingPanel(DessinControlPanel):
       spinner.value()
       for spinner in self.order_spinners
     ])
+    self.canvas.set_working(False)
     self.canvas.set_selection(None)
-    self.canvas.working = False
     self.canvas.update()
 
 class PermutationValidator(QValidator):
@@ -737,9 +726,9 @@ class WorkingPanel(DessinControlPanel):
   def take_the_canvas(self):
     index = self.domain_box.currentIndex()
     if index < 0:
-      self.canvas.set_domain(None, False)
+      self.canvas.set_domain(None, working=False)
     else:
-      self.canvas.set_domain(self.domains[index], True)
+      self.canvas.set_domain(self.domains[index], working=True)
   
   def save_domain(self):
     index = self.domain_box.currentIndex()
@@ -842,9 +831,15 @@ class TilingWindow(qt.QMainWindow):
     self.canvas = TilingCanvas(4, 4, 3)
     central.layout().addWidget(self.canvas.native)
     
-    # add selection display
+    # add work info bar
+    work_info_bar = qt.QWidget()
+    work_info_bar.setLayout(qt.QHBoxLayout())
     self.canvas.selection_display = qt.QLabel()
-    central.layout().addWidget(self.canvas.selection_display)
+    self.canvas.working_indicator = qt.QLabel()
+    self.canvas.working_indicator.setAlignment(Qt.AlignRight)
+    work_info_bar.layout().addWidget(self.canvas.selection_display)
+    work_info_bar.layout().addWidget(self.canvas.working_indicator)
+    central.layout().addWidget(work_info_bar)
     
     # set up control panels for tilings, working domains, and saved domains
     tiling_panel = TilingPanel(self.canvas)
