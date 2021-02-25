@@ -1,7 +1,7 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
 # <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
-import sys, os, re, pickle
+import sys, os, re, json
 import PyQt5.QtWidgets as qt
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QValidator
@@ -760,9 +760,9 @@ class WorkingPanel(DessinControlPanel):
     index = self.domain_box.currentIndex()
     domain = self.domains[index]
     try:
-      with open('domains/' + domain.name() + '.pickle', 'wb') as file:
-        pickle.dump(domain, file)
-    except (PicklingError, OSError) as ex:
+      with open('domains/' + domain.name() + '.json', 'w') as file:
+        domain.dump(file)
+    except (TypeError, ValueError, OSError) as ex:
       self.error_dialog.setText('Error saving file.')
       self.error_dialog.setDetailedText(str(PicklingError))
       self.error_dialog.exec()
@@ -790,11 +790,11 @@ class SavedPanel(DessinControlPanel):
     # open saved domains
     self.domains = {}
     for filename in os.listdir('domains'):
-      if re.match(r'.*\.pickle$', filename):
+      if re.match(r'.*\.json$', filename):
         try:
-          with open('domains/' + filename, 'rb') as file:
-            dom = pickle.load(file)
-        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
+          with open('domains/' + filename, 'r') as file:
+            dom = DessinDomain.load(file)
+        except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:
           if not dom.passport in self.domains:
