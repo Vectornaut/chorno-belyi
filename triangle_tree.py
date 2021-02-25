@@ -1,7 +1,6 @@
 from sage.all import PermutationGroup
 from sage.categories.permutation_groups import PermutationGroups
 import json
-import os, re, pickle ## for adding metadata to existing domains
 from sage.all import ZZ ##[TEMP] needed for serialization of Sage integers
 
 # highlight styles
@@ -77,7 +76,7 @@ class TriangleTree:
     # start a node list, if none is provided
     if list == None:
       list = []
-      self.list = list
+      self.list = list ## i don't know how much of a speed boost this actually gives, and it creates a circular reference that makes serialization a pain
     
     # list this node
     self.index = len(list) + offset
@@ -88,7 +87,7 @@ class TriangleTree:
         self.children[k].flatten(offset, list)
   
   def dump(self, fp, **kwargs):
-    json.dump(self, default=lambda obj: obj.__dict__, **kwargs)
+    json.dump(self, fp, default=lambda obj: obj.__dict__, **kwargs)
   
   def dumps(self, **kwargs):
     return json.dumps(self, default=lambda obj: obj.__dict__, **kwargs)
@@ -170,7 +169,7 @@ class DessinDomain:
         return obj.__dict__
   
   def dump(self, fp, **kwargs):
-    json.dump(self, cls=DessinDomain.Encoder, **kwargs)
+    json.dump(self, fp, cls=DessinDomain.Encoder, **kwargs)
   
   def dumps(self, **kwargs):
     return json.dumps(self, cls=DessinDomain.Encoder, **kwargs)
@@ -186,38 +185,6 @@ class DessinDomain:
   @staticmethod
   def loads(s, **kwargs):
     return DessinDomain.from_dict(json.loads(s, **kwargs))
-
-def add_metadata(dry_run = True):
-    old_name_format = 'domain\\-.*-(.)-(\\(.*\\)),(\\(.*\\)),(\\(.*\\))\\.pickle'
-    print()
-    for filename in os.listdir('domains/old'):
-      if info := re.search(old_name_format, filename):
-        # get metadata
-        domain = DessinDomain(info.groups()[1:], info.groups()[0])
-        new_name = domain.name() + '.pickle'
-        print(filename + '\n-> ' + new_name + '\n')
-        
-        # add fundamental domain tree
-        try:
-          with open('domains/old/' + filename, 'rb') as file:
-            domain.tree = pickle.load(file)
-        except (pickle.UnpicklingError, AttributeError,  EOFError, ImportError, IndexError) as ex:
-          print(ex)
-        
-        if not dry_run:
-          try:
-            with open('domains/' + new_name, 'wb') as file:
-              pickle.dump(domain, file)
-          except pickle.PicklingError as ex:
-            print(ex)
-
-def metadata_test():
-  old_name_format = 'domain\\-.*-(.)-(\\(.*\\)),(\\(.*\\)),(\\(.*\\))\\.pickle'
-  for filename in [
-    'domain-5_4_6-5.1.1_4.2.1_3.2.2-a-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).pickle',
-    'domain-6.1_3.3.1_4.1.1.1-a-(1,4,5,2,6,7),(2,7,6)(3,5,4),(1,2,3,4).pickle'
-  ]:
-    print(re.search(old_name_format, filename).groups())
 
 def tree_test():
   tree = TriangleTree()
