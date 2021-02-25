@@ -799,7 +799,7 @@ class SavedPanel(DessinControlPanel):
       if re.match(r'.*\.json$', filename):
         try:
           with open('domains/' + filename, 'r') as file:
-            dom = DessinDomain.load(file, legacy=True)
+            dom = DessinDomain.load(file)
         except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:

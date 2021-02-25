@@ -108,10 +108,10 @@ class TriangleTree:
     for k in range(3):
       if child := data['children'][k]:
         tree.children[k] = TriangleTree.from_dict(child, legacy)
-    if not legacy:
+    if not legacy: ##[ONESIES]
       tree.lit = data['lit']
       tree.trim = data['trim']
-    else:
+    else: ##[ONESIES] v v v
       highlight = data['highlight']
       color = 1 + data['color']
       if highlight == L_HALF:
