@@ -50,9 +50,14 @@ vec2 conj(vec2 z) {
   return vec2(z.x, -z.y);
 }
 
+// multiplication by `z`
+mat2 mul(vec2 z) {
+    return mat2(z, conj(z).yx);
+}
+
 // the product of `z` and `w`
 vec2 mul(vec2 z, vec2 w) {
-  return mat2(z, conj(z).yx) * w;
+    return mul(z) * w;
 }
 
 // the reciprocal of `z`
@@ -64,14 +69,56 @@ vec2 rcp(vec2 z) {
 // `z^n`
 vec2 cpow(vec2 z, int n) {
   vec2 z_power = ONE;
+  mat2 mul_z = mul(z);
   for (int k = 0; k < n; k++) {
-    z_power = mul(z, z_power);
+    z_power = mul_z * z_power;
   }
   return z_power;
 }
 
-// the square root of `z`, from the complex arithmetic code listing in
-// Appendix C of _Numerical Recipes in C_
+// --- automatic differentiation ---
+
+// a cjet is a 1-jet of a holomorphic map C --> C,
+// with image point `pt` and derivative `push`
+
+struct cjet {
+  vec2 pt;
+  mat2 push;
+};
+
+cjet add(cjet f, cjet g) {
+  return cjet(f.pt + g.pt, f.push + g.push);
+}
+
+cjet add(cjet f, vec2 c) {
+  return cjet(f.pt + c, f.push);
+}
+
+cjet scale(float a, cjet f) {
+  return cjet(a*f.pt, a*f.push);
+}
+
+cjet mul(cjet f, cjet g) {
+  mat2 mul_f = mul(f.pt);
+  mat2 mul_g = mul(g.pt);
+  return cjet(
+    mul_f*g.pt,
+    f.push*mul_g + mul_f*g.push
+  );
+}
+
+// `f^n`
+cjet cpow(cjet f, int n) {
+  cjet f_power = cjet(ONE, mat2(0.));
+  for (int k = 0; k < n; k++) {
+    f_power = mul(f, f_power);
+  }
+  return f_power;
+}
+
+// --- complex square root ---
+//
+// from the complex arithmetic code listing in Appendix C of _Numerical Recipes_
 //
 // William Press, Saul Teukolsky, William Vetterling, and Brian Flannery,
 // _Numerical Recipes in C_, 2nd edition. Cambridge University Press, 1992
@@ -121,28 +168,32 @@ const vec2 C3 = 3./44. * ONE;
 const vec2 C4 = 1./14. * ONE;
 
 vec2 RF(vec2 x, vec2 y, vec2 z) {
-    for (int n = 0; n < N; n++) {
-        vec2 sqrt_x = csqrt(x);
-        vec2 sqrt_y = csqrt(y);
-        vec2 sqrt_z = csqrt(z);
-        vec2 lambda = mul(sqrt_x, sqrt_y) + mul(sqrt_y, sqrt_z) + mul(sqrt_z, sqrt_x);
-        x = 0.25*(x + lambda);
-        y = 0.25*(y + lambda);
-        z = 0.25*(z + lambda);
-    }
-    vec2 avg = (x + y + z)/3.;
-    vec2 off_x = x - avg;
-    vec2 off_y = y - avg;
-    vec2 off_z = z - avg;
-    vec2 e2 = mul(off_x, off_y) - mul(off_z, off_z);
-    vec2 e3 = mul(mul(off_x, off_y), off_z);
-    return mul(ONE + mul(mul(C1, e2) - C2 - mul(C3, e3), e2) + mul(C4, e3), rcp(csqrt(avg)));
+  for (int n = 0; n < N; n++) {
+    vec2 sqrt_x = csqrt(x);
+    vec2 sqrt_y = csqrt(y);
+    vec2 sqrt_z = csqrt(z);
+    vec2 lambda = mul(sqrt_x, sqrt_y) + mul(sqrt_y, sqrt_z) + mul(sqrt_z, sqrt_x);
+    x = 0.25*(x + lambda);
+    y = 0.25*(y + lambda);
+    z = 0.25*(z + lambda);
+  }
+  vec2 avg = (x + y + z)/3.;
+  vec2 off_x = x - avg;
+  vec2 off_y = y - avg;
+  vec2 off_z = z - avg;
+  vec2 e2 = mul(off_x, off_y) - mul(off_z, off_z);
+  vec2 e3 = mul(mul(off_x, off_y), off_z);
+  return mul(ONE + mul(mul(C1, e2) - C2 - mul(C3, e3), e2) + mul(C4, e3), rcp(csqrt(avg)));
 }
 
 // inverse sine (Carlson 1995, equation 4.18)
-vec2 casin(vec2 z) {
-    vec2 z_sq = mul(z, z);
-    return mul(z, RF(ONE - z_sq, ONE, ONE));
+cjet casin(cjet z) {
+  mat2 mul_z = mul(z.pt);
+  vec2 z_sq = mul_z * z.pt;
+  return cjet(
+    mul_z * RF(ONE - z_sq, ONE, ONE),
+    mul(rcp(csqrt(ONE - z_sq))) * z.push
+  );
 }
 
 // --- minkowski geometry ---
@@ -164,46 +215,84 @@ vec3 mreflect(vec3 v, vec3 mirror) {
 // --- covering ---
 
 /*[TEMP] should make size adjustable*/
-vec2 apply_series(float[20] series, vec2 w, int order) {
+cjet apply_series(float[20] series, cjet w, int order) {
   // write cover(w) as w * deformation(w)
-  vec2 deformation = vec2(0.);
-  vec2 w_order = cpow(w, order);
-  vec2 w_power = ONE;
+  cjet deformation = cjet(ZERO, mat2(0.));
+  cjet w_order = cpow(w, order);
+  cjet w_power = cjet(ONE, mat2(0.));
   for (int n = 0; n < 20; n++) {
-    deformation += series[n] * w_power;
+    deformation = add(deformation, scale(series[n], w_power));
     w_power = mul(w_order, w_power);
   }
   return mul(w, deformation);
 }
 
-vec2 cover(vec3 v) {
+// if `v` came from somewhere else in the hyperbolic plane, we can factor in
+// the conformal scale factor of the mobius transformation that brought it here
+// by passing its original `r_sq` as `r_sq_orig`
+cjet cover(vec3 v, float r_sq_orig) {
   vec3 v_shift = shift * v;
   if (v.z < v_shift.z) {
     // v is closer to the time axis (this comparison works because v and v_shift
     // are on the forward -1 hyperboloid)
-    vec2 w = v.xy / (1. + v.z);
-    vec2 s = apply_series(cover_a, w / K_a, p);
+    
+    // project to the Poincare disk, and find the conformal scale factor of the
+    // Mobius transformation that brought us here
+    vec2 w_pt = v.xy / (1. + v.z);
+    float r_sq = dot(w_pt, w_pt);
+    float pre_scaling = (1-r_sq) / (1-r_sq_orig);
+    
+    // apply the covering map
+    cjet w = cjet(w_pt, mat2(pre_scaling));
+    cjet s = apply_series(cover_a, scale(1./K_a, w), p);
     return cpow(s, p);
   } else {
-    vec2 w_shift = v_shift.xy / (1. + v_shift.z);
-    vec2 s = apply_series(cover_b, w_shift / K_b, q);
-    return ONE - cpow(s, q);
+    // project to the Poincare disk, and find the conformal scale factor of the
+    // Mobius transformation that brought us here
+    vec2 w_shift_pt = v_shift.xy / (1. + v_shift.z);
+    float r_sq = dot(w_shift_pt, w_shift_pt);
+    float pre_scaling = (1-r_sq) / (1-r_sq_orig);
+    
+    // apply the covering map
+    cjet w_shift = cjet(w_shift_pt, mat2(pre_scaling));
+    cjet s = apply_series(cover_b, scale(1./K_b, w_shift), q);
+    return add(scale(-1., cpow(s, q)), ONE);
   }
 }
 
 // --- strip coloring ---
 
+const float A1 = 0.278393;
+const float A2 = 0.230389;
+const float A3 = 0.000972;
+const float A4 = 0.078108;
+
+// Abramowitz and Stegun, equation 7.1.27
+float erfc_appx(float t) {
+  float p = 1. + A1*(t + A2*(t + A3*(t + A4*t)));
+  float p_sq = p*p;
+  return 1. / (p_sq*p_sq);
+}
+
+// mix two colors according to how much of a pixel's sampling distribution
+// spills across the edge between them
+vec3 sample_mix(
+  vec3 near_color, vec3 far_color,
+  float edge_dist, float scaling, float r_px
+) {
+  // find the distance to the edge in the screen tangent space
+  float screen_dist = edge_dist / scaling;
+  
+  // integrate our pixel's sampling distribution on the screen tangent space to
+  // find out how much of the pixel falls on the other side of the edge
+  float overflow = 0.5*erfc_appx(screen_dist / r_px);
+  
+  return mix(near_color, far_color, overflow);
+}
+
 const float PI = 3.141592653589793;
 
-const int NONE = 0;
-const int L_HALF = 1;
-const int R_HALF = 2;
-const int L_WHOLE = 3;
-const int R_WHOLE = 4;
-const int WHOLE = 5;
-const int ERROR = 6;
-
-vec3 strip_color(vec2 z, bvec2 lit, ivec2 trim) {
+vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   // set up edge palette
   vec3 edge_palette [6];
   edge_palette[0] = vec3(1.00, 0.43, 0.00);
@@ -214,15 +303,19 @@ vec3 strip_color(vec2 z, bvec2 lit, ivec2 trim) {
   edge_palette[5] = vec3(0.30, 0.11, 0.68);
   
   // get strip coordinate and side
-  vec2 h = 8./PI * casin(z);
-  int side = h.x < 0. ? 0 : 1;
+  cjet h = scale(8./PI, casin(z));
+  int side = h.pt.x < 0. ? 0 : 1;
   
   // reflect strip coordinate into non-negative quadrant
-  h = abs(h);
+  vec2 h_pos = abs(h.pt);
+  
+  // find the conformal scale factor of the map from screen space to pattern
+  // space
+  float scaling = length(h.push[0]);
   
   // draw ribbon graph
   vec3 color;
-  if (h.y < 0.5) {
+  /*if (h.y < 0.5) {
     // draw ribbon
     color = vec3(float(1-side));
   } else {
@@ -237,14 +330,15 @@ vec3 strip_color(vec2 z, bvec2 lit, ivec2 trim) {
       float off = mod(h.y, 1.);
       color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
     }
-  }
+  }*/
+  return sample_mix(vec3(1-side), vec3(side), h_pos.x, scaling, r_px);
   
   // highlight fundamental domain
-  if (lit[side]) {
+  /*if (lit[side]) {
     return color;
   } else {
     return mix(color, vec3(0.5), 0.8);
-  }
+  }*/
 }
 
 // --- tiling ---
@@ -255,7 +349,8 @@ const float SQRT2 = 1.4142135623730951;
 
 void main_none() {
   // find screen coordinate
-  vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
+  float r_px = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
+  vec2 u = r_px * (2.*gl_FragCoord.xy - resolution);
   float r_sq = dot(u, u);
   
   // reduce to fundamental domain
@@ -274,9 +369,9 @@ void main_none() {
         } else {
           onsides += 1;
           if (onsides >= 3) {
-            vec2 z = cover(v);
+            cjet z = cover(v, r_sq);
             vec3 color = strip_color(
-              2.*z - ONE,
+              add(scale(2., z), -ONE), r_px / SQRT2,
               bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]),
               ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6])
             );
@@ -292,18 +387,6 @@ void main_none() {
     return; /*[DEBUG] real axis speckles*/
   }
   gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
-}
-
-const float A1 = 0.278393;
-const float A2 = 0.230389;
-const float A3 = 0.000972;
-const float A4 = 0.078108;
-
-// Abramowitz and Stegun, equation 7.1.27
-float erfc_appx(float t) {
-  float p = 1. + A1*(t + A2*(t + A3*(t + A4*t)));
-  float p_sq = p*p;
-  return 1. / (p_sq*p_sq);
 }
 
 void main_gauss() {
@@ -394,10 +477,10 @@ class TilingCanvas(app.Canvas):
     self.domain = None
     
     # initialize triangle-coloring tree
-    for m in range(1022):
-      self.program['tri_tree[{}]'.format(m)] = 0
-    if lit:
-      self.load_empty_tree(True)
+    ##for m in range(1022):
+    ##  self.program['tri_tree[{}]'.format(m)] = 0
+    ##if lit:
+    ##  self.load_empty_tree(True)
     
     # initialize work state
     self.paint_display = None
