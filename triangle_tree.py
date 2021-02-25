@@ -1,7 +1,8 @@
 from sage.all import PermutationGroup
-from sage.groups.perm_gps.permgroup import PermutationGroup_generic
+from sage.categories.permutation_groups import PermutationGroups
 import json
 import os, re, pickle ## for adding metadata to existing domains
+from sage.all import ZZ ##[TEMP] needed for serialization of Sage integers
 
 # highlight styles
 NONE = 0
@@ -86,6 +87,9 @@ class TriangleTree:
       if self.children[k] != None:
         self.children[k].flatten(offset, list)
   
+  def dump(self, fp, **kwargs):
+    json.dump(self, default=lambda obj: obj.__dict__, **kwargs)
+  
   def dumps(self, **kwargs):
     return json.dumps(self, default=lambda obj: obj.__dict__, **kwargs)
   
@@ -95,39 +99,58 @@ class TriangleTree:
   #   https://stackoverflow.com/a/23597335/1644283
   #
   @staticmethod
-  def from_dict(di):
+  def from_dict(data):
     tree = TriangleTree()
     for k in range(3):
-      if child := di['children'][k]:
+      if child := data['children'][k]:
         tree.children[k] = TriangleTree.from_dict(child)
-    tree.highlight = di['highlight']
-    tree.color = di['color']
+    tree.highlight = data['highlight']
+    tree.color = data['color']
+    return tree
+  
+  @staticmethod
+  def load(fp, **kwargs):
+    return TriangleTree.from_dict(json.load(fp, **kwargs))
+  
+  @staticmethod
+  def loads(s, **kwargs):
+    return TriangleTree.from_dict(json.loads(s, **kwargs))
 
 class DessinDomain:
-  # if `group` isn't a PermutationGroup, it'll be passed to the PermutationGroup
-  # constructor
-  def __init__(self, group, orbit, tag = None):
-    # store metadata
-    if isinstance(group, PermutationGroup_generic):
+  # `group` will be passed to PermutationGroup, unless it's already in the
+  # PermutationGroups category. for deserialization, you can pass precomputed
+  # group details and a serialized tree in the `data` dictionary
+  def __init__(self, group, orbit, tag = None, data = None):
+    # store independent metadata
+    if group in PermutationGroups:
       self.group = group
     else:
       self.group = PermutationGroup(group, canonicalize = False)
-    self.degree = self.group.degree()
-    self.t_number = self.group.gap().TransitiveIdentification()
-    self.orders = tuple(s.order() for s in self.group.gens())
     self.orbit = orbit
     self.tag = tag
     
-    # store passport
-    label = 'T'.join(map(str, [self.degree, self.t_number]))
-    partition_str = '_'.join([
-      '.'.join(map(str, s.cycle_type()))
-      for s in self.group.gens()
-    ])
-    self.passport = '-'.join([label, partition_str])
-    
-    # start a triangle tree
-    self.tree = TriangleTree()
+    # store dependent metadata and tree
+    if data:
+      self.degree = data['degree']
+      self.t_number = data['t_number']
+      self.orders = data['orders']
+      self.passport = data['passport']
+      self.tree = TriangleTree.from_dict(data['tree'])
+    else:
+      self.degree = int(self.group.degree())
+      self.t_number = int(self.group.gap().TransitiveIdentification())
+      self.orders = tuple(s.order() for s in self.group.gens())
+      
+      # store passport
+      label = 'T'.join(map(str, [self.degree, self.t_number]))
+      partition_str = '_'.join([
+        '.'.join(map(str, s.cycle_type()))
+        for s in self.group.gens()
+      ])
+      self.passport = '-'.join([label, partition_str])
+      
+      # start a triangle tree
+      self.tree = TriangleTree()
   
   def name(self):
     permutation_str = ','.join([s.cycle_string() for s in self.group.gens()])
@@ -136,10 +159,37 @@ class DessinDomain:
       return all_but_tag
     else:
       return '-'.join([all_but_tag, tag])
+  
+  class Encoder(json.JSONEncoder):
+    def default(self, obj):
+      if obj in PermutationGroups:
+        return [s.cycle_string() for s in obj.gens()]
+      elif obj in ZZ: ##[TEMP] for handling old instances
+        return int(obj)
+      else:
+        return obj.__dict__
+  
+  def dump(self, fp, **kwargs):
+    json.dump(self, cls=DessinDomain.Encoder, **kwargs)
+  
+  def dumps(self, **kwargs):
+    return json.dumps(self, cls=DessinDomain.Encoder, **kwargs)
+  
+  @staticmethod
+  def from_dict(data):
+    return DessinDomain(data['group'], data['orbit'], data['tag'], data)
+  
+  @staticmethod
+  def load(fp, **kwargs):
+    return DessinDomain.from_dict(json.load(fp, **kwargs))
+  
+  @staticmethod
+  def loads(s, **kwargs):
+    return DessinDomain.from_dict(json.loads(s, **kwargs))
 
 def add_metadata(dry_run = True):
     old_name_format = 'domain\\-.*-(.)-(\\(.*\\)),(\\(.*\\)),(\\(.*\\))\\.pickle'
-    print('')
+    print()
     for filename in os.listdir('domains/old'):
       if info := re.search(old_name_format, filename):
         # get metadata
@@ -174,35 +224,38 @@ def tree_test():
   tree.store([0, 0, 0], highlight=9000)
   tree.store([0, 1], highlight=901)
   tree.store([0, 1, 1], highlight=9011)
-  ##tree.store([0, 1, 2], highlight=9012)
   tree.store([2, 0, 1], highlight=9201)
   tree.store([2], color=92)
   
   tree.flatten()
   print(tree)
-  print('')
+  print()
   for node in tree.list:
     print('({}, {})'.format(node.highlight, node.color))
-  print('')
+  print()
   
   for address in [[0, 1], [0, 0, 0], [0, 1, 1], [2, 0], [2, 0, 1]]:
     tree.drop(address)
     print('drop ' + ''.join(map(str, address)))
     print(tree)
-    print('')
+    print()
   
   print('note that node 2 is severable because its highlight mode is 0, even though its color is nonzero')
-  print('')
+  print()
 
 def json_test():
-  tree = TriangleTree()
-  tree.store([0, 0, 0], highlight=9000)
-  tree.store([0, 1], highlight=901)
-  tree.store([0, 1, 1], highlight=9011)
-  tree.store([2, 0, 1], highlight=9201)
-  tree.store([2], color=92)
+  dom = DessinDomain([[(1,2)], [(2,3)], [(3,1)]], 'a')
+  dom.tree.store([0, 0, 0], highlight=9000)
+  dom.tree.store([0, 1], highlight=901)
+  dom.tree.store([0, 1, 1], highlight=9011)
+  dom.tree.store([2, 0, 1], highlight=9201)
+  dom.tree.store([2], color=92)
+  print(dom.tree)
+  print()
   
-  print(tree.dumps(indent=2))
+  serialized = dom.dumps()
+  reconstituted = DessinDomain.loads(serialized)
+  print(reconstituted.tree)
 
 def domain_test():
   permutations = [
