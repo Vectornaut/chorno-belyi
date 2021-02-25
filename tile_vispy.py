@@ -37,7 +37,7 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
-uniform int tri_tree [1000];
+uniform int tri_tree [1022];
 
 // --- complex arithmetic ---
 
@@ -203,7 +203,7 @@ const int R_WHOLE = 4;
 const int WHOLE = 5;
 const int ERROR = 6;
 
-vec3 strip_color(vec2 z, int part, int edge) {
+vec3 strip_color(vec2 z, bvec2 lit, ivec2 trim) {
   // set up edge palette
   vec3 edge_palette [6];
   edge_palette[0] = vec3(1.00, 0.43, 0.00);
@@ -213,25 +213,26 @@ vec3 strip_color(vec2 z, int part, int edge) {
   edge_palette[4] = vec3(0.40, 0.00, 0.29);
   edge_palette[5] = vec3(0.30, 0.11, 0.68);
   
-  // get strip coordinate
+  // get strip coordinate and side
   vec2 h = 8./PI * casin(z);
-  h.y = abs(h.y);
+  int side = h.x < 0. ? 0 : 1;
+  
+  // reflect strip coordinate into non-negative quadrant
+  h = abs(h);
   
   // draw ribbon graph
   vec3 color;
   if (h.y < 0.5) {
     // draw ribbon
-    color = vec3(h.x < 0. ? 0. : 1.);
+    color = vec3(float(1-side));
   } else {
     // draw sky
     if (
-      part == L_HALF && -0.5 < h.x && h.x < 0. ||
-      part == R_HALF && 0. < h.x && h.x < 0.5 ||
-      part == L_WHOLE && h.x > 3.5 ||
-      part == R_WHOLE && -h.x > 3.5
+      trim[side] > 0 && 0. < h.x && h.x < 0.5 ||
+      trim[side] < 0 && 3.5 < h.x
     ) {
       // draw edge identification tab
-      color = edge_palette[edge];
+      color = edge_palette[abs(trim[side]) - 1];
     } else {
       float off = mod(h.y, 1.);
       color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
@@ -239,14 +240,10 @@ vec3 strip_color(vec2 z, int part, int edge) {
   }
   
   // highlight fundamental domain
-  if (
-    part == NONE ||
-    part == L_HALF && h.x > 0. ||
-    part == R_HALF && h.x < 0.
-  ) {
-    return mix(color, vec3(0.5), 0.8);
-  } else {
+  if (lit[side]) {
     return color;
+  } else {
+    return mix(color, vec3(0.5), 0.8);
   }
 }
 
@@ -280,8 +277,8 @@ void main_none() {
             vec2 z = cover(v);
             vec3 color = strip_color(
               2.*z - ONE,
-              tri_tree[5*index + 3],
-              tri_tree[5*index + 4]
+              bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]),
+              ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6])
             );
             /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
             vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
@@ -378,7 +375,7 @@ class TilingCanvas(app.Canvas):
     '#4c1cad'
   ]
   
-  def __init__(self, p, q, r, highlight=WHOLE, *args, **kwargs):
+  def __init__(self, p, q, r, lit=True, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.program = gloo.Program(vertex, fragment, count = 6) # we'll always send 6 vertices
     
@@ -397,10 +394,10 @@ class TilingCanvas(app.Canvas):
     self.domain = None
     
     # initialize triangle-coloring tree
-    for m in range(1000):
+    for m in range(1022):
       self.program['tri_tree[{}]'.format(m)] = 0
-    if highlight == WHOLE:
-      self.load_empty_tree(WHOLE)
+    if lit:
+      self.load_empty_tree(True)
     
     # initialize work state
     self.paint_display = None
@@ -452,14 +449,15 @@ class TilingCanvas(app.Canvas):
       self.program['cover_a[{}]'.format(n)] = self.bel.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = self.bel.cover_b[n]
   
-  def load_empty_tree(self, highlight=NONE):
-    if highlight == WHOLE:
+  def load_empty_tree(self, lit=False):
+    if lit:
       for attr in range(3):
         self.program[tri_tree_key(1, attr)] = 1
-      self.program[tri_tree_key(1, 3)] = WHOLE
-      self.program[tri_tree_key(1, 4)] = 0
+      for side in range(2):
+        self.program[tri_tree_key(1, 3 + side)] = True
+        self.program[tri_tree_key(1, 5 + side)] = 0
     else:
-      for attr in range(5):
+      for attr in range(7):
         self.program[tri_tree_key(1, attr)] = 0
   
   def load_tri_tree(self, tree):
@@ -469,17 +467,18 @@ class TilingCanvas(app.Canvas):
           self.program[tri_tree_key(tri.index, k)] = tri.children[k].index
         else:
           self.program[tri_tree_key(tri.index, k)] = 0
-      self.program[tri_tree_key(tri.index, 3)] = tri.highlight
-      self.program[tri_tree_key(tri.index, 4)] = tri.color
+      for side in range(2):
+        self.program[tri_tree_key(tri.index, 3 + side)] = tri.lit[side]
+        self.program[tri_tree_key(tri.index, 5 + side)] = tri.trim[side]
   
-  def set_domain(self, domain, highlight=NONE, working=None):
+  def set_domain(self, domain, lit=False, working=None):
     self.domain = domain
     if domain:
       self.load_tri_tree(domain.tree)
       if domain.orders != self.orders:
         self.set_tiling(*domain.orders)
     else:
-      self.load_empty_tree(highlight)
+      self.load_empty_tree(lit)
     self.update()
     
     if domain == None:
@@ -496,25 +495,30 @@ class TilingCanvas(app.Canvas):
   
   def on_key_press(self, event):
     # update coloring
-    highlight = None
-    color = None
+    side = None
+    lit = None
     if event.key == ';':
       self.toggle_antialiasing()
       self.update()
     elif self.working:
-      if event.key == 'c': highlight = triangle_tree.WHOLE
-      elif event.key == 'x': highlight = L_HALF + self.selection_side
-      elif event.key == 's': highlight = L_WHOLE + self.selection_side
-      elif event.key == 'z': highlight = NONE
-      elif event.text.isdigit(): self.set_paint_color(int(event.text))
+      if event.key == 'c':
+        lit = (True, True)
+        trim = (0, 0)
+      elif event.key == 'x':
+        side = self.selection_side
+        lit = True
+        trim = self.paint_color
+      elif event.key == 's':
+        side = selection_side
+        lit = True
+        trim = -self.paint_color
+      elif event.key == 'z':
+        domain.tree.drop(self.selection)
+      elif event.text.isdigit():
+        self.set_paint_color(int(event.text))
       
-      if self.domain and highlight != None:
-        if highlight == NONE:
-          self.domain.tree.drop(self.selection)
-        elif highlight == WHOLE:
-          self.domain.tree.store(self.selection, highlight)
-        else:
-          self.domain.tree.store(self.selection, highlight, self.paint_color)
+      if lit != None:
+        self.domain.tree.store(self.selection, side, lit, trim)
         self.load_tri_tree(self.domain.tree)
         self.update()
   
@@ -555,9 +559,9 @@ class TilingCanvas(app.Canvas):
     if color != None: self.paint_color = color
     if self.paint_display:
       self.paint_display.setText(str(self.paint_color))
-      if self.paint_color < len(self.edge_palette):
-        textcolor = 'black' if self.paint_color < 3 else 'white'
-        bgcolor = self.edge_palette[self.paint_color]
+      if self.paint_color <= len(self.edge_palette):
+        textcolor = 'black' if self.paint_color <= 3 else 'white'
+        bgcolor = self.edge_palette[self.paint_color-1]
       else:
         textcolor = 'black'
         bgcolor = 'none'
@@ -641,7 +645,7 @@ class TilingPanel(DessinControlPanel):
     self.set_minimums()
   
   def take_the_canvas(self):
-    self.canvas.load_empty_tree(WHOLE)
+    self.canvas.load_empty_tree(True)
     self.canvas.set_tiling(*[
       spinner.value()
       for spinner in self.order_spinners
@@ -792,7 +796,7 @@ class SavedPanel(DessinControlPanel):
       if re.match(r'.*\.json$', filename):
         try:
           with open('domains/' + filename, 'r') as file:
-            dom = DessinDomain.load(file)
+            dom = DessinDomain.load(file, legacy=True)
         except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:

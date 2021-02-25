@@ -3,7 +3,7 @@ from sage.categories.permutation_groups import PermutationGroups
 import json
 from sage.all import ZZ ##[TEMP] needed for serialization of Sage integers
 
-# highlight styles
+# old highlight styles
 NONE = 0
 L_HALF = 1
 R_HALF = 2
@@ -14,8 +14,8 @@ WHOLE = 5
 class TriangleTree:
   def __init__(self):
     self.children = [None, None, None]
-    self.highlight = NONE
-    self.color = 0
+    self.lit = [False, False]
+    self.trim = [0, 0]
   
   def __str__(self):
     return self.show('*', 0)
@@ -29,16 +29,22 @@ class TriangleTree:
         text += '\n' + self.children[k].show(k, level+1)
     return text
   
-  # store the given highlight and color data at the given address, creating any
-  # nodes on the way to the address that don't exist already
-  def store(self, address, highlight=None, color=None):
+  # store the given coloring data at the given address, creating any nodes on
+  # the way to the address that don't exist already. to store data for both
+  # sides at once, set `side` to None and pass length-2 tuples or lists for
+  # `lit` and `trim`
+  def store(self, address, side, lit, trim):
     if address == []:
-      if highlight != None: self.highlight = highlight
-      if color != None: self.color = color
+      if side == None:
+        self.lit[:] = lit
+        self.trim[:] = trim
+      else:
+        self.lit[side] = lit
+        self.trim[side] = trim
     else:
       k = address[0]
       if self.children[k] == None: self.children[k] = TriangleTree()
-      self.children[k].store(address[1:], highlight, color)
+      self.children[k].store(address[1:], side, lit, trim)
   
   def drop(self, address):
     if address == []:
@@ -46,10 +52,10 @@ class TriangleTree:
         # this node can be severed from the tree
         return True
       else:
-        # this node can't be severed, so just clear its highlighting and tell
-        # the nodes above to do nothing
-        self.highlight = NONE
-        self.color = 0
+        # this node can't be severed, so just turn off the lights and tell the
+        # nodes above to do nothing
+        self.lit[:] = (False, False)
+        self.trim[:] = (0, 0)
         return False
     else:
       k = address[0]
@@ -63,7 +69,8 @@ class TriangleTree:
         if (
           self.children[(k+1)%3] == None
           and self.children[(k+2)%3] == None
-          and self.highlight == NONE
+          and not any(self.lit)
+          and not any(self.trim)
         ):
           # this node can be severed too
           return True
@@ -99,33 +106,47 @@ class TriangleTree:
   #   https://stackoverflow.com/a/23597335/1644283
   #
   @staticmethod
-  def from_dict(data):
+  def from_dict(data, legacy=False):
     tree = TriangleTree()
     for k in range(3):
       if child := data['children'][k]:
-        tree.children[k] = TriangleTree.from_dict(child)
-    tree.highlight = data['highlight']
-    tree.color = data['color']
+        tree.children[k] = TriangleTree.from_dict(child, legacy)
+    if not legacy:
+      tree.lit = data['lit']
+      tree.trim = data['trim']
+    else:
+      highlight = data['highlight']
+      color = 1 + data['color']
+      if highlight == L_HALF:
+        tree.lit[0] = True
+        tree.trim[0] = color
+      elif highlight == R_HALF:
+        tree.lit[1] = True
+        tree.trim[1] = color
+      else:
+        tree.lit[:] = [True, True]
+        if highlight == L_WHOLE: tree.trim[1] = -color
+        elif highlight == R_WHOLE: tree.trim[0] = -color
     return tree
   
   @staticmethod
-  def load(fp, **kwargs):
-    return TriangleTree.from_dict(json.load(fp, **kwargs))
+  def load(fp, legacy=False, **kwargs):
+    return TriangleTree.from_dict(json.load(fp, **kwargs), legacy)
   
   @staticmethod
-  def loads(s, **kwargs):
-    return TriangleTree.from_dict(json.loads(s, **kwargs))
+  def loads(s, legacy=False, **kwargs):
+    return TriangleTree.from_dict(json.loads(s, **kwargs), legacy)
 
 class DessinDomain:
   # `group` will be passed to PermutationGroup, unless it's already in the
   # PermutationGroups category. for deserialization, you can pass precomputed
   # group details and a serialized tree in the `data` dictionary
-  def __init__(self, group, orbit, tag = None, data = None):
+  def __init__(self, group, orbit, tag=None, data=None, legacy=False):
     # store independent metadata
     if group in PermutationGroups:
       self.group = group
     else:
-      self.group = PermutationGroup(group, canonicalize = False)
+      self.group = PermutationGroup(group, canonicalize=False)
     self.orbit = orbit
     self.tag = tag
     
@@ -135,7 +156,7 @@ class DessinDomain:
       self.t_number = data['t_number']
       self.orders = data['orders']
       self.passport = data['passport']
-      self.tree = TriangleTree.from_dict(data['tree'])
+      self.tree = TriangleTree.from_dict(data['tree'], legacy)
     else:
       self.degree = int(self.group.degree())
       self.t_number = int(self.group.gap().TransitiveIdentification())
@@ -176,24 +197,24 @@ class DessinDomain:
     return json.dumps(self, cls=DessinDomain.Encoder, **kwargs)
   
   @staticmethod
-  def from_dict(data):
-    return DessinDomain(data['group'], data['orbit'], data['tag'], data)
+  def from_dict(data, legacy=False):
+    return DessinDomain(data['group'], data['orbit'], data['tag'], data, legacy)
   
   @staticmethod
-  def load(fp, **kwargs):
-    return DessinDomain.from_dict(json.load(fp, **kwargs))
+  def load(fp, legacy=False, **kwargs):
+    return DessinDomain.from_dict(json.load(fp, **kwargs), legacy)
   
   @staticmethod
-  def loads(s, **kwargs):
-    return DessinDomain.from_dict(json.loads(s, **kwargs))
+  def loads(s, legacy=False, **kwargs):
+    return DessinDomain.from_dict(json.loads(s, **kwargs), legacy)
 
 def tree_test():
   tree = TriangleTree()
-  tree.store([0, 0, 0], highlight=9000)
-  tree.store([0, 1], highlight=901)
-  tree.store([0, 1, 1], highlight=9011)
-  tree.store([2, 0, 1], highlight=9201)
-  tree.store([2], color=92)
+  tree.store([0, 0, 0], lit=9000)
+  tree.store([0, 1], lit=901)
+  tree.store([0, 1, 1], lit=9011)
+  tree.store([2, 0, 1], lit=9201)
+  tree.store([2], trim=92)
   
   nodes = tree.flatten()
   print(tree)
