@@ -274,21 +274,28 @@ float erfc_appx(float t) {
   return 1. / (p_sq*p_sq);
 }
 
-// mix two colors according to how much of a pixel's sampling distribution
-// spills across the edge between them
-vec3 sample_mix(
-  vec3 near_color, vec3 far_color,
-  float edge_dist, float scaling, float r_px
-) {
+// how much of a pixel's sampling distribution spills across an edge
+float overflow(float edge_dist, float scaling, float r_px) {
   // find the distance to the edge in the screen tangent space
   float screen_dist = edge_dist / scaling;
   
   // integrate our pixel's sampling distribution on the screen tangent space to
   // find out how much of the pixel falls on the other side of the edge
-  float overflow = 0.5*erfc_appx(screen_dist / r_px);
-  
-  return mix(near_color, far_color, overflow);
+  return 0.5*erfc_appx(screen_dist / r_px);
 }
+
+// mix two colors according to how much of a pixel's sampling distribution
+// spills across the edge between them
+
+float sample_mix(float near, float far, float edge_dist, float scaling, float r_px) {
+  return mix(near, far, overflow(edge_dist, scaling, r_px));
+}
+
+vec3 sample_mix(vec3 near, vec3 far, float edge_dist, float scaling, float r_px) {
+  return mix(near, far, overflow(edge_dist, scaling, r_px));
+}
+
+// ---
 
 const float PI = 3.141592653589793;
 
@@ -314,7 +321,16 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   float scaling = length(h.push[0]);
   
   // draw ribbon graph
+  vec3 ribbon = vec3(sample_mix(1-side, side, h_pos.x, scaling, r_px));
+  vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   vec3 color;
+  if (h_pos.y < 0.5) {
+    color = sample_mix(ribbon, sky, abs(h_pos.y - 0.5), scaling, r_px);
+  } else {
+    color = sample_mix(sky, ribbon, abs(h_pos.y - 0.5), scaling, r_px);
+  }
+  return color;
+  
   /*if (h.y < 0.5) {
     // draw ribbon
     color = vec3(float(1-side));
@@ -331,7 +347,6 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
       color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
     }
   }*/
-  return sample_mix(vec3(1-side), vec3(side), h_pos.x, scaling, r_px);
   
   // highlight fundamental domain
   /*if (lit[side]) {
