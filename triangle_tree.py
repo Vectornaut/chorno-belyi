@@ -21,7 +21,7 @@ class TriangleTree:
     return self.show('*', 0)
   
   def show(self, k, level):
-    text = level*' ' + '{} ({}, {})'.format(k, self.highlight, self.color)
+    text = level*' ' + '{} [{}, {}]'.format(k, self.lit, self.trim)
     if hasattr(self, 'index') and self.index != None:
       text += ' #' + str(self.index)
     for k in range(3):
@@ -48,15 +48,12 @@ class TriangleTree:
   
   def drop(self, address):
     if address == []:
-      if all(child == None for child in self.children):
-        # this node can be severed from the tree
-        return True
-      else:
-        # this node can't be severed, so just turn off the lights and tell the
-        # nodes above to do nothing
-        self.lit[:] = (False, False)
-        self.trim[:] = (0, 0)
-        return False
+      # turn off the lights
+      self.lit[:] = (False, False)
+      self.trim[:] = (0, 0)
+      
+      # tell the node above whether this node can be severed from the tree
+      return all(child == None for child in self.children)
     else:
       k = address[0]
       if self.children[k] == None:
@@ -210,17 +207,17 @@ class DessinDomain:
 
 def tree_test():
   tree = TriangleTree()
-  tree.store([0, 0, 0], lit=9000)
-  tree.store([0, 1], lit=901)
-  tree.store([0, 1, 1], lit=9011)
-  tree.store([2, 0, 1], lit=9201)
-  tree.store([2], trim=92)
+  tree.store([0, 0, 0], None, (True, True), (9000, 5555))
+  tree.store([0, 1], 0, True, 901)
+  tree.store([0, 1, 1], 1, True, 9011)
+  tree.store([2, 0, 1], 0, False, 9201)
+  tree.store([2], None, (False, False), (92, 55))
   
   nodes = tree.flatten()
   print(tree)
   print()
   for node in nodes:
-    print('({}, {})'.format(node.highlight, node.color))
+    print('[{}, {}]'.format(node.lit, node.trim))
   print()
   
   for address in [[0, 1], [0, 0, 0], [0, 1, 1], [2, 0], [2, 0, 1]]:
@@ -230,6 +227,16 @@ def tree_test():
     print()
   
   print('note that node 2 is severable because its highlight mode is 0, even though its color is nonzero')
+  print()
+
+def root_drop_test():
+  tree = TriangleTree()
+  tree.store([], 0, True, 99)
+  print(tree)
+  print()
+  
+  tree.drop([])
+  print(tree)
   print()
 
 def json_test():

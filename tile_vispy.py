@@ -270,7 +270,7 @@ void main_none() {
           v = mreflect(v, mirrors[k]);
           flips += 1;
           onsides = 0;
-          index = tri_tree[5*index + k];
+          index = tri_tree[7*index + k];
         } else {
           onsides += 1;
           if (onsides >= 3) {
@@ -363,7 +363,7 @@ def mprod(v, w):
   return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
 
 def tri_tree_key(index, attr):
-  return 'tri_tree[{}]'.format(5*index + attr)
+  return 'tri_tree[{}]'.format(7*index + attr)
 
 class TilingCanvas(app.Canvas):
   edge_palette = [
@@ -403,7 +403,7 @@ class TilingCanvas(app.Canvas):
     self.paint_display = None
     self.selection_display = None
     self.set_working(False)
-    self.set_paint_color(0)
+    self.set_paint_color(1)
     self.set_selection(None)
   
   def update_resolution(self):
@@ -509,16 +509,19 @@ class TilingCanvas(app.Canvas):
         lit = True
         trim = self.paint_color
       elif event.key == 's':
-        side = selection_side
+        side = self.selection_side
         lit = True
         trim = -self.paint_color
       elif event.key == 'z':
-        domain.tree.drop(self.selection)
+        lit = False
       elif event.text.isdigit():
         self.set_paint_color(int(event.text))
       
       if lit != None:
-        self.domain.tree.store(self.selection, side, lit, trim)
+        if lit == False:
+          self.domain.tree.drop(self.selection)
+        else:
+          self.domain.tree.store(self.selection, side, lit, trim)
         self.load_tri_tree(self.domain.tree)
         self.update()
   
