@@ -463,8 +463,7 @@ class TilingCanvas(app.Canvas):
         self.program[tri_tree_key(1, attr)] = 0
   
   def load_tri_tree(self, tree):
-    tree.flatten(1)
-    for tri in tree.list:
+    for tri in tree.flatten(1):
       for k in range(3):
         if tri.children[k] != None:
           self.program[tri_tree_key(tri.index, k)] = tri.children[k].index

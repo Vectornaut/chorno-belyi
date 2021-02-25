@@ -69,22 +69,23 @@ class TriangleTree:
           return True
   
   # list the tree's nodes, depth first, and give each node an `index` attribute
-  # that hold its list index plus the given offset. if `list` is provided,
-  # append the list of nodes to it. otherwise, store the list of nodes in the
-  # `list` attribute of the root node
-  def flatten(self, offset=0, list=None):
+  # that hold its list index plus the given offset. if `nodes` is provided,
+  # append the list of nodes to it. otherwise, return the list
+  def flatten(self, offset=0, nodes=None):
     # start a node list, if none is provided
-    if list == None:
-      list = []
-      self.list = list ## i don't know how much of a speed boost this actually gives, and it creates a circular reference that makes serialization a pain
+    init = nodes == None
+    if init: nodes = []
     
     # list this node
-    self.index = len(list) + offset
-    list.append(self)
+    self.index = len(nodes) + offset
+    nodes.append(self)
     
     for k in range(3):
       if self.children[k] != None:
-        self.children[k].flatten(offset, list)
+        self.children[k].flatten(offset, nodes)
+    
+    # if the node list wasn't passed to us, return it
+    if init: return nodes
   
   def dump(self, fp, **kwargs):
     json.dump(self, fp, default=lambda obj: obj.__dict__, **kwargs)
@@ -194,10 +195,10 @@ def tree_test():
   tree.store([2, 0, 1], highlight=9201)
   tree.store([2], color=92)
   
-  tree.flatten()
+  nodes = tree.flatten()
   print(tree)
   print()
-  for node in tree.list:
+  for node in nodes:
     print('({}, {})'.format(node.highlight, node.color))
   print()
   
