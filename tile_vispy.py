@@ -324,16 +324,15 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   
   // draw ribbon graph
   vec3 ribbon = vec3(sample_mix(0, 1, h.pt.x, scaling, r_px));
-  vec3 trimmed;
-  if (trim[side] > 0) {
-    trimmed = sample_mix(edge_palette[trim[side]-1], ribbon, h_pos.x - 0.5, scaling, r_px);
-  } else if (trim[side] < 0) {
-    trimmed = sample_mix(ribbon, edge_palette[-trim[side]-1], h_pos.x - 3.5, scaling, r_px);
-  } else {
-    trimmed = ribbon;
-  }
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
-  return sample_mix(trimmed, sky, h_pos.y - 0.5, scaling, r_px);
+  vec3 trimmed = sky;
+  if (trim[side] > 0) {
+    trimmed = sample_mix(edge_palette[trim[side]-1], sky, h_pos.x - 0.5, scaling, r_px);
+  } else if (trim[side] < 0) {
+    trimmed = sample_mix(sky, edge_palette[-trim[side]-1], h_pos.x - 3.5, scaling, r_px);
+  }
+  trimmed = mix(sky, trimmed, exp(-0.1*(h_pos.y - 0.5)));
+  return sample_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
   
   /*if (h.y < 0.5) {
     // draw ribbon
