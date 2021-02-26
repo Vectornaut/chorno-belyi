@@ -347,47 +347,22 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   vec3 ribbon = vec3(edge_mix(0, 1, h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   
-  // draw contours
-  float fade = exp(-0.2*(h_pos.y - 0.5));
-  vec3 contour_color = mix(sky, vec3(0.0, 0.2, 0.5), fade);
-  vec3 contoured = sky;
-  if (h_pos.y > 1.) {
-    contoured = line_mix(contour_color, sky, 2, mod(h.pt.y, 1) - 0.5, scaling, r_px);
-  }
-  
   // draw trim
-  vec3 trimmed = contoured;
+  vec3 trimmed = sky;
   if (trim[side] > 0) {
-    trimmed = edge_mix(edge_palette[trim[side]-1], contoured, h_pos.x - 0.5, scaling, r_px);
+    trimmed = line_mix(edge_palette[trim[side]-1], sky, 10, h_pos.x, scaling, r_px);
   } else if (trim[side] < 0) {
-    trimmed = edge_mix(contoured, edge_palette[-trim[side]-1], h_pos.x - 3.5, scaling, r_px);
+    trimmed = line_mix(edge_palette[-trim[side]-1], sky, 10, h_pos.x - 4., scaling, r_px);
   }
-  trimmed = mix(contoured, trimmed, fade);
-  return edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
+  trimmed = mix(sky, trimmed, exp(-0.2*(h_pos.y - 0.5)));
   
-  /*if (h.y < 0.5) {
-    // draw ribbon
-    color = vec3(float(1-side));
-  } else {
-    // draw sky
-    if (
-      trim[side] > 0 && 0. < h.x && h.x < 0.5 ||
-      trim[side] < 0 && 3.5 < h.x
-    ) {
-      // draw edge identification tab
-      color = edge_palette[abs(trim[side]) - 1];
-    } else {
-      float off = mod(h.y, 1.);
-      color = (off < 0.5) ? vec3(0.267, 0.6, 0.941) : vec3(0.494, 0.698, 0.980);
-    }
-  }*/
-  
-  // highlight fundamental domain
-  /*if (lit[side]) {
+  // combine ribbon with trim, and dim if unlit
+  vec3 color = edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
+  if (lit[side]) {
     return color;
   } else {
-    return mix(color, vec3(0.5), 0.8);
-  }*/
+    return mix(color, vec3(0.4, 0.45, 0.5), 0.8);
+  }
 }
 
 // --- tiling ---
