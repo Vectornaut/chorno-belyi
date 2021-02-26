@@ -277,24 +277,45 @@ float erfc_appx(float t) {
 }
 
 // how much of a pixel's sampling distribution falls on the negative side of an
-// edge
-float neg_part(float edge_disp, float scaling, float r_px) {
+// edge. `disp` is the pixel's displacement from the edge in pattern space
+float neg_part(float pattern_disp, float scaling, float r_px) {
   // find the displacement to the edge in the screen tangent space
-  float screen_disp = edge_disp / scaling;
+  float screen_disp = pattern_disp / scaling;
   
   // integrate our pixel's sampling distribution on the screen tangent space to
   // find out how much of the pixel falls on the negative side of the edge
   return 0.5*erfc_appx(screen_disp / r_px);
 }
 
-// find the color of a pixel near an edge between two colored regions
+// find the color of a pixel near an edge between two colored regions.
+// `neg` and `pos` are the colors on the negative and positive sides of the
+// edge. `disp` is the displacement from the edge
 
-float sample_mix(float neg_color, float pos_color, float edge_disp, float scaling, float r_px) {
-  return mix(pos_color, neg_color, neg_part(edge_disp, scaling, r_px));
+float edge_mix(float neg, float pos, float pattern_disp, float scaling, float r_px) {
+  return mix(pos, neg, neg_part(pattern_disp, scaling, r_px));
 }
 
-vec3 sample_mix(vec3 neg_color, vec3 pos_color, float edge_disp, float scaling, float r_px) {
-  return mix(pos_color, neg_color, neg_part(edge_disp, scaling, r_px));
+vec3 edge_mix(vec3 neg, vec3 pos, float pattern_disp, float scaling, float r_px) {
+  return mix(pos, neg, neg_part(pattern_disp, scaling, r_px));
+}
+
+// how much of a pixel's sampling distribution falls on a thickened line.
+// `width` is the line thickness, in pixels. `pattern_disp` is the pixel's
+// displacement from the line in pattern space
+float line_part(float width, float pattern_disp, float scaling, float r_px) {
+  // find the displacement to the edge in the screen tangent space
+  float screen_disp = pattern_disp / scaling;
+  float screen_disp_px = screen_disp / r_px;
+  
+  // integrate our pixel's sampling distribution on the screen tangent space to
+  // find out how much of the pixel falls within `width/2` of the line
+  float lower = erfc_appx(screen_disp_px - 0.5*width);
+  float upper = erfc_appx(screen_disp_px + 0.5*width);
+  return 0.5*(lower - upper);
+}
+
+vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scaling, float r_px) {
+  return mix(bg, stroke, line_part(width, pattern_disp, scaling, r_px));
 }
 
 // --- strip coloring ---
@@ -323,16 +344,26 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   float scaling = length(h.push[0]);
   
   // draw ribbon graph
-  vec3 ribbon = vec3(sample_mix(0, 1, h.pt.x, scaling, r_px));
+  vec3 ribbon = vec3(edge_mix(0, 1, h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
-  vec3 trimmed = sky;
-  if (trim[side] > 0) {
-    trimmed = sample_mix(edge_palette[trim[side]-1], sky, h_pos.x - 0.5, scaling, r_px);
-  } else if (trim[side] < 0) {
-    trimmed = sample_mix(sky, edge_palette[-trim[side]-1], h_pos.x - 3.5, scaling, r_px);
+  
+  // draw contours
+  float fade = exp(-0.2*(h_pos.y - 0.5));
+  vec3 contour_color = mix(sky, vec3(0.0, 0.2, 0.5), fade);
+  vec3 contoured = sky;
+  if (h_pos.y > 1.) {
+    contoured = line_mix(contour_color, sky, 2, mod(h.pt.y, 1) - 0.5, scaling, r_px);
   }
-  trimmed = mix(sky, trimmed, exp(-0.1*(h_pos.y - 0.5)));
-  return sample_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
+  
+  // draw trim
+  vec3 trimmed = contoured;
+  if (trim[side] > 0) {
+    trimmed = edge_mix(edge_palette[trim[side]-1], contoured, h_pos.x - 0.5, scaling, r_px);
+  } else if (trim[side] < 0) {
+    trimmed = edge_mix(contoured, edge_palette[-trim[side]-1], h_pos.x - 3.5, scaling, r_px);
+  }
+  trimmed = mix(contoured, trimmed, fade);
+  return edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
   
   /*if (h.y < 0.5) {
     // draw ribbon
