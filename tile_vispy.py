@@ -347,22 +347,24 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   vec3 ribbon = vec3(edge_mix(0, 1, h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   
+  // dim unlit half-triangles
+  vec3 shadow = vec3(0.4, 0.45, 0.5);
+  float dimness = 0.8*edge_mix(float(!lit[0]), float(!lit[1]), h.pt.x, scaling, r_px);
+  ribbon = mix(ribbon, shadow, dimness);
+  sky = mix(sky, shadow, dimness);
+  
   // draw trim
   vec3 trimmed = sky;
-  if (trim[side] > 0) {
-    trimmed = line_mix(edge_palette[trim[side]-1], sky, 10, h_pos.x, scaling, r_px);
+  int trim_mid = max(trim[0], trim[1]);
+  if (trim_mid > 0) {
+    trimmed = line_mix(edge_palette[trim_mid-1], sky, 10, h.pt.x, scaling, r_px);
   } else if (trim[side] < 0) {
     trimmed = line_mix(edge_palette[-trim[side]-1], sky, 10, h_pos.x - 4., scaling, r_px);
   }
-  trimmed = mix(sky, trimmed, exp(-0.2*(h_pos.y - 0.5)));
+  /*trimmed = mix(sky, trimmed, exp(-0.2*(h_pos.y - 0.5)));*/
   
-  // combine ribbon with trim, and dim if unlit
-  vec3 color = edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
-  if (lit[side]) {
-    return color;
-  } else {
-    return mix(color, vec3(0.4, 0.45, 0.5), 0.8);
-  }
+  // combine ribbon and trim
+  return edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
 }
 
 // --- tiling ---
