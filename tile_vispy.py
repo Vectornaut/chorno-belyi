@@ -260,7 +260,7 @@ cjet cover(vec3 v, float r_sq_orig) {
   }
 }
 
-// --- strip coloring ---
+// --- pixel sampling ---
 
 const float A1 = 0.278393;
 const float A2 = 0.230389;
@@ -269,33 +269,35 @@ const float A4 = 0.078108;
 
 // Abramowitz and Stegun, equation 7.1.27
 float erfc_appx(float t) {
-  float p = 1. + A1*(t + A2*(t + A3*(t + A4*t)));
+  float r = abs(t);
+  float p = 1. + A1*(r + A2*(r + A3*(r + A4*r)));
   float p_sq = p*p;
-  return 1. / (p_sq*p_sq);
+  float erfc_r = 1. / (p_sq*p_sq);
+  return t < 0. ? (2. - erfc_r) : erfc_r;
 }
 
-// how much of a pixel's sampling distribution spills across an edge
-float overflow(float edge_dist, float scaling, float r_px) {
-  // find the distance to the edge in the screen tangent space
-  float screen_dist = edge_dist / scaling;
+// how much of a pixel's sampling distribution falls on the negative side of an
+// edge
+float neg_part(float edge_disp, float scaling, float r_px) {
+  // find the displacement to the edge in the screen tangent space
+  float screen_disp = edge_disp / scaling;
   
   // integrate our pixel's sampling distribution on the screen tangent space to
-  // find out how much of the pixel falls on the other side of the edge
-  return 0.5*erfc_appx(screen_dist / r_px);
+  // find out how much of the pixel falls on the negative side of the edge
+  return 0.5*erfc_appx(screen_disp / r_px);
 }
 
-// mix two colors according to how much of a pixel's sampling distribution
-// spills across the edge between them
+// find the color of a pixel near an edge between two colored regions
 
-float sample_mix(float near, float far, float edge_dist, float scaling, float r_px) {
-  return mix(near, far, overflow(edge_dist, scaling, r_px));
+float sample_mix(float neg_color, float pos_color, float edge_disp, float scaling, float r_px) {
+  return mix(pos_color, neg_color, neg_part(edge_disp, scaling, r_px));
 }
 
-vec3 sample_mix(vec3 near, vec3 far, float edge_dist, float scaling, float r_px) {
-  return mix(near, far, overflow(edge_dist, scaling, r_px));
+vec3 sample_mix(vec3 neg_color, vec3 pos_color, float edge_disp, float scaling, float r_px) {
+  return mix(pos_color, neg_color, neg_part(edge_disp, scaling, r_px));
 }
 
-// ---
+// --- strip coloring ---
 
 const float PI = 3.141592653589793;
 
@@ -321,15 +323,17 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   float scaling = length(h.push[0]);
   
   // draw ribbon graph
-  vec3 ribbon = vec3(sample_mix(1-side, side, h_pos.x, scaling, r_px));
-  vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
-  vec3 color;
-  if (h_pos.y < 0.5) {
-    color = sample_mix(ribbon, sky, abs(h_pos.y - 0.5), scaling, r_px);
+  vec3 ribbon = vec3(sample_mix(0, 1, h.pt.x, scaling, r_px));
+  vec3 trimmed;
+  if (trim[side] > 0) {
+    trimmed = sample_mix(edge_palette[trim[side]-1], ribbon, h_pos.x - 0.5, scaling, r_px);
+  } else if (trim[side] < 0) {
+    trimmed = sample_mix(ribbon, edge_palette[-trim[side]-1], h_pos.x - 3.5, scaling, r_px);
   } else {
-    color = sample_mix(sky, ribbon, abs(h_pos.y - 0.5), scaling, r_px);
+    trimmed = ribbon;
   }
-  return color;
+  vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
+  return sample_mix(trimmed, sky, h_pos.y - 0.5, scaling, r_px);
   
   /*if (h.y < 0.5) {
     // draw ribbon
@@ -492,10 +496,10 @@ class TilingCanvas(app.Canvas):
     self.domain = None
     
     # initialize triangle-coloring tree
-    ##for m in range(1022):
-    ##  self.program['tri_tree[{}]'.format(m)] = 0
-    ##if lit:
-    ##  self.load_empty_tree(True)
+    for m in range(1022):
+      self.program['tri_tree[{}]'.format(m)] = 0
+    if lit:
+      self.load_empty_tree(True)
     
     # initialize work state
     self.paint_display = None
