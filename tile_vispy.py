@@ -38,6 +38,7 @@ uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
 uniform int tri_tree [1022];
+uniform bool bdry_lit;
 
 // --- complex arithmetic ---
 
@@ -379,6 +380,12 @@ void main_none() {
   vec2 u = r_px * (2.*gl_FragCoord.xy - resolution);
   float r_sq = dot(u, u);
   
+  // set boundary color
+  vec3 bdry_color = vec3(0.8, 0.9, 1.0);
+  if (!bdry_lit) {
+    bdry_color = mix(bdry_color, vec3(0.4, 0.45, 0.5), 0.8);
+  }
+  
   // reduce to fundamental domain
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
@@ -403,6 +410,7 @@ void main_none() {
             );
             /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
             vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
+            color = line_mix(bdry_color, color, 2, r_sq - 1., 2., r_px);
             gl_FragColor = vec4(color, 1.);
             return;
           }
@@ -412,7 +420,9 @@ void main_none() {
     gl_FragColor = vec4(0., 1., 0., 1.); /*[DEBUG] real axis speckles*/
     return; /*[DEBUG] real axis speckles*/
   }
-  gl_FragColor = vec4(0.25, 0.15, 0.35, 1.);
+  vec3 color = vec3(0.25, 0.15, 0.35);
+  color = line_mix(bdry_color, color, 2, r_sq - 1., 2., r_px);
+  gl_FragColor = vec4(color, 1.);
 }
 
 void main_gauss() {
@@ -507,6 +517,7 @@ class TilingCanvas(app.Canvas):
       self.program['tri_tree[{}]'.format(m)] = 0
     if lit:
       self.load_empty_tree(True)
+    self.program['bdry_lit'] = lit
     
     # initialize work state
     self.paint_display = None
@@ -568,6 +579,8 @@ class TilingCanvas(app.Canvas):
     else:
       for attr in range(7):
         self.program[tri_tree_key(1, attr)] = 0
+    
+    self.program['bdry_lit'] = lit;
   
   def load_tri_tree(self, tree):
     for tri in tree.flatten(1):
@@ -579,6 +592,8 @@ class TilingCanvas(app.Canvas):
       for side in range(2):
         self.program[tri_tree_key(tri.index, 3 + side)] = tri.lit[side]
         self.program[tri_tree_key(tri.index, 5 + side)] = tri.trim[side]
+    
+    self.program['bdry_lit'] = False;
   
   def set_domain(self, domain, lit=False, working=None):
     self.domain = domain
