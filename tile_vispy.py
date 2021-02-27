@@ -204,15 +204,6 @@ float mprod(vec3 v, vec3 w) {
   return dot(v.xy, w.xy) - v.z*w.z;
 }
 
-float msq(vec3 v) {
-  return mprod(v, v);
-}
-
-// a minkowski version of the built-in `reflect`
-vec3 mreflect(vec3 v, vec3 mirror) {
-  return v - 2*mprod(v, mirror)*mirror;
-}
-
 // --- covering ---
 
 /*[TEMP] should make size adjustable*/
@@ -323,16 +314,7 @@ vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
-vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit) {
-  // set up edge palette
-  vec3 edge_palette [6];
-  edge_palette[0] = vec3(1.00, 0.43, 0.00);
-  edge_palette[1] = vec3(1.00, 0.87, 0.21);
-  edge_palette[2] = vec3(0.92, 0.67, 0.96);
-  edge_palette[3] = vec3(0.64, 0.07, 0.73);
-  edge_palette[4] = vec3(0.40, 0.00, 0.29);
-  edge_palette[5] = vec3(0.30, 0.11, 0.68);
-  
+vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit, vec3 edge_palette[6]) {
   // get strip coordinate and side
   cjet h = scale(8./PI, casin(z));
   int side = h.pt.x < 0. ? 0 : 1;
@@ -354,18 +336,14 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit) {
   ribbon = mix(ribbon, shadow, dimness);
   sky = mix(sky, shadow, dimness);
   
-  float twin_dimness = 0.4*edge_mix(float(twin_lit[0]), float(twin_lit[1]), h.pt.x, scaling, r_px);
-  ribbon = mix(ribbon, vec3(1., 0., 0.), twin_dimness);
-  sky = mix(sky, vec3(1., 0., 0.), twin_dimness);
-  
-  // draw trim
+  // draw inner trim
   vec3 trimmed = sky;
   int trim_mid = max(trim[0], trim[1]);
   if (trim_mid > 0) {
     trimmed = line_mix(edge_palette[trim_mid-1], sky, 10, h.pt.x, scaling, r_px);
-  } else if (trim[side] < 0) {
+  } /*else if (trim[side] < 0) {
     trimmed = line_mix(edge_palette[-trim[side]-1], sky, 10, h_pos.x - 4., scaling, r_px);
-  }
+  }*/
   
   // combine ribbon and trim
   return edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
@@ -375,6 +353,16 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit) {
 
 const float VIEW = 1.2;
 const float EPS = 1e-6;
+const float TWIN_EPS = 1e-5;
+const float SQRT2 = 1.4142135623730951;
+
+/*int argmin(float arr[3]) {
+  int k = 0;
+  float firstmin = arr[0];
+  if (arr[1] < arr[0]) k = 1; firstmin = arr[1];
+  if (arr[2] < firstmin) k = 2;
+  return k;
+}*/
 
 void main_none() {
   // find screen coordinate
@@ -398,11 +386,11 @@ void main_none() {
     // for area sampling across triangle boundaries, we follow a twin point on
     // the other side of the nearest mirror. (strictly speaking, or kludgey
     // algorithm doesn't always find the nearest mirror. if two mirrors'
-    // minkowski products with us are smaler than EPS, we could get a twin
-    // across either one
+    // minkowski products with us are smaler than TWIN_EPS, we could get a twin
+    // across either one. to identify the twin point during the final onsides
+    // check, we also save the last minkowski product with each mirror
     int twin = 0; // our twin's triangle tree index
-    /*int twin_k = -1;*/ // the mirror beween us and our twin
-    /*bool twin_extra = false;*/ // does our twin have a longer address than us?
+    float mirror_prod [3];
     
     // the minkowski product with the nearest mirror we've flipped across so
     // far. to set the initial value, we note that the inradius of a hyperbolic
@@ -412,56 +400,101 @@ void main_none() {
     //   sqrt(1 - cosh(2*log(3))) = sqrt(1 - 5/9) = 2/3
     //
     float twin_prod = 0.6667;
-    bool green_flag = false; /*[TEST]*/
-    bool blue_flag = false; /*[TEST]*/
     
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
-        /*if (flips == 1 && twin == index) green_flag = true;*/ /*TEST*/
-        float mirror_prod = mprod(mirrors[k], v);
-        if (mirror_prod > EPS) {
-          if (mirror_prod < twin_prod - EPS) {
+        mirror_prod[k] = mprod(v, mirrors[k]);
+        if (mirror_prod[k] > EPS) {
+          if (mirror_prod[k] < twin_prod - TWIN_EPS) {
             // the twin that didn't flip here would be closer than our current
             // twin, so start following that twin instead
             twin = index;
-            /*twin_k = k;*/
-            twin_prod = mirror_prod;
+            twin_prod = mirror_prod[k];
           } else {
             twin = tri_tree[7*twin + k];
           }
           
-          v = mreflect(v, mirrors[k]);
+          // reflect across mirror k
+          v -= 2.*mirror_prod[k]*mirrors[k];
           flips += 1;
           onsides = 0;
           index = tri_tree[7*index + k];
         } else {
           onsides += 1;
           
-          if (-mirror_prod < twin_prod - EPS) {
+          if (-mirror_prod[k] < twin_prod - TWIN_EPS) {
             // the twin that did flip here would be closer than our current twin
             // twin, so start following that twin instead
             twin = tri_tree[7*index + k];
             /*twin_k = k;*/
-            twin_prod = -mirror_prod;
+            twin_prod = -mirror_prod[k];
           }
           
           if (onsides >= 3) {
             // we're in the fundamental domain, on the negative side of every mirror
             
-            /*vec3 test_color = vec3(0.5*mod(flips, 2));
-            test_color = min(test_color + vec3(0., float(green_flag), float(blue_flag)), vec3(1.));
-            gl_FragColor = vec4(test_color, 1.);
-            return;*/
+            // find out which side of the strip we're closest to hyperbolically,
+            // and whether our twin is across that side or the ribbon side
+            int side = mirror_prod[1] > mirror_prod[2] ? 0 : 1;
+            bool twin_beside = mirror_prod[side+1] > mirror_prod[0];
             
+            // fetch coloring data
+            bvec2 lit = bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]);
+            ivec2 trim = ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6]);
+            bvec2 twin_lit = bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4]);
+            ivec2 twin_trim = ivec2(tri_tree[7*twin + 5], tri_tree[7*twin + 6]);
+            
+            // set up edge palette
+            vec3 edge_palette [6];
+            edge_palette[0] = vec3(1.00, 0.43, 0.00);
+            edge_palette[1] = vec3(1.00, 0.87, 0.21);
+            edge_palette[2] = vec3(0.92, 0.67, 0.96);
+            edge_palette[3] = vec3(0.64, 0.07, 0.73);
+            edge_palette[4] = vec3(0.40, 0.00, 0.29);
+            edge_palette[5] = vec3(0.30, 0.11, 0.68);
+            
+            // sample the dessin coloring
             cjet z = cover(v, r_sq);
             vec3 color = strip_color(
               add(scale(2., z), -ONE), r_px,
-              bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]),
-              ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6]),
-              bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4])
+              lit, trim, twin_lit, edge_palette
             );
-            /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
-            vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
+            
+            // add outer trim
+            int outer_trim;
+            if (twin_beside) {
+              outer_trim = min(trim[side], twin_trim[side]);
+            } else {
+              outer_trim = trim[side];
+            }
+            /*outer_trim = twin_trim[side];*/
+            if (outer_trim < 0) {
+              // get the trim color
+              vec3 trim_color = edge_palette[-outer_trim-1];
+              
+              // find the hyperbolic distance L to the nearest side-mirror. it's
+              // given by
+              //
+              //   1 + mirror_prod^2 = cosh(L) = 1 + L^2/2! + L^4/4! + ...,
+              //
+              // so we have
+              //
+              //   -mirror_prod ~= L/sqrt(2)
+              //
+              // for small distances
+              float mirror_dist = -SQRT2 * mirror_prod[side+1];
+              
+              // find the scaling for which
+              //
+              //   hyperbolic-metric = scaling * screen-metric
+              //
+              float scaling = 2. / (1.-r_sq);
+              
+              /*color = trim_color;*/
+              color = line_mix(trim_color, color, 10, mirror_dist, scaling, r_px);
+            }
+            
+            // area-sample the disk boundary
             color = line_mix(bdry_color, color, 2, r_sq - 1., 2., r_px);
             gl_FragColor = vec4(color, 1.);
             return;
@@ -476,8 +509,6 @@ void main_none() {
   color = line_mix(bdry_color, color, 2, r_sq - 1., 2., r_px);
   gl_FragColor = vec4(color, 1.);
 }
-
-const float SQRT2 = 1.4142135623730951;
 
 void main_gauss() {
   // find screen coordinate
@@ -728,6 +759,7 @@ class TilingCanvas(app.Canvas):
     ## they're separated by mirror 1. in general, when `p` is odd, each mirror
     ## through `a` hits `b` on one side and `c` on the other side
     EPS = 1e-6
+    TWIN_EPS = 1e-5
     if r_sq <= 1:
       v = array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
       address = []
@@ -736,7 +768,7 @@ class TilingCanvas(app.Canvas):
         for k in range(3):
           sep = mprod(v, self.mirrors[k])
           if sep > EPS:
-            if k != twin_k and sep < twin_prod: ##[TEST]
+            if sep < twin_prod - TWIN_EPS: ##[TEST]
               twin += ['-{}:{}('.format(k, sep)] + address + [')'] ##[TEST]
               twin_k = k ##[TEST]
               twin_prod = sep ##[TEST]
@@ -747,8 +779,7 @@ class TilingCanvas(app.Canvas):
             onsides = 0
           else:
             onsides += 1
-            if k != twin_k and abs(sep + twin_prod) < EPS: twin += ['!{}|{}:{}|{}'.format(k, twin_k, sep, twin_prod)] ##[TEST]
-            if k != twin_k and -sep < twin_prod: ##[TEST]
+            if -sep < twin_prod - TWIN_EPS: ##[TEST]
               twin += ['+{}:{}('.format(k, sep)] + address + [')', k] ##[TEST]
               twin_k = k ##[TEST]
               twin_prod = -sep ##[TEST]
