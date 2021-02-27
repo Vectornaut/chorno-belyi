@@ -314,7 +314,7 @@ vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
-vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit, vec3 edge_palette[6]) {
+vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, vec3 edge_palette[6]) {
   // get strip coordinate and side
   cjet h = scale(8./PI, casin(z));
   int side = h.pt.x < 0. ? 0 : 1;
@@ -341,9 +341,7 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit, vec3
   int trim_mid = max(trim[0], trim[1]);
   if (trim_mid > 0) {
     trimmed = line_mix(edge_palette[trim_mid-1], sky, 10, h.pt.x, scaling, r_px);
-  } /*else if (trim[side] < 0) {
-    trimmed = line_mix(edge_palette[-trim[side]-1], sky, 10, h_pos.x - 4., scaling, r_px);
-  }*/
+  }
   
   // combine ribbon and trim
   return edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
@@ -354,17 +352,8 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit, vec3
 const float VIEW = 1.2;
 const float EPS = 1e-6;
 const float TWIN_EPS = 1e-5;
-const float SQRT2 = 1.4142135623730951;
 
-/*int argmin(float arr[3]) {
-  int k = 0;
-  float firstmin = arr[0];
-  if (arr[1] < arr[0]) k = 1; firstmin = arr[1];
-  if (arr[2] < firstmin) k = 2;
-  return k;
-}*/
-
-void main_none() {
+void main_dessin() {
   // find screen coordinate
   float r_px = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
   vec2 u = r_px * (2.*gl_FragCoord.xy - resolution);
@@ -426,7 +415,6 @@ void main_none() {
             // the twin that did flip here would be closer than our current twin
             // twin, so start following that twin instead
             twin = tri_tree[7*index + k];
-            /*twin_k = k;*/
             twin_prod = -mirror_prod[k];
           }
           
@@ -441,7 +429,7 @@ void main_none() {
             // fetch coloring data
             bvec2 lit = bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]);
             ivec2 trim = ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6]);
-            bvec2 twin_lit = bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4]);
+            /*bvec2 twin_lit = bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4]);*/
             ivec2 twin_trim = ivec2(tri_tree[7*twin + 5], tri_tree[7*twin + 6]);
             
             // set up edge palette
@@ -457,7 +445,7 @@ void main_none() {
             cjet z = cover(v, r_sq);
             vec3 color = strip_color(
               add(scale(2., z), -ONE), r_px,
-              lit, trim, twin_lit, edge_palette
+              lit, trim, edge_palette
             );
             
             // add outer trim
@@ -467,30 +455,18 @@ void main_none() {
             } else {
               outer_trim = trim[side];
             }
-            /*outer_trim = twin_trim[side];*/
             if (outer_trim < 0) {
               // get the trim color
               vec3 trim_color = edge_palette[-outer_trim-1];
               
-              // find the hyperbolic distance L to the nearest side-mirror. it's
-              // given by
-              //
-              //   1 + mirror_prod^2 = cosh(L) = 1 + L^2/2! + L^4/4! + ...,
-              //
-              // so we have
-              //
-              //   -mirror_prod ~= L/sqrt(2)
-              //
-              // for small distances
-              float mirror_dist = -SQRT2 * mirror_prod[side+1];
+              // estimate the hyperbolic distance to the nearest side-mirror,
+              // using the fact that the minkowski metric induces the hyperbolic
+              // metric of curvature -1 on the forward hyperboloid
+              float mirror_dist = -mirror_prod[side+1];
               
-              // find the scaling for which
-              //
-              //   hyperbolic-metric = scaling * screen-metric
-              //
+              // find the conformal scale factor of the Poincare projection
               float scaling = 2. / (1.-r_sq);
               
-              /*color = trim_color;*/
               color = line_mix(trim_color, color, 10, mirror_dist, scaling, r_px);
             }
             
@@ -510,7 +486,7 @@ void main_none() {
   gl_FragColor = vec4(color, 1.);
 }
 
-void main_gauss() {
+void main_tiling() {
   // find screen coordinate
   vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
@@ -540,16 +516,10 @@ void main_gauss() {
           if (onsides >= 3) {
             // we're in the fundamental domain, on the negative side of every mirror
             
-            // get the distance L to the nearest mirror. it's given by
-            //
-            //   1 + mirror_prod^2 = cosh(L) = 1 + L^2/2! + L^4/4! + ...,
-            //
-            // so we have
-            //
-            //   -mirror_prod ~= L/sqrt(2)
-            //
-            // for small distances
-            float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
+            // estimate the hyperbolic distance to the nearest mirror, using the
+            // fact that the minkowski metric induces the hyperbolic metric of
+            // curvature -1 on the forward hyperboloid
+            float mirror_dist = -max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
             
             // estimate how much of our pixel is on the negative side of the nearest mirror
             float overflow = 0.5*erfc_appx(mirror_dist / r_px);
@@ -569,7 +539,7 @@ void main_gauss() {
 }
 
 void main() {
-  if (show_tiling) main_gauss(); else main_none();
+  if (show_tiling) main_tiling(); else main_dessin();
 }
 ''')
 
