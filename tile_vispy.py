@@ -27,7 +27,7 @@ void main() {
 fragment = ('''
 uniform vec2 resolution;
 uniform float shortdim;
-uniform bool antialias;
+uniform bool show_tiling;
 
 uniform vec3 mirrors [3];
 uniform mat3 shift;
@@ -323,7 +323,7 @@ vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
-vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
+vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, bvec2 twin_lit) {
   // set up edge palette
   vec3 edge_palette [6];
   edge_palette[0] = vec3(1.00, 0.43, 0.00);
@@ -354,6 +354,10 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   ribbon = mix(ribbon, shadow, dimness);
   sky = mix(sky, shadow, dimness);
   
+  float twin_dimness = 0.4*edge_mix(float(twin_lit[0]), float(twin_lit[1]), h.pt.x, scaling, r_px);
+  ribbon = mix(ribbon, vec3(1., 0., 0.), twin_dimness);
+  sky = mix(sky, vec3(1., 0., 0.), twin_dimness);
+  
   // draw trim
   vec3 trimmed = sky;
   int trim_mid = max(trim[0], trim[1]);
@@ -362,7 +366,6 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
   } else if (trim[side] < 0) {
     trimmed = line_mix(edge_palette[-trim[side]-1], sky, 10, h_pos.x - 4., scaling, r_px);
   }
-  /*trimmed = mix(sky, trimmed, exp(-0.2*(h_pos.y - 0.5)));*/
   
   // combine ribbon and trim
   return edge_mix(ribbon, trimmed, h_pos.y - 0.5, scaling, r_px);
@@ -372,7 +375,6 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim) {
 
 const float VIEW = 1.2;
 const float EPS = 1e-6;
-const float SQRT2 = 1.4142135623730951;
 
 void main_none() {
   // find screen coordinate
@@ -390,23 +392,72 @@ void main_none() {
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
-    int onsides = 0;
+    int onsides = 0; // how many times in a row we've been on the negative side of a mirror
     int index = 1;
+    
+    // for area sampling across triangle boundaries, we follow a twin point on
+    // the other side of the nearest mirror
+    int twin = 0; // our twin's triangle tree index
+    int twin_k = -1; // the mirror beween us and our twin
+    /*bool twin_extra = false;*/ // does our twin have a longer address than us?
+    
+    // the minkowski product with the nearest mirror we've flipped across so
+    // far. to set the initial value, we note that the inradius of a hyperbolic
+    // triangle is at most 2*log(3), so the product with the nearest mirror
+    // can be at most
+    //
+    //   sqrt(1 - cosh(2*log(3))) = sqrt(1 - 5/9) = 2/3
+    //
+    float twin_prod = 0.6667;
+    bool green_flag = false; /*[TEST]*/
+    bool blue_flag = false; /*[TEST]*/
+    
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
-        if (mprod(mirrors[k], v) > EPS) {
+        if (flips == 1 && twin == index) green_flag = true;
+        float mirror_prod = mprod(mirrors[k], v);
+        if (mirror_prod > EPS) {
+          if (k != twin_k && mirror_prod < twin_prod) {
+            // the twin that didn't flip here would be closer than our current
+            // twin, so start following that twin instead
+            twin = index;
+            twin_k = k;
+            twin_prod = mirror_prod;
+          } else {
+            twin = tri_tree[7*twin + k];
+          }
+          
           v = mreflect(v, mirrors[k]);
           flips += 1;
           onsides = 0;
           index = tri_tree[7*index + k];
         } else {
           onsides += 1;
+          
+          if (k != twin_k && -mirror_prod < twin_prod) {
+            // the twin that did flip here would be closer than our current twin
+            // twin, so start following that twin instead
+            twin = tri_tree[7*index + k];
+            twin_k = k;
+            twin_prod = -mirror_prod;
+          }
+          
           if (onsides >= 3) {
+            // we're in the fundamental domain, on the negative side of every mirror
+            
+            if (twin > 1) blue_flag = true;
+            
+            vec3 test_color = vec3(0.5*mod(flips, 2));
+            test_color = min(test_color + vec3(0., float(green_flag), float(blue_flag)), vec3(1.));
+            gl_FragColor = vec4(test_color, 1.);
+            return;
+            
             cjet z = cover(v, r_sq);
             vec3 color = strip_color(
-              add(scale(2., z), -ONE), r_px / SQRT2,
+              add(scale(2., z), -ONE), r_px,
               bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]),
-              ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6])
+              ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6]),
+              bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4])
             );
             /*float tone = 1. / (1. + length(z - ZERO) / length(z - ONE));
             vec3 color = mix(vec3(mod(flips, 2)), vec3(1., 0.5, 0.), tone);*/
@@ -425,21 +476,26 @@ void main_none() {
   gl_FragColor = vec4(color, 1.);
 }
 
+const float SQRT2 = 1.4142135623730951;
+
 void main_gauss() {
   // find screen coordinate
   vec2 u = VIEW*(2.*gl_FragCoord.xy - resolution) / shortdim;
   float r_sq = dot(u, u);
   
-  // find pixel radius, for antialiasing
+  // find pixel radius, for area sampling
   float r_px_screen = VIEW / shortdim; // the inner radius of a pixel in the Euclidean metric of the screen
   float r_px = 2.*r_px_screen / (1.-r_sq); // the approximate inner radius of our pixel in the hyperbolic metric
   
   // reduce to fundamental domain
-  float mirror_prod [3];
   if (r_sq < 1.) {
     vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0; // how many times in a row we've been on the negative side of a mirror
+    
+    // for area sampling, we save the last minkowski product with each mirror
+    float mirror_prod [3];
+    
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
         mirror_prod[k] = mprod(v, mirrors[k]);
@@ -452,7 +508,15 @@ void main_gauss() {
           if (onsides >= 3) {
             // we're in the fundamental domain, on the negative side of every mirror
             
-            // get the distance to the nearest mirror
+            // get the distance L to the nearest mirror. it's given by
+            //
+            //   1 + mirror_prod^2 = cosh(L) = 1 + L^2/2! + L^4/4! + ...,
+            //
+            // so we have
+            //
+            //   -mirror_prod ~= L/sqrt(2)
+            //
+            // for small distances
             float mirror_dist = -SQRT2 * max(max(mirror_prod[0], mirror_prod[1]), mirror_prod[2]);
             
             // estimate how much of our pixel is on the negative side of the nearest mirror
@@ -473,7 +537,7 @@ void main_gauss() {
 }
 
 void main() {
-  if (antialias) main_gauss(); else main_none();
+  if (show_tiling) main_gauss(); else main_none();
 }
 ''')
 
@@ -504,9 +568,9 @@ class TilingCanvas(app.Canvas):
       (-1, -1), (1, 1), (1, -1)  # southeast triangle
     ]
     
-    # initialize resolution and antialiasing mode
+    # initialize resolution and tiling display mode
     self.update_resolution()
-    self.program['antialias'] = False
+    self.program['show_tiling'] = False
     
     # initialize tiling and fundamental domain
     self.set_tiling(p, q, r)
@@ -531,9 +595,6 @@ class TilingCanvas(app.Canvas):
     gloo.set_viewport(0, 0, width, height)
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
-  
-  def toggle_antialiasing(self):
-    self.program['antialias'] = not self.program['antialias']
   
   def set_tiling(self, p, q, r):
     # save vertex orders
@@ -621,8 +682,8 @@ class TilingCanvas(app.Canvas):
     # update coloring
     side = None
     lit = None
-    if event.key == ';':
-      self.toggle_antialiasing()
+    if event.key == keys.SPACE:
+      self.program['show_tiling'] = not self.program['show_tiling']
       self.update()
     elif self.working:
       if event.key == 'c':
@@ -655,7 +716,16 @@ class TilingCanvas(app.Canvas):
     u = VIEW*(2*array(event.pos) - self.program['resolution']) / self.program['shortdim']
     r_sq = dot(u, u)
     
+    twin = [] ##[TEST]
+    twin_k = -1##[TEST]
+    twin_prod = 0.6667##[TEST]
+    
     # reduce to fundamental domain
+    ##[TEST] to see a collision between `sep` and `twin_prod`, try clicking
+    ## near the real axis on triangle 1010. the point and its twin start out
+    ## separated by mirror 0, but when they get to the fundamental domain
+    ## they're separated by mirror 1. in general, when `p` is odd, each mirror
+    ## through `a` hits `b` on one side and `c` on the other side
     EPS = 1e-6
     if r_sq <= 1:
       v = array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
@@ -665,15 +735,29 @@ class TilingCanvas(app.Canvas):
         for k in range(3):
           sep = mprod(v, self.mirrors[k])
           if sep > EPS:
+            if k != twin_k and sep < twin_prod: ##[TEST]
+              twin += ['-{}:{}('.format(k, sep)] + address + [')'] ##[TEST]
+              twin_k = k ##[TEST]
+              twin_prod = sep ##[TEST]
+            else:
+              twin += [k]
             v -= 2*sep*self.mirrors[k]
             address += [k]
             onsides = 0
           else:
             onsides += 1
+            if k != twin_k and abs(sep + twin_prod) < EPS: twin += ['!{}|{}:{}|{}'.format(k, twin_k, sep, twin_prod)] ##[TEST]
+            if k != twin_k and -sep < twin_prod: ##[TEST]
+              twin += ['+{}:{}('.format(k, sep)] + address + [')', k] ##[TEST]
+              twin_k = k ##[TEST]
+              twin_prod = -sep ##[TEST]
             if onsides >= 3:
               # save the address of the selected triangle
               z = self.bel.apply(v)
               self.set_selection(address, 0 if z.real < 0.5 else 1)
+              print('address ' + str(address)) ##[TEST]
+              print('   twin ' + str(twin)) ##[TEST]
+              print()
               return
     self.set_selection(None)
   
