@@ -314,7 +314,16 @@ vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
-vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, vec3 edge_palette[6]) {
+vec3 strip_color(cjet z, float r_px, bvec2 lit, float trim_dist, float trim_scaling, int inner_trim, int outer_trim) {
+  // set up edge palette
+  vec3 edge_palette [6];
+  edge_palette[0] = vec3(1.00, 0.43, 0.00);
+  edge_palette[1] = vec3(1.00, 0.87, 0.21);
+  edge_palette[2] = vec3(0.92, 0.67, 0.96);
+  edge_palette[3] = vec3(0.64, 0.07, 0.73);
+  edge_palette[4] = vec3(0.40, 0.00, 0.29);
+  edge_palette[5] = vec3(0.30, 0.11, 0.68);
+  
   // get strip coordinate and side
   cjet h = scale(8./PI, casin(z));
   int side = h.pt.x < 0. ? 0 : 1;
@@ -338,9 +347,11 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, ivec2 trim, vec3 edge_palette[6]
   
   // draw inner trim
   vec3 trimmed = sky;
-  int trim_mid = max(trim[0], trim[1]);
-  if (trim_mid > 0) {
-    trimmed = line_mix(edge_palette[trim_mid-1], sky, 10, h.pt.x, scaling, r_px);
+  if (inner_trim > 0) {
+    trimmed = line_mix(edge_palette[inner_trim-1], sky, 10, h.pt.x, scaling, r_px);
+  }
+  if (outer_trim < 0) {
+    trimmed = line_mix(edge_palette[-outer_trim-1], trimmed, 10, trim_dist, trim_scaling, r_px);
   }
   
   // combine ribbon and trim
@@ -432,43 +443,29 @@ void main_dessin() {
             /*bvec2 twin_lit = bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4]);*/
             ivec2 twin_trim = ivec2(tri_tree[7*twin + 5], tri_tree[7*twin + 6]);
             
-            // set up edge palette
-            vec3 edge_palette [6];
-            edge_palette[0] = vec3(1.00, 0.43, 0.00);
-            edge_palette[1] = vec3(1.00, 0.87, 0.21);
-            edge_palette[2] = vec3(0.92, 0.67, 0.96);
-            edge_palette[3] = vec3(0.64, 0.07, 0.73);
-            edge_palette[4] = vec3(0.40, 0.00, 0.29);
-            edge_palette[5] = vec3(0.30, 0.11, 0.68);
-            
-            // sample the dessin coloring
-            cjet z = cover(v, r_sq);
-            vec3 color = strip_color(
-              add(scale(2., z), -ONE), r_px,
-              lit, trim, edge_palette
-            );
-            
-            // add outer trim
+            // find trim colors
+            int inner_trim = max(trim[0], trim[1]);
             int outer_trim;
             if (twin_beside) {
               outer_trim = min(trim[side], twin_trim[side]);
             } else {
               outer_trim = trim[side];
             }
-            if (outer_trim < 0) {
-              // get the trim color
-              vec3 trim_color = edge_palette[-outer_trim-1];
-              
-              // estimate the hyperbolic distance to the nearest side-mirror,
-              // using the fact that the minkowski metric induces the hyperbolic
-              // metric of curvature -1 on the forward hyperboloid
-              float mirror_dist = -mirror_prod[side+1];
-              
-              // find the conformal scale factor of the Poincare projection
-              float scaling = 2. / (1.-r_sq);
-              
-              color = line_mix(trim_color, color, 10, mirror_dist, scaling, r_px);
-            }
+            
+            // estimate the hyperbolic distance to the nearest trim mirror,
+            // using the fact that the minkowski metric induces the hyperbolic
+            // metric of curvature -1 on the forward hyperboloid
+            float trim_dist = -mirror_prod[side+1];
+            
+            // find the conformal scale factor of the Poincare projection
+            float trim_scaling = 2. / (1.-r_sq);
+            
+            // sample the dessin coloring
+            cjet z = cover(v, r_sq);
+            vec3 color = strip_color(
+              add(scale(2., z), -ONE), r_px, lit,
+              trim_dist, trim_scaling, inner_trim, outer_trim
+            );
             
             // area-sample the disk boundary
             color = line_mix(bdry_color, color, 2, r_sq - 1., 2., r_px);
