@@ -718,16 +718,7 @@ class TilingCanvas(app.Canvas):
     u = VIEW*(2*array(event.pos) - self.program['resolution']) / self.program['shortdim']
     r_sq = dot(u, u)
     
-    twin = [] ##[TEST]
-    twin_k = -1##[TEST]
-    twin_prod = 0.6667##[TEST]
-    
     # reduce to fundamental domain
-    ##[TEST] to see a collision between `sep` and `twin_prod`, try clicking
-    ## near the real axis on triangle 1010. the point and its twin start out
-    ## separated by mirror 0, but when they get to the fundamental domain
-    ## they're separated by mirror 1. in general, when `p` is odd, each mirror
-    ## through `a` hits `b` on one side and `c` on the other side
     EPS = 1e-6
     TWIN_EPS = 1e-5
     if r_sq <= 1:
@@ -738,28 +729,15 @@ class TilingCanvas(app.Canvas):
         for k in range(3):
           sep = mprod(v, self.mirrors[k])
           if sep > EPS:
-            if sep < twin_prod - TWIN_EPS: ##[TEST]
-              twin += ['-{}:{}('.format(k, sep)] + address + [')'] ##[TEST]
-              twin_k = k ##[TEST]
-              twin_prod = sep ##[TEST]
-            else:
-              twin += [k]
             v -= 2*sep*self.mirrors[k]
             address += [k]
             onsides = 0
           else:
             onsides += 1
-            if -sep < twin_prod - TWIN_EPS: ##[TEST]
-              twin += ['+{}:{}('.format(k, sep)] + address + [')', k] ##[TEST]
-              twin_k = k ##[TEST]
-              twin_prod = -sep ##[TEST]
             if onsides >= 3:
               # save the address of the selected triangle
               z = self.bel.apply(v)
               self.set_selection(address, 0 if z.real < 0.5 else 1)
-              print('address ' + str(address)) ##[TEST]
-              print('   twin ' + str(twin)) ##[TEST]
-              print()
               return
     self.set_selection(None)
   
