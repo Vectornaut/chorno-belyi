@@ -314,7 +314,11 @@ vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
-vec3 strip_color(cjet z, float r_px, bvec2 lit, float trim_dist, float trim_scaling, int inner_trim, int outer_trim) {
+vec3 strip_color(
+  cjet z, float proj_scaling, float r_px,
+  float twin_dist, bvec2 lit, bool twin_lit,
+  float trim_dist, int inner_trim, int outer_trim
+) {
   // set up edge palette
   vec3 edge_palette [6];
   edge_palette[0] = vec3(1.00, 0.43, 0.00);
@@ -341,9 +345,10 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, float trim_dist, float trim_scal
   
   // dim unlit half-triangles
   vec3 shadow = vec3(0.4, 0.45, 0.5);
-  float dimness = 0.8*edge_mix(float(!lit[0]), float(!lit[1]), h.pt.x, scaling, r_px);
-  ribbon = mix(ribbon, shadow, dimness);
-  sky = mix(sky, shadow, dimness);
+  float dimness = edge_mix(float(!lit[0]), float(!lit[1]), h.pt.x, scaling, r_px);
+  dimness = edge_mix(float(!twin_lit), dimness, twin_dist, proj_scaling, r_px);
+  ribbon = mix(ribbon, shadow, 0.8*dimness);
+  sky = mix(sky, shadow, 0.8*dimness);
   
   // draw inner trim
   vec3 trimmed = sky;
@@ -351,7 +356,7 @@ vec3 strip_color(cjet z, float r_px, bvec2 lit, float trim_dist, float trim_scal
     trimmed = line_mix(edge_palette[inner_trim-1], sky, 10, h.pt.x, scaling, r_px);
   }
   if (outer_trim < 0) {
-    trimmed = line_mix(edge_palette[-outer_trim-1], trimmed, 10, trim_dist, trim_scaling, r_px);
+    trimmed = line_mix(edge_palette[-outer_trim-1], trimmed, 10, trim_dist, proj_scaling, r_px);
   }
   
   // combine ribbon and trim
@@ -432,39 +437,37 @@ void main_dessin() {
           if (onsides >= 3) {
             // we're in the fundamental domain, on the negative side of every mirror
             
-            // find out which side of the strip we're closest to hyperbolically,
-            // and whether our twin is across that side or the ribbon side
+            // find the mirror between us and our twin. along the way, we'll
+            // see which side of the strip we're closest to hyperbolically
             int side = mirror_prod[1] > mirror_prod[2] ? 0 : 1;
-            bool twin_beside = mirror_prod[side+1] > mirror_prod[0];
+            int twin_k = mirror_prod[0] > mirror_prod[side+1] ? 0 : side+1;
             
             // fetch coloring data
             bvec2 lit = bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]);
             ivec2 trim = ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6]);
-            /*bvec2 twin_lit = bvec2(tri_tree[7*twin + 3], tri_tree[7*twin + 4]);*/
-            ivec2 twin_trim = ivec2(tri_tree[7*twin + 5], tri_tree[7*twin + 6]);
+            bool twin_lit = bool(tri_tree[7*twin + 3 + side]);
+            int twin_trim = tri_tree[7*twin + 5 + side];
             
             // find trim colors
             int inner_trim = max(trim[0], trim[1]);
-            int outer_trim;
-            if (twin_beside) {
-              outer_trim = min(trim[side], twin_trim[side]);
-            } else {
-              outer_trim = trim[side];
-            }
+            int outer_trim = (twin_k > 0) ? min(trim[side], twin_trim) : trim[side];
             
-            // estimate the hyperbolic distance to the nearest trim mirror,
-            // using the fact that the minkowski metric induces the hyperbolic
-            // metric of curvature -1 on the forward hyperboloid
+            // estimate the hyperbolic distance to the nearest mirror and the
+            // nearest trim mirror, using the fact that the minkowski metric
+            // induces the hyperbolic metric of curvature -1 on the forward
+            // hyperboloid
+            float twin_dist = -mirror_prod[twin_k];
             float trim_dist = -mirror_prod[side+1];
             
             // find the conformal scale factor of the Poincare projection
-            float trim_scaling = 2. / (1.-r_sq);
+            float proj_scaling = 2. / (1.-r_sq);
             
             // sample the dessin coloring
             cjet z = cover(v, r_sq);
             vec3 color = strip_color(
-              add(scale(2., z), -ONE), r_px, lit,
-              trim_dist, trim_scaling, inner_trim, outer_trim
+              add(scale(2., z), -ONE), proj_scaling, r_px,
+              twin_dist, lit, twin_lit,
+              trim_dist, inner_trim, outer_trim
             );
             
             // area-sample the disk boundary
