@@ -396,9 +396,12 @@ void main_none() {
     int index = 1;
     
     // for area sampling across triangle boundaries, we follow a twin point on
-    // the other side of the nearest mirror
+    // the other side of the nearest mirror. (strictly speaking, or kludgey
+    // algorithm doesn't always find the nearest mirror. if two mirrors'
+    // minkowski products with us are smaler than EPS, we could get a twin
+    // across either one
     int twin = 0; // our twin's triangle tree index
-    int twin_k = -1; // the mirror beween us and our twin
+    /*int twin_k = -1;*/ // the mirror beween us and our twin
     /*bool twin_extra = false;*/ // does our twin have a longer address than us?
     
     // the minkowski product with the nearest mirror we've flipped across so
@@ -414,14 +417,14 @@ void main_none() {
     
     while (flips < 40) {
       for (int k = 0; k < 3; k++) {
-        if (flips == 1 && twin == index) green_flag = true;
+        /*if (flips == 1 && twin == index) green_flag = true;*/ /*TEST*/
         float mirror_prod = mprod(mirrors[k], v);
         if (mirror_prod > EPS) {
-          if (k != twin_k && mirror_prod < twin_prod) {
+          if (mirror_prod < twin_prod - EPS) {
             // the twin that didn't flip here would be closer than our current
             // twin, so start following that twin instead
             twin = index;
-            twin_k = k;
+            /*twin_k = k;*/
             twin_prod = mirror_prod;
           } else {
             twin = tri_tree[7*twin + k];
@@ -434,23 +437,21 @@ void main_none() {
         } else {
           onsides += 1;
           
-          if (k != twin_k && -mirror_prod < twin_prod) {
+          if (-mirror_prod < twin_prod - EPS) {
             // the twin that did flip here would be closer than our current twin
             // twin, so start following that twin instead
             twin = tri_tree[7*index + k];
-            twin_k = k;
+            /*twin_k = k;*/
             twin_prod = -mirror_prod;
           }
           
           if (onsides >= 3) {
             // we're in the fundamental domain, on the negative side of every mirror
             
-            if (twin > 1) blue_flag = true;
-            
-            vec3 test_color = vec3(0.5*mod(flips, 2));
+            /*vec3 test_color = vec3(0.5*mod(flips, 2));
             test_color = min(test_color + vec3(0., float(green_flag), float(blue_flag)), vec3(1.));
             gl_FragColor = vec4(test_color, 1.);
-            return;
+            return;*/
             
             cjet z = cover(v, r_sq);
             vec3 color = strip_color(
