@@ -38,7 +38,8 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
-uniform int tri_tree [1022];
+//uniform int tri_tree [1022];
+uniform int tri_tree [672];
 uniform bool bdry_lit;
 
 // --- complex arithmetic ---
@@ -450,8 +451,10 @@ void main_dessin() {
             int twin_trim = tri_tree[7*twin + 5 + side];
             
             // find trim colors
-            int inner_trim = max(trim[0], trim[1]);
-            int outer_trim = (twin_k > 0) ? min(trim[side], twin_trim) : trim[side];
+            //int inner_trim = max(trim[0], trim[1]);
+            //int inner_trim = max(trim.x, trim.y);
+            int inner_trim = int(max(trim[0], trim[1]));
+            int outer_trim = (twin_k > 0) ? int(min(trim[side], twin_trim)) : trim[side];
             
             // estimate the hyperbolic distance to the nearest mirror and the
             // nearest trim mirror, using the fact that the minkowski metric
@@ -580,7 +583,8 @@ class TilingCanvas(app.Canvas):
     self.domain = None
     
     # initialize triangle-coloring tree
-    for m in range(1022):
+    #for m in range(1022):
+    for m in range(672):
       self.program['tri_tree[{}]'.format(m)] = 0
     if lit:
       self.load_empty_tree(True)
