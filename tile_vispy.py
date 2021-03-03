@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QValidator
 from vispy import app, gloo
 import vispy.util.keys as keys
+import vispy.io as io
 from math import sqrt, cos, sin, pi, floor
 from numpy import array, dot
 
@@ -592,8 +593,8 @@ class TilingCanvas(app.Canvas):
     self.set_paint_color(1)
     self.set_selection(None)
   
-  def update_resolution(self):
-    width, height = self.physical_size
+  def update_resolution(self, size=None):
+    width, height = size if size else self.physical_size
     gloo.set_viewport(0, 0, width, height)
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
@@ -770,6 +771,23 @@ class TilingCanvas(app.Canvas):
         self.selection_display.setText(
           'Side {} of triangle {}'.format(self.selection_side, self.selection)
         )
+  
+  def render(self):
+        self.set_current()
+        size = (400, 400)
+        fbo = gloo.FrameBuffer(
+          color=gloo.RenderBuffer(size[::-1]),
+          depth=gloo.RenderBuffer(size[::-1])
+        )
+        
+        try:
+            self.update_resolution(size)
+            fbo.activate()
+            self.events.draw()
+            return fbo.read()
+        finally:
+            fbo.deactivate()
+            self.update_resolution()
 
 class DessinControlPanel(qt.QWidget):
   def __init__(self, canvas, *args, **kwargs):
@@ -1059,8 +1077,11 @@ class TilingWindow(qt.QMainWindow):
     self.canvas.paint_display = qt.QLabel()
     self.canvas.paint_display.setMaximumWidth(40)
     self.canvas.paint_display.setAlignment(Qt.AlignCenter)
+    export_button = qt.QPushButton("Export")
+    export_button.clicked.connect(self.export_image)
     work_info_bar.layout().addWidget(self.canvas.selection_display)
     work_info_bar.layout().addWidget(self.canvas.paint_display)
+    work_info_bar.layout().addWidget(export_button)
     central.layout().addWidget(work_info_bar)
     
     # set up control panels for tilings, working domains, and saved domains
@@ -1078,6 +1099,14 @@ class TilingWindow(qt.QMainWindow):
   
   def change_mode(self, index):
     self.control_panels.currentWidget().take_the_canvas()
+  
+  def export_image(self):
+    image = self.canvas.render()
+    if self.canvas.domain:
+      name = self.canvas.domain.name()
+    else:
+      name = "tiling-(" + ','.join(map(str, self.canvas.orders)) + ")"
+    io.write_png("export/" + name + ".png", image)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
   main_app = qt.QApplication(sys.argv)
