@@ -34,9 +34,9 @@ function setOrbitDisplay() {
 <body>
 <h1>Who wants to be a Belyionaire?</h1>
 <div class="intro">
-  <div>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</div>
+  <p>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</p>
   <div class="orbits">
-    <div id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</div>
+    <p id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</p>
     <div class="orbit-controls">
       <div>
         <input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()"/>
@@ -51,7 +51,9 @@ function setOrbitDisplay() {
   </div>
 </div>
 <h2>Maps to sort</h2>
-<div id="tray-0" class="tray"></div>
+<div class="tray-container">
+  <div id="tray-0" class="tray"></div>
+</div>
 <div style="display: flex; max-width: 100%">
   <div class="tray-container" style="min-width: 340px; max-width: 340px">
     <h2>The odd one</h2>

@@ -1,5 +1,9 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
-  margin: 40px 40px 40px 40px;
+  margin: 20px 40px 20px 40px;
   font-family: 'Lato', sans-serif;
   font-size: 17px;
 }
@@ -13,8 +17,8 @@ h1 {
   margin-bottom: 5px;
 }
 
-div {
-  margin-bottom: 20px;
+p {
+  margin: 0 0 20px 0;
 }
 
 .intro {
@@ -22,6 +26,7 @@ div {
 }
 
 .orbits {
+  margin-bottom: 20px;
   padding: 15px 15px 15px 15px;
   background-color: #ddddff;
 }
@@ -53,6 +58,7 @@ div {
 }
 
 .tray-container {
+  margin-bottom: 20px;
 }
 
 .tray {
@@ -60,7 +66,7 @@ div {
   overflow-x: scroll;
   width: 100%;
   min-height: 350px;
-  margin-bottom: 20px;
+  padding: 10px 10px 10px 10px;
   border: 1px solid #999999;
 }
 
@@ -72,6 +78,5 @@ div {
   font-size: 40px;
   min-width: 300px;
   min-height: 300px;
-  margin-top: 10px;
-  margin-left: 10px;
+  margin-right: 10px;
 }
