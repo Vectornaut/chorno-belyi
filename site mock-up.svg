@@ -49,9 +49,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.39828539"
-     inkscape:cx="-742.37077"
-     inkscape:cy="-1209.3881"
+     inkscape:zoom="0.45332583"
+     inkscape:cx="946.41454"
+     inkscape:cy="-1177.2471"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -222,14 +222,14 @@
        y="351.71729"
        transform="rotate(-90)" />
     <rect
-       style="fill:#e3dbdb;stroke:none;stroke-width:0.899999;stop-color:#000000"
+       style="fill:#dbe0e6;stroke:none;stroke-width:0.899999;stop-color:#000000;fill-opacity:1"
        id="rect903-4"
        width="508"
        height="285.75"
        x="2.679064"
        y="-497.11215" />
     <rect
-       style="fill:#ececec;fill-opacity:1;stroke:none;stroke-width:0.899999;stop-color:#000000"
+       style="fill:#eff8fa;fill-opacity:1;stroke:none;stroke-width:0.899999;stop-color:#000000"
        id="rect1057"
        width="383.12073"
        height="77.71344"
@@ -261,7 +261,7 @@
        y="-83.817314"
        transform="rotate(90)" />
     <rect
-       style="fill:#ececec;fill-opacity:1;stroke:none;stroke-width:0.9;stop-color:#000000"
+       style="fill:#eff8fa;fill-opacity:1;stroke:none;stroke-width:0.9;stop-color:#000000"
        id="rect1101"
        width="76.9636"
        height="220.57288"
@@ -269,7 +269,7 @@
        y="13.214144"
        transform="rotate(-90)" />
     <rect
-       style="fill:#ececec;fill-opacity:1;stroke:none;stroke-width:0.899999;stop-color:#000000"
+       style="fill:#eff8fa;fill-opacity:1;stroke:none;stroke-width:0.899999;stop-color:#000000"
        id="rect1412"
        width="384.66418"
        height="59.614719"
@@ -341,7 +341,7 @@
          y="-509.19766"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Symbola;-inkscape-font-specification:'Symbola Bold';stroke-width:0.264584px">Landing page</tspan></text>
     <rect
-       style="fill:#ececec;fill-opacity:1;stroke:none;stroke-width:0.9;stop-color:#000000"
+       style="fill:#eff8fa;fill-opacity:1;stroke:none;stroke-width:0.9;stop-color:#000000"
        id="rect1227"
        width="76.9636"
        height="78.007683"
