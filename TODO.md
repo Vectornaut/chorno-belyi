@@ -20,7 +20,10 @@
       2. [Passport 7T6-5.1.1_4.2.1_3.2.2](https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/)
       3. **Mike**—[Passport 7T6-7_7_3.2.2/](https://beta.lmfdb.org/Belyi/7T6/7/7/3.2.2/)
    2. Lay out web page for potential presentation at Bridges
-      1. ~~Learn about Javascript drag-and-drop for sort and check game mechanic~~
-      2. ~~Mock up landing page~~
-      3. Sketch working landing page
-      4. **Sam**—Sketch background page
+      ~1. Learn about Javascript drag-and-drop for sort and check game mechanic~
+      ~2. Mock up landing page~
+      3. Realize landing page in HTML / CSS / JavaScript.
+      4. Keep writing [copy](https://www.overleaf.com/project/602d325ad20f545c8b297465).
+   3. Make images to populate web page
+      1. Color 0 white and 1 black.
+      1. Describe domain-finding algorithm, at least informally (to standardize our work).

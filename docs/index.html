@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8">
+<title>Orbit sorting</title>
+
+<style>
+div {
+  margin-bottom: 20px;
+}
+
+.tray {
+  display: flex;
+  overflow-x: scroll;
+  width: 100%;
+  min-height: 350px;
+  margin-bottom: 20px;
+  border: 1px solid #999999;
+}
+
+#tray-1 {
+  max-width: 340px;
+}
+
+#tray-2 {
+  margin-left: 20px;
+}
+
+.tray > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-size: 40px;
+  min-width: 300px;
+  min-height: 300px;
+  margin-top: 10px;
+  margin-left: 10px;
+}
+</style>
+
+<!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+var orbits = [0, 1, 0, 0];
+var orbitColors = ['#33cc55', '#9955bb'];
+
+function setOrbitDisplay() {
+  var show = document.getElementById('show-orbits').checked;
+  var i;
+  for (i = 0; i < orbits.length; i++) {
+    document.getElementById('box-' + i).style.backgroundColor = show ? orbitColors[orbits[i]] : '#cccccc';
+  }
+  document.getElementById('orbit-trivia').style.visibility = show ? 'visible' : 'hidden';
+}
+</script>
+
+</head>
+
+<body>
+<h1>Who wants to be a Belyionaire?</h1>
+<div>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</div>
+<div>
+<div id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</div>
+<h2 style="display: flex">
+<input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()">Reveal answers</input>
+<div style="margin-left: 30px">
+View on LMFDB:
+<a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/a">A</a>
+<a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/b">B</a>
+</div>
+</h2>
+<div id="tray-0" class="tray"></div>
+<div style="display: flex">
+<div id="tray-1" class="tray"></div>
+<div id="tray-2" class="tray"></div>
+</div>
+
+<script>
+var i;
+
+// make tray contents sortable
+for (i = 0; i < 3; i++) {
+  new Sortable(document.getElementById('tray-' + i), {group: 'shared', animation: 150});
+}
+
+// create boxes
+tray = document.getElementById('tray-0');
+for (i = 0; i < orbits.length; i++) {
+  box = document.createElement('div');
+  box.id = 'box-' + i;
+  box.innerHTML = i;
+  tray.appendChild(box);
+}
+setOrbitDisplay();
+</script>
+</body>
+</html>
