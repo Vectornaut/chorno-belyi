@@ -5,40 +5,12 @@
 <meta charset="utf-8">
 <title>Orbit sorting</title>
 
-<style>
-div {
-  margin-bottom: 20px;
-}
+<link rel="stylesheet" href="chorno-belyi.css">
 
-.tray {
-  display: flex;
-  overflow-x: scroll;
-  width: 100%;
-  min-height: 350px;
-  margin-bottom: 20px;
-  border: 1px solid #999999;
-}
-
-#tray-1 {
-  max-width: 340px;
-}
-
-#tray-2 {
-  margin-left: 20px;
-}
-
-.tray > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  font-size: 40px;
-  min-width: 300px;
-  min-height: 300px;
-  margin-top: 10px;
-  margin-left: 10px;
-}
-</style>
+<!-- web fonts -->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&display=swap" rel="stylesheet"><!-- main body font -->
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&display=swap" rel="stylesheet"><!-- heading font -->
 
 <!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -61,21 +33,40 @@ function setOrbitDisplay() {
 
 <body>
 <h1>Who wants to be a Belyionaire?</h1>
-<div>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</div>
-<div>
-<div id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</div>
-<h2 style="display: flex">
-<input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()">Reveal answers</input>
-<div style="margin-left: 30px">
-View on LMFDB:
-<a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/a">A</a>
-<a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/b">B</a>
+<div class="intro">
+  <div>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</div>
+  <div class="orbits">
+    <div id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</div>
+    <div class="orbit-controls">
+      <div>
+        <input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()"/>
+        <label for="show-orbits">Reveal answers</label>
+      </div>
+      <div>
+        <a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/a"><div class="orbit-link">A</div></a>
+        <a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/b"><div class="orbit-link">B</div></a>
+        View on LMFDB
+      </div>
+    </div>
+  </div>
 </div>
-</h2>
+<h2>Maps to sort</h2>
 <div id="tray-0" class="tray"></div>
-<div style="display: flex">
-<div id="tray-1" class="tray"></div>
-<div id="tray-2" class="tray"></div>
+<div style="display: flex; max-width: 100%">
+  <div class="tray-container" style="min-width: 340px; max-width: 340px">
+    <h2>The odd one</h2>
+    <div id="tray-1" class="tray"></div>
+  </div>
+  <!--
+    setting a min-width gives the container permission to stop growing even if
+    its child wants more room. that puts the child into overflow, so in our case
+    the child will scroll
+    https://gaurav5430.medium.com/css-flex-positioning-gotchas-child-expands-to-more-than-the-width-allowed-by-the-parent-799c37428dd6
+  -->
+  <div class="tray-container" style="margin-left: 20px; min-width: 0; flex-grow: 1">
+    <h2>The related ones</h2>
+    <div id="tray-2" class="tray"></div>
+  </div>
 </div>
 
 <script>

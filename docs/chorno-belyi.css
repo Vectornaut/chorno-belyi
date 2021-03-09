@@ -1,0 +1,77 @@
+body {
+  margin: 40px 40px 40px 40px;
+  font-family: 'Lato', sans-serif;
+  font-size: 17px;
+}
+
+h1, h2 {
+  margin: 0 0 0 0;
+  font-family: 'Baloo 2', sans-serif;
+}
+
+h1 {
+  margin-bottom: 5px;
+}
+
+div {
+  margin-bottom: 20px;
+}
+
+.intro {
+  max-width: 900px;
+}
+
+.orbits {
+  padding: 15px 15px 15px 15px;
+  background-color: #ddddff;
+}
+
+.orbit-controls {
+  margin-bottom: 0;
+  line-height: 30px;
+  display: flex;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 23px;
+}
+
+.orbit-controls > div {
+  margin-right: 30px;
+  margin-bottom: 0;
+}
+
+.orbit-controls > input {
+  vertical-align: middle;
+  position: relative;
+}
+
+.orbit-link {
+  margin-bottom: 0;
+  display: inline-block;
+  text-align: center;
+  min-width: 30px;
+  background-color: #eeeeff;
+}
+
+.tray-container {
+}
+
+.tray {
+  display: flex;
+  overflow-x: scroll;
+  width: 100%;
+  min-height: 350px;
+  margin-bottom: 20px;
+  border: 1px solid #999999;
+}
+
+.tray > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-size: 40px;
+  min-width: 300px;
+  min-height: 300px;
+  margin-top: 10px;
+  margin-left: 10px;
+}
