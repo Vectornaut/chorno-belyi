@@ -29,14 +29,24 @@ function setOrbitDisplay() {
 }
 </script>
 
+<!-- MathJax -->
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3.0.0/es5/tex-mml-chtml.js">
+</script>
+
 </head>
 
 <body>
 <h1>Who wants to be a Belyionaire?</h1>
 <div class="intro">
-  <p>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</p>
+  <p>
+  <!--    These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out? -->
+  Below are four <i>dessins d'enfants</i> (children's drawings), which are a certain kind of bicolored graph. Each one represents a different <a href=""><i>Belyi map</i></a>&mdash;three-pointed branch covers of the Riemann sphere. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?
+  </p>
   <div class="orbits">
-    <p id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</p>
+    <p id="orbit-trivia" style="visibility: hidden">
+      In this case, the three related Belyi maps can only be defined over the extension of the rational numbers obtained by adjoining a root of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38. They are related by the field automorphisms that permute the roots of this polynomial. By contrast, the odd one out can be defined using only rational numbers. you also need the 
+    </p>
     <div class="orbit-controls">
       <div>
         <input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()"/>
