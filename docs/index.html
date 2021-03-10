@@ -39,14 +39,24 @@ function setOrbitDisplay() {
 }
 </script>
 
+<!-- MathJax -->
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
 </head>
 
 <body>
 <h1>Who wants to be a Belyionaire?</h1>
 <div class="intro">
-  <p>These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out?</p>
+  <p>
+  <!--    These four drawings represent <a href="">Belyi maps</a>&mdash;cousins of the Mercator and Peirce projections used to make maps of the globe. Three of them are related by symmetries, and one of them stands alone. Can you spot the odd one out? -->
+  Below are four <a id="dessin"><i>dessins d'enfants</i></a> (children's drawings), which are a certain kind of bicolored graph. Each one represents a different <a id="Belyi"><i>Belyi map</i></a>&mdash;three-pointed branched covers of the Riemann sphere. Three of them are related by symmetries of algebraic numbers, while one of them stands alone. Can you spot the odd one out?
+  </p>
   <div class="orbits">
-    <p id="orbit-trivia" style="visibility: hidden">In this case, the three related Belyi maps can be described using only rational numbers. For the odd one out, you also need the roots of the polynomial x<sup>3</sup> − x<sup>2</sup> + 2x − 38.</p>
+    <p id="orbit-trivia" style="visibility: hidden">
+      In this case, the three related Belyi maps can only be defined over the extension of the rational numbers obtained by adjoining a root of the polynomial \(x^3 - x^2 + 2x − 38\). They are related by the field automorphisms that permute the roots of this polynomial. By contrast, the odd one out can be defined using only rational numbers.
+    </p>
     <div class="orbit-controls">
       <div>
         <input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()"/>
@@ -99,5 +109,35 @@ for (i = 0; i < orbits.length; i++) {
 }
 setOrbitDisplay();
 </script>
+
+<h2 id="Belyi">What is a Belyi map?</h2>
+  <p>
+    A <i>Belyi map</i> is a holomorphic map \(\varphi: X \to \widehat{\mathbb{C}}\) from a Riemann surface to the Riemann sphere whose critical points each map to \(0, 1\), or \(\infty\). Equivalently, a Belyi map \(\varphi: X \to \mathbb{P}^1\) is a morphism of algebraic curves over \(\mathbb{C}\) that is unramified outside of \(\{0, 1, \infty\}\).
+  </p>
+
+<h2>Why are they interesting?</h2>
+  <p>
+    In 1979, G. V. Belyi proved that an algebraic curve over \(\mathbb{C}\) can be defined over \(\overline{\mathbb{Q}}\) if and only if it admits a Belyi map. In this case, the Belyi map can also be defined over \(\overline{\mathbb{Q}}\).
+  </p>
+
+<h2 id="dessin">What is a dessin d'enfant?</h2>
+  <p>
+    A <i>dessin d'enfant</i> (child's drawing) is a finite, connected graph \(D\) embedded in an oriented compact topological surface \(X\) whose vertices are bicolored, such that its complement \(X \setminus D\) is the union of finitely many topological discs.
+  </p>
+
+<h2>Why are they interesting?</h2>
+  <p>
+    In 1984, Grothendieck gave a bijection between Belyi maps and dessins d'enfants. One direction is easy to describe: we first realize the unit interval \(I\) as a dessin on \(\mathbb{P}^1\) by putting a white vertex at \(0\), a black vertex at \(1\), and connecting them with an edge along the real axis. Given a Belyi map \(\varphi: X \to \mathbb{P}^1\), we obtain a dessin \(D\) on \(X\) by pulling back \(I\) under \(\varphi\), so \(D = \varphi^{-1}(I)\).
+  </p>
+  <p>
+    Given a Belyi map \(\varphi: X \to \mathbb{P}^1\), both \(X\) and \(\varphi\) can be defined by equations with coefficients in \(\overline{\mathbb{Q}}\). Thus we get an action of the absolute Galois group \(\operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\) on the set of Belyi maps: an element \(\sigma \in \operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\) acts on \(\varphi\) by acting on its coefficients.
+  </p>
+  <p>
+    Since Belyi maps and dessins are in bijection, there is an induced action of \(\operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\) on the set of dessins. Grothendieck wondered if there was a way to understand the action \(\operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\) on Belyi maps through this induced action on these children's drawings. In particular, can one tell if two dessins are Galois conjugate simply by studying their combinatorial or topological features? This would provide a very concrete way of understanding the important and mysterious group \(\operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\)!
+  </p>
+  <p>
+    In this game, we present you with a collection of dessins, and ask you to try group them into Galois orbits, i.e., place all dessins that are Galois conjugate to each other in the corresponding boxes. Can you find some distinguishing features that tell you that two dessins are Galois conjugate? This is no small feat, so don't be discouraged if you get stumped!
+  </p>
+
 </body>
 </html>
