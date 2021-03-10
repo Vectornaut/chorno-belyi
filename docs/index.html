@@ -7,6 +7,16 @@
 
 <link rel="stylesheet" href="chorno-belyi.css">
 
+<style>
+#orbit-a {
+  background-color: #28b8f2;
+}
+
+#orbit-b {
+  background-color: #fa9004;
+}
+</style>
+
 <!-- web fonts -->
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&display=swap" rel="stylesheet"><!-- main body font -->
@@ -17,7 +27,7 @@
 
 <script>
 var orbits = [0, 1, 0, 0];
-var orbitColors = ['#33cc55', '#9955bb'];
+var orbitColors = ['#28b8f2', '#fa9004'];
 
 function setOrbitDisplay() {
   var show = document.getElementById('show-orbits').checked;
@@ -43,14 +53,14 @@ function setOrbitDisplay() {
         <label for="show-orbits">Reveal answers</label>
       </div>
       <div>
-        <a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/a"><div class="orbit-link">A</div></a>
-        <a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/b"><div class="orbit-link">B</div></a>
+        <a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/a"><div id="orbit-a" class="orbit-link">A</div></a>
+        <a href="https://beta.lmfdb.org/Belyi/7T6/5.1.1/4.2.1/3.2.2/b"><div id="orbit-b" class="orbit-link">B</div></a>
         View on LMFDB
       </div>
     </div>
   </div>
 </div>
-<h2>Maps to sort</h2>
+<h2>Drawings to sort</h2>
 <div class="tray-container">
   <div id="tray-0" class="tray"></div>
 </div>

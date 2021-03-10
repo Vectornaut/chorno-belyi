@@ -6,6 +6,7 @@ body {
   margin: 20px 40px 20px 40px;
   font-family: 'Lato', sans-serif;
   font-size: 17px;
+  background-color: #b8e5fe;
 }
 
 h1, h2 {
@@ -15,6 +16,10 @@ h1, h2 {
 
 h1 {
   margin-bottom: 5px;
+}
+
+a {
+  color: inherit;
 }
 
 p {
@@ -28,7 +33,7 @@ p {
 .orbits {
   margin-bottom: 20px;
   padding: 15px 15px 15px 15px;
-  background-color: #ddddff;
+  background-color: #d6edfe;
 }
 
 .orbit-controls {
@@ -54,7 +59,6 @@ p {
   display: inline-block;
   text-align: center;
   min-width: 30px;
-  background-color: #eeeeff;
 }
 
 .tray-container {
@@ -68,7 +72,7 @@ p {
   min-height: 350px;
   padding-top: 10px;
   padding-bottom: 10px;
-  border: 1px solid #999999;
+  background-color: #d6edfe;
 }
 
 .tray > div {
