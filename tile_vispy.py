@@ -323,12 +323,12 @@ vec3 strip_color(
 ) {
   // set up edge palette
   vec3 edge_palette [6];
-  edge_palette[0] = vec3(1.00, 0.43, 0.00);
-  edge_palette[1] = vec3(1.00, 0.87, 0.21);
-  edge_palette[2] = vec3(0.92, 0.67, 0.96);
-  edge_palette[3] = vec3(0.64, 0.07, 0.73);
-  edge_palette[4] = vec3(0.40, 0.00, 0.29);
-  edge_palette[5] = vec3(0.30, 0.11, 0.68);
+  edge_palette[0] = vec3(231.,  48.,  44.) / 255.;
+  edge_palette[1] = vec3(250., 144.,   4.) / 255.;
+  edge_palette[2] = vec3(255., 242.,   0.) / 255.;
+  edge_palette[3] = vec3( 40., 184., 242.) / 255.;
+  edge_palette[4] = vec3(128.,  90., 244.) / 255.;
+  edge_palette[5] = vec3( 58.,  39., 178.) / 255.;
   
   // get strip coordinate and side
   cjet h = scale(8./PI, casin(z));
@@ -555,14 +555,7 @@ def tri_tree_key(index, attr):
   return 'tri_tree[{}]'.format(7*index + attr)
 
 class TilingCanvas(app.Canvas):
-  edge_palette = [
-    '#ff6e00',
-    '#ffde36',
-    '#ebabf5',
-    '#a312ba',
-    '#66004a',
-    '#4c1cad'
-  ]
+  edge_palette = ['#e7302c', '#fa9004', '#fff200', '#28b8f2', '#805af4', '#3a27b2']
   
   def __init__(self, p, q, r, lit=True, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -756,7 +749,7 @@ class TilingCanvas(app.Canvas):
     if self.paint_display:
       self.paint_display.setText(str(self.paint_color))
       if self.paint_color <= len(self.edge_palette):
-        textcolor = 'black' if self.paint_color <= 3 else 'white'
+        textcolor = 'black' if self.paint_color == 3 else 'white'
         bgcolor = self.edge_palette[self.paint_color-1]
       else:
         textcolor = 'black'
