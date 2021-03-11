@@ -312,6 +312,10 @@ vec3 line_mix(vec3 stroke, vec3 bg, float width, float pattern_disp, float scali
   return mix(bg, stroke, line_part(width, pattern_disp, scaling, r_px));
 }
 
+vec4 line_mix(vec4 stroke, vec4 bg, float width, float pattern_disp, float scaling, float r_px) {
+  return mix(bg, stroke, line_part(width, pattern_disp, scaling, r_px));
+}
+
 // --- strip coloring ---
 
 const float PI = 3.141592653589793;
@@ -367,7 +371,7 @@ vec3 strip_color(
 
 // --- tiling ---
 
-const float VIEW = 1.2;
+const float VIEW = 1.02;
 const float EPS = 1e-6;
 const float TWIN_EPS = 1e-5;
 
@@ -408,7 +412,7 @@ void main_dessin() {
     //
     float twin_prod = 0.6667;
     
-    while (flips < 40) {
+    while (flips < 60) {
       for (int k = 0; k < 3; k++) {
         mirror_prod[k] = mprod(v, mirrors[k]);
         if (mirror_prod[k] > EPS) {
@@ -482,12 +486,10 @@ void main_dessin() {
         }
       }
     }
-    gl_FragColor = vec4(0., 1., 0., 1.); /*[DEBUG] real axis speckles*/
-    return; /*[DEBUG] real axis speckles*/
+    //gl_FragColor = vec4(0., 1., 0., 1.); /*[DEBUG] real axis speckles*/
+    //return; /*[DEBUG] real axis speckles*/
   }
-  vec3 color = vec3(0.25, 0.15, 0.35);
-  color = line_mix(bdry_color, color, 2, r_sq - 1., 2., r_px);
-  gl_FragColor = vec4(color, 1.);
+  gl_FragColor = line_mix(vec4(bdry_color, 1.), vec4(0.), 2, r_sq - 1., 2., r_px);
 }
 
 void main_tiling() {
@@ -712,7 +714,7 @@ class TilingCanvas(app.Canvas):
   
   def on_mouse_release(self, event):
     # find screen coordinate
-    VIEW = 1.2
+    VIEW = 1.02
     u = VIEW*(2*array(event.pos) - self.program['resolution']) / self.program['shortdim']
     r_sq = dot(u, u)
     

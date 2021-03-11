@@ -26,6 +26,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 <script>
+var dessins = [
+  '7T6-5.1.1_4.2.1_3.2.2-b-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).png',
+  '7T6-5.1.1_4.2.1_3.2.2-b-(1,5,7,6,4),(1,2,3,4)(5,6),(1,3,2)(4,5)(6,7).png',
+  '7T6-5.1.1_4.2.1_3.2.2-a-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).png',
+  '7T6-5.1.1_4.2.1_3.2.2-b-(1,6,4,2,7),(1,2,3,4)(5,6),(1,7)(2,3)(4,5,6).png'
+]
 var orbits = [1, 1, 0, 1];
 var orbitColors = ['#28b8f2', '#fa9004'];
 
@@ -33,7 +39,7 @@ function setOrbitDisplay() {
   var show = document.getElementById('show-orbits').checked;
   var i;
   for (i = 0; i < orbits.length; i++) {
-    document.getElementById('box-' + i).style.backgroundColor = show ? orbitColors[orbits[i]] : '#cccccc';
+    document.getElementById('box-' + i).style.backgroundColor = show ? orbitColors[orbits[i]] : 'inherit';
   }
   document.getElementById('orbit-trivia').style.visibility = show ? 'visible' : 'hidden';
 }
@@ -79,7 +85,7 @@ function setOrbitDisplay() {
   <div id="tray-0" class="tray"></div>
 </div>
 <div style="display: flex; max-width: 100%">
-  <div class="tray-container" style="min-width: 340px; max-width: 340px">
+  <div class="tray-container" style="min-width: 360px; max-width: 360px">
     <h2>The odd one</h2>
     <div id="tray-1" class="tray"></div>
   </div>
@@ -108,7 +114,7 @@ tray = document.getElementById('tray-0');
 for (i = 0; i < orbits.length; i++) {
   box = document.createElement('div');
   box.id = 'box-' + i;
-  box.innerHTML = i;
+  box.innerHTML = '<img src="dessins/' + dessins[i] + '">';
   tray.appendChild(box);
 }
 setOrbitDisplay();
