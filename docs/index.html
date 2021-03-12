@@ -121,77 +121,71 @@ setOrbitDisplay();
 </script>
 
 <h1>Technical FAQ</h1>
-<div>
-  <div>
-    <h2 id="Belyi">What is a Belyi map?</h2>
-      <p>
-        <img src="images/belyi_image.png" alt="belyi" width="30%" style:"float:right">
-        <!--A <i>Belyi map</i> is a holomorphic map \(\varphi \colon X \to \widehat{\mathbb{C}}\) from a Riemann surface to the Riemann sphere whose critical points each map to \(0, 1\), or \(\infty\). Equivalently, a Belyi map \(\varphi \colon X \to \mathbb{P}^1\) is a morphism of algebraic curves over \(\mathbb{C}\) that is unramified outside of \(\{0, 1, \infty\}\).-->
-        A Belyi map is a special kind of map from a surface to the sphere.
-        <ul>
-          <li><b>Geometrically,</b> it's a mostly angle-preserving map from a rigid surface to a round sphere. At three special points on the sphere, labeled \(0\), \(1\), and \(\infty\), it's allowed to multiply angles by a whole number instead of preserving them.</li>
-          <li><b>Analytically,</b> it's a holomorphic map from a Riemann surface to the Riemann sphere whose critical points each map to \(0, 1\), or \(\infty\).</li>
-          <li><b>Algebraically,</b> it's a morphism from a complex algebraic curve to \(\mathbb{P}^1\) which is unramified away from \(0\), \(1\), and \(\infty\).</li>
-        </ul>
-      </p>
+  <h2 id="Belyi">What is a Belyi map?</h2>
+    <p>
+      <img src="images/belyi_image.png" alt="belyi" width="30%" style:"float:right">
+      <!--A <i>Belyi map</i> is a holomorphic map \(\varphi \colon X \to \widehat{\mathbb{C}}\) from a Riemann surface to the Riemann sphere whose critical points each map to \(0, 1\), or \(\infty\). Equivalently, a Belyi map \(\varphi \colon X \to \mathbb{P}^1\) is a morphism of algebraic curves over \(\mathbb{C}\) that is unramified outside of \(\{0, 1, \infty\}\).-->
+      A Belyi map is a special kind of map from a surface to the sphere.
+      <ul>
+        <li><b>Geometrically,</b> it's a mostly angle-preserving map from a rigid surface to a round sphere. At three special points on the sphere, labeled \(0\), \(1\), and \(\infty\), it's allowed to multiply angles by a whole number instead of preserving them.</li>
+        <li><b>Analytically,</b> it's a holomorphic map from a Riemann surface to the Riemann sphere whose critical points each map to \(0, 1\), or \(\infty\).</li>
+        <li><b>Algebraically,</b> it's a morphism from a complex algebraic curve to \(\mathbb{P}^1\) which is unramified away from \(0\), \(1\), and \(\infty\).</li>
+      </ul>
+    </p>
 
-    <h2>Why are Belyi maps interesting?</h2>
-      <p>
-        In 1979, G. V. Belyi proved that an algebraic curve over \(\mathbb{C}\) can be defined over \(\overline{\mathbb{Q}}\) if and only if it admits a Belyi map. In this case, the Belyi map can also be defined over \(\overline{\mathbb{Q}}\).
-      </p>
-    <!--<img src="images/belyi_image.png" alt="belyi" style:"float:right;width:30%">-->
-    <!--<img src="images/belyi_image.png" alt="belyi" style="float:right;width:200px;margin-left:10px;">-->
-    <!--<img src="" alt="Pineapple" style="width:170px;height:170px;margin-right:15px;">-->
-  </div>
-
-  <div>
-    <h2 id="dessin">What is a dessin d'enfant?</h2>
-      <p>
-        <img src="images/dessin_image.png" alt="dessin" style:"float:right;width:30%">
-        <!-- A <i>dessin d'enfant</i> (child's drawing) is a finite, connected graph \(D\) embedded in an oriented compact topological surface \(X\) whose vertices are bicolored, such that its complement \(X \setminus D\) is the union of finitely many topological discs. -->
-        A dessin is a special kind of ribbon graph. A <i>ribbon graph</i> is a finite set of rectangular strips glued together at the ends. Each end is divided in half, and each half-end is glued to another half-end.
-      </p>
-      <p>
-        A <i>dessin d'enfant</i> is an orientable ribbon graph where each strip is black on one end and white on the other. Ends can only be glued if their colors match. We require dessins to be connected.
-      </p>
-      <p>
-        A ribbon graph is <i>completed</i> when it's embedded in a surface so that its complement is a set of disks. Any ribbon graph can be completed, by gluing disks along the loops formed by the sides of the strips. Since a dessin is a kind of ribbon graph, dessins can be completed too.
-      </p>
-
-    <h2>Why are dessins interesting?</h2>
-      <p>
-        The let us describe Belyi maps using simple pictures instead of complicated formulas.
-      </p>
-      <p>
-        In 1984, Alexander Grothendieck pointed out that a Belyi map \(X \to \widehat{\mathbb{C}}\) gives a completed dessin d'enfant on \(X\) by pulling a prototype dessin back from \(\widehat{\mathbb{C}}\). He proved that the Belyi map is fully described by its dessin, and that every completed dessin on \(X\) describes a Belyi map.
-      </p>
-      <p>
-        The prototype dessin on \(\widehat{\mathbb{C}}\) has one strip, which runs along the interval \([0, 1]\). The white end is at \(0\) and the black end is at \(1\). Each end of the strip has its halves glued together.
-      </p>
-        <!--<ol>
-          <li>
-            Draw a basic completed dessin \(I\) on \(\widehat{\mathbb{C}}\).
-            <ol>
-              <li>Place a black and white strip along the interval \([0, 1] \subset \widehat{\mathbb{C}}\), with the white end at \(0\) and the black end at \(1\).
-              <li>Seal each end of the strip by gluing its halves together.</li>
-            </ol>
-          </li>
-          <li>Pull \(I\) back along \(\varphi\), giving a completed dessin on \(X\).</li>
-        </ol>
-      </p>
-      <p>-->
-      <p>
-        To see how dramatically dessins d'enfants simplify the description of Belyi maps, consider the odd map out in the puzzle above. Algebraically, it's described by the formula
-        <div style="margin-left: 20px; margin-bottom: 20px">\(\displaystyle 373248 \frac{ 75 x^{7} + 25 x^{6} + 2 x^{5} } { 15855175 x^{7} + 13000190 x^{6} + 2792748 x^{5} - 264680 x^{4} - 142000 x^{3} - 6240 x^{2} + 1600 x + 128 }\)</div>
-        Its dessin is much easier to take in.
-      </p>
-      <!-- <p>
-        In 1984, Grothendieck gave a bijection between Belyi maps and dessins d'enfants. One direction is easy to describe: we first realize the unit interval \(I\) as a dessin on \(\mathbb{P}^1\) by putting a white vertex at \(0\), a black vertex at \(1\), and connecting them with an edge along the real axis. Given a Belyi map \(\varphi \colon X \to \mathbb{P}^1\), we obtain a dessin \(D\) on \(X\) by pulling back \(I\) under \(\varphi\), so \(D = \varphi^{-1}(I)\).
-      </p> -->
-  </div>
+  <h2>Why are Belyi maps interesting?</h2>
+    <p>
+      In 1979, G. V. Belyi proved that an algebraic curve over \(\mathbb{C}\) can be defined over \(\overline{\mathbb{Q}}\) if and only if it admits a Belyi map. In this case, the Belyi map can also be defined over \(\overline{\mathbb{Q}}\).
+    </p>
+  <!--<img src="images/belyi_image.png" alt="belyi" style:"float:right;width:30%">-->
+  <!--<img src="images/belyi_image.png" alt="belyi" style="float:right;width:200px;margin-left:10px;">-->
+  <!--<img src="" alt="Pineapple" style="width:170px;height:170px;margin-right:15px;">-->
 </div>
 
-<div>
+  <h2 id="dessin">What is a dessin d'enfant?</h2>
+    <p>
+      <img src="images/dessin_image.png" alt="dessin" style:"float:right;width:30%">
+      <!-- A <i>dessin d'enfant</i> (child's drawing) is a finite, connected graph \(D\) embedded in an oriented compact topological surface \(X\) whose vertices are bicolored, such that its complement \(X \setminus D\) is the union of finitely many topological discs. -->
+      A dessin is a special kind of ribbon graph. A <i>ribbon graph</i> is a finite set of rectangular strips glued together at the ends. Each end is divided in half, and each half-end is glued to another half-end.
+    </p>
+    <p>
+      A <i>dessin d'enfant</i> is an orientable ribbon graph where each strip is black on one end and white on the other. Ends can only be glued if their colors match. We require dessins to be connected.
+    </p>
+    <p>
+      A ribbon graph is <i>completed</i> when it's embedded in a surface so that its complement is a set of disks. Any ribbon graph can be completed, by gluing disks along the loops formed by the sides of the strips. Since a dessin is a kind of ribbon graph, dessins can be completed too.
+    </p>
+
+  <h2>Why are dessins interesting?</h2>
+    <p>
+      The let us describe Belyi maps using simple pictures instead of complicated formulas.
+    </p>
+    <p>
+      In 1984, Alexander Grothendieck pointed out that a Belyi map \(X \to \widehat{\mathbb{C}}\) gives a completed dessin d'enfant on \(X\) by pulling a prototype dessin back from \(\widehat{\mathbb{C}}\). He proved that the Belyi map is fully described by its dessin, and that every completed dessin on \(X\) describes a Belyi map.
+    </p>
+    <p>
+      The prototype dessin on \(\widehat{\mathbb{C}}\) has one strip, which runs along the interval \([0, 1]\). The white end is at \(0\) and the black end is at \(1\). Each end of the strip has its halves glued together.
+    </p>
+      <!--<ol>
+        <li>
+          Draw a basic completed dessin \(I\) on \(\widehat{\mathbb{C}}\).
+          <ol>
+            <li>Place a black and white strip along the interval \([0, 1] \subset \widehat{\mathbb{C}}\), with the white end at \(0\) and the black end at \(1\).
+            <li>Seal each end of the strip by gluing its halves together.</li>
+          </ol>
+        </li>
+        <li>Pull \(I\) back along \(\varphi\), giving a completed dessin on \(X\).</li>
+      </ol>
+    </p>
+    <p>-->
+    <p>
+      To see how dramatically dessins d'enfants simplify the description of Belyi maps, consider the odd map out in the puzzle above. Algebraically, it's described by the formula
+      <div style="margin-left: 20px; margin-bottom: 20px">\(\displaystyle 373248 \frac{ 75 x^{7} + 25 x^{6} + 2 x^{5} } { 15855175 x^{7} + 13000190 x^{6} + 2792748 x^{5} - 264680 x^{4} - 142000 x^{3} - 6240 x^{2} + 1600 x + 128 }\)</div>
+      Its dessin is much easier to take in.
+    </p>
+    <!-- <p>
+      In 1984, Grothendieck gave a bijection between Belyi maps and dessins d'enfants. One direction is easy to describe: we first realize the unit interval \(I\) as a dessin on \(\mathbb{P}^1\) by putting a white vertex at \(0\), a black vertex at \(1\), and connecting them with an edge along the real axis. Given a Belyi map \(\varphi \colon X \to \mathbb{P}^1\), we obtain a dessin \(D\) on \(X\) by pulling back \(I\) under \(\varphi\), so \(D = \varphi^{-1}(I)\).
+    </p> -->
+
   <h2>Where do the symmetries of algebraic numbers come in?</h2>
     <p>
       If there's a Belyi map \(\varphi \colon X \to \mathbb{P}^1\), both \(X\) and \(\varphi\) can be defined by equations with coefficients in \(\overline{\mathbb{Q}}\). This lets the absolute Galois group \(\operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\) act on the set of Belyi maps: an element of \(\operatorname{Gal}(\overline{\mathbb{Q}}/\mathbb{Q})\) acts on \(\varphi\) by acting on its coefficients.
@@ -202,7 +196,6 @@ setOrbitDisplay();
     <p>
       In this game, we give you a collection of dessins, and you try to sort them into <i>Galois orbits</i>&mdash;that is, to put them in the same box if they're related by the Galois action. Can you find some distinguishing features that tell you two dessins belong together? This is no small feat, so don't be discouraged if you get stumped!
     </p>
-</div>
 
 </body>
 </html>
