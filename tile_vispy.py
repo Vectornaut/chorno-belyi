@@ -346,7 +346,7 @@ vec3 strip_color(
   float scaling = length(h.push[0]);
   
   // draw ribbon graph
-  vec3 ribbon = vec3(edge_mix(0, 1, h.pt.x, scaling, r_px));
+  vec3 ribbon = vec3(edge_mix(1, 0, h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   
   // dim unlit half-triangles

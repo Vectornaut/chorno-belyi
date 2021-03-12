@@ -1,0 +1,40 @@
+First Name: Aaron
+Last Name: Fenyes
+Extended Name: Aaron Fenyes, Michael Musty, and Sam Schiavone
+Position: Postdoc (Aaron), research mathematician (Mike), research scientist (Sam)
+Affiliation: IHÉS (Aaron), ERDC-CRREL (Mike), MIT (Sam)
+Location: Bures-sur-Yvette, France (Aaron); Hanover, New Hampshire, USA (Mike); Cambridge, Massachusetts, USA (Sam)
+
+Email:
+
+fenyes@ihes.fr
+michaelmusty@gmail.com
+sschiavo@mit.edu
+
+Website:
+
+https://www.ihes.fr/~fenyes
+https://michaelmusty.github.io
+https://math.mit.edu/~sschiavo
+
+Statement (at most 750 characters):
+
+Mike and Sam study Belyi maps, represented graphically by dessins d’enfants. Aaron studies flat surfaces. When we met at ICERM’s Illustrating Mathematics semester in fall 2019, we started asking whether we could draw better pictures of Belyi maps by taking advantage of their flat geometry. We’re looking not only for aesthetic appeal, but also for a new perspective on an old question: which Belyi maps are related by symmetries of the algebraic numbers that define them? Is this reflected in their dessins d’enfants? We hope the right visualization might reveal hidden patterns in the symmetry relationship.
+
+Thumbnail (100 by 100, from one of your submitted images): [thumbnail.jpg]
+
+Image (a JPEG file (.jpg extension), exactly 1800 pixels in the larger direction, 300dpi, RGB format, saved with maximum quality. It is important that you upload a high quality image now, because this file may be used for a printed catalog if your work is accepted. For digital media submissions, please submit a .jpg still and a link to the full video online in the "URL for digital media submissions or this artwork" field): [catalog-image.jpg]
+
+Title: Who wants to be a Belyionaire?
+
+Medium: Magma, SageMath, GLSL, HTML / CSS / JavaScript
+
+Year of completion: 2021
+
+Description (at most 750 characters):
+
+A central goal of number theory is to understand the symmetries of algebraic numbers. One way these symmetries reveal themselves is by acting on deceptively simple drawings called “dessins d’enfants.” This piece is a challenge for all of us at Bridges: can we tell which dessins are related by symmetries just by looking at them? We’ve drawn some collections of Belyi maps from a database; you’re invited to try your hand at sorting them into their symmetry classes. If you succeed, you might just become... a Belyionaire.
+
+The pictures were painted with a GLSL shader, using power series and symmetry data computed in SageMath and Magma. Ideas and methods came from papers by Klug, Musty, Schiavone & Voight (2014) and Mulase & Penkava (1998).
+
+URL for digital media submissions or this artwork: https://vectornaut.github.io/chorno-belyi

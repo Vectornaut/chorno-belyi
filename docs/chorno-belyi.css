@@ -3,7 +3,7 @@
 }
 
 body {
-  margin: 20px 40px 40px 40px;
+  margin: 20px 40px 20px 40px;
   font-family: 'Lato', sans-serif;
   font-size: 17px;
   background-color: #b8e5fe;
@@ -106,7 +106,7 @@ scrolling containers */
 
 .text-col {
   display: inline-block;
-  max-width: 700px;
+  max-width: 900px;
 }
 
 .image-col {

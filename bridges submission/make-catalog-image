@@ -1,0 +1,1 @@
+convert gameplay.png \( reveal.png -splice 0x20 \) -append catalog-image.jpg
