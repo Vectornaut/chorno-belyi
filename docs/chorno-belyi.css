@@ -100,17 +100,9 @@ scrolling containers */
   min-width: 10px;
 }
 
-.box-row { 
-    display:flex; 
-} 
-.box-cell { 
-    padding:10px; 
-} 
-.box-cell.box1 { 
-    width:70%; 
-    text-align:justify; 
+.left-col { 
+  width:70%; 
  } 
-.box-cell.box2 { 
-    width:30%; 
-    text-align:justify 
+.right-col { 
+  width:30%; 
 } 
