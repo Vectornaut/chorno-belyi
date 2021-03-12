@@ -100,9 +100,14 @@ scrolling containers */
   min-width: 10px;
 }
 
-.left-col { 
-  width:70%; 
- } 
-.right-col { 
-  width:30%; 
-} 
+.left-col {
+  display: inline-block;
+  width: 600px;
+}
+
+.right-col {
+  display: inline-block;
+  vertical-align: top;
+  margin-left: 40px;
+  width: 250px;
+}
