@@ -102,12 +102,17 @@ scrolling containers */
 
 .left-col {
   display: inline-block;
-  width: 600px;
+  max-width: 600px;
 }
 
 .right-col {
   display: inline-block;
   vertical-align: top;
   margin-left: 40px;
-  width: 250px;
+  min-width: 260px;
+  width: 260px;
+}
+
+.right-col > img {
+  width: 100%;
 }
