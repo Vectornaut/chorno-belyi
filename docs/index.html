@@ -40,6 +40,7 @@ function setOrbitDisplay() {
   var i;
   for (i = 0; i < orbits.length; i++) {
     document.getElementById('box-' + i).style.backgroundColor = show ? orbitColors[orbits[i]] : 'inherit';
+    document.getElementById('label-' + i).style.visibility = show ? 'visible' : 'hidden';
   }
   document.getElementById('orbit-trivia').style.visibility = show ? 'visible' : 'hidden';
 }
@@ -115,7 +116,17 @@ tray = document.getElementById('tray-0');
 for (i = 0; i < orbits.length; i++) {
   box = document.createElement('div');
   box.id = 'box-' + i;
-  box.innerHTML = '<img src="dessins/' + dessins[i] + '"/>';
+  
+  image = document.createElement('img');
+  image.src = 'dessins/' + dessins[i];
+  box.appendChild(image);
+  
+  label = document.createElement('div');
+  label.id = 'label-' + i;
+  label.className = 'orbit-label';
+  label.innerHTML = String.fromCharCode(65 + orbits[i]);
+  box.appendChild(label);
+  
   tray.appendChild(box);
 }
 setOrbitDisplay();

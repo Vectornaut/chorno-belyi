@@ -77,6 +77,7 @@ p {
 }
 
 .tray > div {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -90,6 +91,14 @@ p {
   height: 300px;
   margin-left: 10px;
   margin-right: 10px;
+}
+
+.orbit-label {
+  position: absolute;
+  top: 0;
+  left: 15px;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 34px;
 }
 
 /* Xander Gottlieb's solution to the right padding problem for horizontally
