@@ -100,12 +100,16 @@ scrolling containers */
   min-width: 10px;
 }
 
-.left-col {
-  display: inline-block;
-  max-width: 600px;
+.two-col {
+  display: flex;
 }
 
-.right-col {
+.text-col {
+  display: inline-block;
+  max-width: 700px;
+}
+
+.image-col {
   display: inline-block;
   vertical-align: top;
   margin-left: 40px;
@@ -113,6 +117,6 @@ scrolling containers */
   width: 260px;
 }
 
-.right-col > img {
+.image-col > img {
   width: 100%;
 }
