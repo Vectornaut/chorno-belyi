@@ -99,10 +99,3 @@ scrolling containers */
   display: block;
   min-width: 10px;
 }
-
-.left-col { 
-  width:70%; 
- } 
-.right-col { 
-  width:30%; 
-} 
