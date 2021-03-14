@@ -19,10 +19,10 @@
       % base
       \draw[thick] (0,0)--(14,0)--(17,6)--(3,6)--(0,0);
       % projection to 0
-      \draw[<-, black, thin] (4,3) -- (4,15);
+      \draw[<-, black, thin, shorten <=3pt] (4,3) -- (4,15);
       \draw[gray, thin] (4,15) -- (4,17);
       % projection to 1
-      \draw[<-, black, thin] (10,3) -- (10,9);
+      \draw[<-, black, thin, shorten <=3pt] (10,3) -- (10,9);
       \draw[red, thin] (10,9) -- (10,11);
       \draw[black, thin] (10,11) -- (10,13.5);
       % branching
@@ -45,23 +45,14 @@
       \fill [black] (10,3) circle (4pt);
       \node at (10,3) [label=right:$1$] {};
       \fill [black] (10,11) circle (4pt);
-      %\node at (12.5,11) {$x=1/2$};
       \fill [black] (4,10.5) circle (4pt);
-      %\node at (6.5,10.5) {$x=0$};
       \fill [black] (4,17) circle (4pt);
-      %\node at (7,17) {$x=-3/2$};
       \fill [black] (10,13.5) circle (4pt);
-      %\node at (13,13.5) {$x=-1$};
       \fill [black] (7,1) circle (4pt);
       \node at (7,1) [label=right:$\infty$] {};
-      % misc
-      %\node[red] at (-1,9) {$1$};
-      %\node[blue] at (-1,12) {$2$};
-      %\node[gray] at (-1,15) {$3$};
+      % morphism label
       \node at (19,18.75) {$X$};
       \node at (19,5.25) {$\PP^1$};
       \draw[black,->] (19,18) to node[right]{$\varphi$} (19,6);
-    %\node at (22,12) {z=\phi(x)=2x^3+3x^2$};
-      %\node at (24,12) {$\phi(x)=2x^3+3x^2$};
     \end{tikzpicture}
 \end{document}
