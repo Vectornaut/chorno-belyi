@@ -1,11 +1,7 @@
-%\documentclass[xcolor=dvipsnames]{beamer}
 \documentclass{standalone}
 
-%\setbeamertemplate{navigation symbols}{}%remove navigation symbols
-\usepackage{stmaryrd}
-\usepackage{amssymb,amsthm,amsmath,amsxtra}
+\usepackage{amssymb}
 \usepackage{tikz}
-\usetikzlibrary{arrows,calc,automata,shadows,backgrounds,positioning,intersections,fadings,decorations.pathreplacing,shapes,decorations,matrix}
 
 \newcommand{\PP}{\mathbb P}
 
@@ -21,21 +17,12 @@
       % ComplexPlane
       \draw[thick] (0,0)--(14,0)--(17,6)--(3,6)--(0,0);
       % sheet 1
-      \draw[thick,red] (8,9)--(14,9)--(17,15)--(15.5,15);
+      \draw[red, thick, fill=red, fill opacity=0.2] (0,9) to[out=0,in=-180] (4,10.5) to[out=0,in=-180] (8,9) -- (14,9) -- (17,15) -- (3,15) -- cycle;
       % sheet 2
-      \draw[blue,thick] (0,12)--(1.5,15);
-      \draw[blue,thick] (15.5,18)--(17,18)--(14,12);
+      \draw[blue, thick, fill=blue, fill opacity=0.2] (0,12) to[out=0,in=-180] (4,10.5) to[out=0,in=-180] (10,13.5) to[out=0,in=-180] (14,12) -- (17,18) -- (3,18) -- cycle;
       % sheet 3
-      \draw[gray,thick] (6,15)--(0,15)--(3,21)--(17,21)--(14,15);
+      \draw[gray, thick, fill=gray, fill opacity=0.2] (0, 15) -- (6,15) to[out=0,in=-180] (10,13.5) to[out=0,in=-180] (14,15) -- (17,21) -- (3,21) -- cycle;
       % branching
-      \draw[red,thick] (0,9)--(1.5,11.5);
-      \draw[red,thick] (0,9) to[out=0,in=-180] (4,10.5);
-      \draw[red,thick] (4,10.5) to[out=0,in=-180] (8,9);
-      \draw[blue,thick] (0,12) to[out=0,in=-180] (4,10.5);
-      \draw[blue,thick] (4,10.5) to[out=0,in=-180] (10,13.5);
-      \draw[blue,thick] (10,13.5) to[out=0,in=-180] (14,12);
-      \draw[gray,thick] (6,15) to[out=0,in=-180] (10,13.5);
-      \draw[gray,thick] (10,13.5) to[out=0,in=-180] (14,15);
       % points
       \fill [black] (4,3) circle (4pt);
       \node at (4,3) [label=right:$0$] {};
