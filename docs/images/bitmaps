@@ -1,0 +1,1 @@
+convert -density 111.43 belyi_image_alone.pdf belyi-map.png
