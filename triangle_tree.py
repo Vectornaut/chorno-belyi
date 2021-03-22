@@ -176,7 +176,7 @@ class DessinDomain:
     if self.tag == None:
       return all_but_tag
     else:
-      return '-'.join([all_but_tag, tag])
+      return '-'.join([all_but_tag, self.tag])
   
   class Encoder(json.JSONEncoder):
     def default(self, obj):
