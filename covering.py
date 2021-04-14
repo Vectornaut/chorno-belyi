@@ -5,7 +5,6 @@ import numpy as np
 from numpy import pi
 from scipy.special import gamma
 
-##[TEMP] should make size adjustable
 def apply_series(series, w, order):
   # write cover(w) as w * deformation(w)
   deformation = 0
