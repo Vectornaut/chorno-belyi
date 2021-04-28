@@ -2,6 +2,7 @@
 
 from sage.all import PermutationGroup
 from sage.categories.permutation_groups import PermutationGroups
+from numpy import identity, matmul
 
 from covering import Covering
 
@@ -9,7 +10,7 @@ class Dessin(Covering):
   # `group` will be passed to PermutationGroup, unless it's already in the
   # PermutationGroups category. for deserialization, you can pass precomputed
   # group details and a serialized tree in the `data` dictionary
-  def __init__(self, group, orbit, tag=None, data=None):
+  def __init__(self, group, orbit, prec, tag=None, data=None):
     # store independent metadata
     if group in PermutationGroups:
       self.group = group
@@ -30,6 +31,9 @@ class Dessin(Covering):
       self.t_number = int(self.group.gap().TransitiveIdentification())
       self.orders = tuple(s.order() for s in self.group.gens())
       
+      # initialize covering
+      super().__init__(*self.orders, prec)
+      
       # store passport
       label = 'T'.join(map(str, [self.degree, self.t_number]))
       partition_str = '_'.join([
@@ -41,6 +45,7 @@ class Dessin(Covering):
       # find a fundamental domain
       s = self.group.gens()
       self.route = [self.degree*[None], self.degree*[None]]
+      self.rep = [self.degree*[None], self.degree*[None]]
       self.edge_gluings = []
       self.vertex_gluings = []
       frontier = [[1], [1]]
@@ -60,8 +65,10 @@ class Dessin(Covering):
           # route to the opposite half-edge from this one
           if self.route[side][edge-1] == None:
             self.route[1-side][edge-1] = []
+            self.rep[1-side][edge-1] = identity(3)
           else:
             self.route[1-side][edge-1] = self.route[side][edge-1]
+            self.rep[1-side][edge-1] = matmul(self.rep[side][edge-1], self.flip)
           print('flip')
           print('|' + str(self.route[0]))
           print('|' + str(self.route[1]))
@@ -72,6 +79,7 @@ class Dessin(Covering):
             print('  petaling; next edge: ' + str(next_edge))
             if self.route[1-side][next_edge-1] == None:
               self.route[1-side][next_edge-1] = self.route[1-side][edge-1] + [1-side]
+              self.rep[1-side][next_edge-1] = matmul(self.rep[1-side][edge-1], self.rot_ccw[1-side])
               frontier[1-side].append(next_edge)
             else:
               self.vertex_gluings.append((1-side, edge, next_edge, color))
@@ -90,11 +98,18 @@ class Dessin(Covering):
 
 ##[TEST]
 if __name__ == '__main__':
-  ##dessin = Dessin([(1,2,3,4),(1,3,4,2),(1,3,4)], 'a') # 4T5-4_4_3.1
-  dessin = Dessin([(1,2,3,4,5),(1,2,5,4),(1,2,4,3)], 'a') # 5T3-5_4.1_4.1
+  ##dessin = Dessin([(1,2,3,4),(1,3,4,2),(1,3,4)], 'a', 20) # 4T5-4_4_3.1
+  dessin = Dessin([(1,2,3,4,5),(1,2,5,4),(1,2,4,3)], 'a', 20) # 5T3-5_4.1_4.1
   print('final routes')
   print(dessin.route[0])
   print(dessin.route[1])
+  for side in range(2):
+    print('side ' + str(side) + ' representatives:')
+    for g in dessin.rep[side]:
+      if not (g is None):
+        print(matmul(g, dessin.midpoint))
+      else:
+        print(g)
   print('final edge gluings')
   print(dessin.edge_gluings)
   print('final vertex gluings')

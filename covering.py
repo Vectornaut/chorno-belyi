@@ -2,7 +2,7 @@
 
 from sage.all import QQ, CDF, polygen, PowerSeriesRing, hypergeometric
 import numpy as np
-from numpy import pi
+from numpy import pi, matmul
 from scipy.special import gamma
 
 def apply_series(series, w, order):
@@ -36,17 +36,100 @@ class Covering():
     self.q = q
     self.r = r
     
-    # --- find shift
+    # --- find symmetries
     
-    # `shift` is the Möbius transformation that translates `b` to `a` along the
-    # real axis. `cosh_dist` is cosh(d(a, b)). in [KMSV], `cosh_dist` is called
-    # `lambda` (and the formula for it is off by a factor of two)
+    # `shift_ba` is the Möbius transformation that translates `b` to `a` along
+    # the real axis. `cosh_dist` is cosh(d(a, b)). in [KMSV], `cosh_dist` is
+    # called `lambda` (and the formula for it is off by a factor of two)
     cosh_dist = (np.cos(pi/p)*np.cos(pi/q) + np.cos(pi/r)) / (np.sin(pi/p)*np.sin(pi/q))
     sinh_dist = np.sqrt(cosh_dist**2 - 1)
+    ##self.shift_ba = np.array([
     self.shift = np.array([
-      [cosh_dist, 0, -sinh_dist],
-      [        0, 1,          0],
-      [-sinh_dist, 0, cosh_dist]
+      [ cosh_dist, 0, -sinh_dist],
+      [         0, 1,          0],
+      [-sinh_dist, 0,  cosh_dist]
+    ])
+    self.shift_ab = np.array([
+      [cosh_dist, 0, sinh_dist],
+      [        0, 1,         0],
+      [sinh_dist, 0, cosh_dist]
+    ])
+    
+    # `midpoint` is the midpoint of the edge in the fundamental domain.
+    # `half_shift_ba` translates `b` to `midpoint` and `midpoint` to `a` along
+    # the real axis. doing it twice gives `shift_ba`
+    cosh_half_dist = np.sqrt((cosh_dist + 1) / 2)
+    sinh_half_dist = np.sqrt((cosh_dist - 1) / 2)
+    self.half_shift_ba = np.array([
+      [ cosh_half_dist, 0, -sinh_half_dist],
+      [              0, 1,               0],
+      [-sinh_half_dist, 0,  cosh_half_dist]
+    ])
+    self.half_shift_ab = np.array([
+      [cosh_half_dist, 0, sinh_half_dist],
+      [             0, 1,              0],
+      [sinh_half_dist, 0, cosh_half_dist]
+    ])
+    self.midpoint = self.half_shift_ab[:, 2]
+    
+    # `flip` does a half-turn rotation around `midpoint`
+    bare_flip = np.array([
+      [0, -1, 0],
+      [1,  0, 0],
+      [0,  0, 1]
+    ])
+    self.flip = matmul(matmul(self.half_shift_ab, bare_flip), self.half_shift_ba)
+    
+    # in the notation of [KMSV],
+    #   delta_a = rot_ccw[0]
+    #   delta_b = flip * rot_ccw[1] * flip
+    self.rot_ccw = [
+      np.array([
+        [cos(2*pi/p), -sin(2*pi/p), 0],
+        [sin(2*pi/p),  cos(2*pi/p), 0],
+        [          0,            0, 1]
+      ]),
+      np.array([
+        [cos(2*pi/q), -sin(2*pi/q), 0],
+        [sin(2*pi/q),  cos(2*pi/q), 0],
+        [          0,            0, 1]
+      ])
+    ]
+    self.rot_cw = [
+      np.array([
+        [ cos(2*pi/p), sin(2*pi/p), 0],
+        [-sin(2*pi/p), cos(2*pi/p), 0],
+        [           0,           0, 1]
+      ]),
+      np.array([
+        [ cos(2*pi/q), sin(2*pi/q), 0],
+        [-sin(2*pi/q), cos(2*pi/q), 0],
+        [           0,           0, 1]
+      ])
+    ]
+    
+    # in the notation of [KMSV],
+    #   delta_a = rot_a_ccw
+    #   delta_b = shift_ab * rot_b_ccw_shift * shift_ba
+    self.rot_a_ccw = np.array([
+      [cos(pi/p), -sin(pi/p), 0],
+      [sin(pi/p),  cos(pi/p), 0],
+      [        0,          0, 1]
+    ])
+    self.rot_b_ccw_shift = np.array([
+      [cos(pi/q), -sin(pi/q), 0],
+      [sin(pi/q),  cos(pi/q), 0],
+      [        0,          0, 1]
+    ])
+    self.rot_a_cw = np.array([
+      [ cos(pi/p), sin(pi/p), 0],
+      [-sin(pi/p), cos(pi/p), 0],
+      [         0,         0, 1]
+    ])
+    self.rot_b_cw_shift = np.array([
+      [ cos(pi/q), sin(pi/q), 0],
+      [-sin(pi/q), cos(pi/q), 0],
+      [        0,          0, 1]
     ])
     
     # --- find scale factors
