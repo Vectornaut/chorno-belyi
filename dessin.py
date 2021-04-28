@@ -2,9 +2,11 @@
 
 from sage.all import PermutationGroup
 from sage.categories.permutation_groups import PermutationGroups
-from numpy import identity, matmul
+import numpy as np
+from numpy import identity, matmul, pi, cos, sin
 
 from covering import Covering
+from triangle_tree import TriangleTree
 
 class Dessin(Covering):
   # `group` will be passed to PermutationGroup, unless it's already in the
@@ -25,7 +27,7 @@ class Dessin(Covering):
       self.t_number = data['t_number']
       self.orders = data['orders']
       self.passport = data['passport']
-      ## read fundamental domain
+      self.tree = TriangleTree.from_dict(data['tree'], legacy)
     else:
       self.degree = int(self.group.degree())
       self.t_number = int(self.group.gap().TransitiveIdentification())
@@ -95,6 +97,65 @@ class Dessin(Covering):
           print('  edge gluing ' + str(self.edge_gluings[-1]))
           color += 1
         side = 1-side
+      
+      # find the addresses of the edge representatives in our fundamental domain
+      c_nudge = cos(0.1*pi/self.orders[0])
+      s_nudge = sin(0.1*pi/self.orders[0])
+      nudge_ccw = np.array([
+        [c_nudge, -s_nudge, 0],
+        [s_nudge,  c_nudge, 0],
+        [      0,        0, 1]
+      ])
+      nudge_cw = np.array([
+        [ c_nudge, s_nudge, 0],
+        [-s_nudge, c_nudge, 0],
+        [       0,       0, 1]
+      ])
+      midpoint_upper = matmul(nudge_ccw, self.midpoint)
+      midpoint_lower = matmul(nudge_cw, self.midpoint)
+      addresses_upper = [
+        [self.address(matmul(g, midpoint_upper))[0] for g in self.rep[0]],
+        [self.address(matmul(matmul(g, self.flip), midpoint_upper))[0] for g in self.rep[1]]
+      ]
+      addresses_lower = [
+        [self.address(matmul(g, midpoint_lower))[0] for g in self.rep[0]],
+        [self.address(matmul(matmul(g, self.flip), midpoint_lower))[0] for g in self.rep[1]]
+      ]
+      
+      for side in range(2):
+        print('side ' + str(side) + ' representatives:')
+        for g in self.rep[side]:
+          mid = matmul(g, self.midpoint)
+          print(mid[0:2] / (1 + mid[2]))
+      
+      # build the triangle tree for our fundamental domain
+      self.tree = TriangleTree()
+      for edge in range(1, self.degree+1):
+        for side in range(2):
+          self.tree.store(addresses_upper[side][edge-1], side, True, 0)
+          self.tree.store(addresses_lower[side][edge-1], side, True, 0)
+      for (edge, color) in self.edge_gluings:
+        for side in range(2):
+          for addresses in [addresses_upper, addresses_lower]:
+            self.tree.store(addresses[side][edge-1], side, True, color)
+            self.tree.store(addresses[side][edge-1], side, True, color)
+      for (side, edge, next_edge, color) in self.vertex_gluings:
+        if side == 0:
+          address_ccw = addresses_upper[side][edge-1]
+          address_cw = addresses_lower[side][next_edge-1]
+        else:
+          address_ccw = addresses_lower[side][edge-1]
+          address_cw = addresses_upper[side][next_edge-1]
+        self.tree.store(address_ccw, side, True, -color)
+        self.tree.store(address_cw, side, True, -color)
+  
+  def name(self):
+    permutation_str = ','.join([s.cycle_string() for s in self.group.gens()])
+    all_but_tag = '-'.join([self.passport, self.orbit, permutation_str])
+    if self.tag == None:
+      return all_but_tag
+    else:
+      return '-'.join([all_but_tag, self.tag])
 
 ##[TEST]
 if __name__ == '__main__':
@@ -106,10 +167,8 @@ if __name__ == '__main__':
   for side in range(2):
     print('side ' + str(side) + ' representatives:')
     for g in dessin.rep[side]:
-      if not (g is None):
-        print(matmul(g, dessin.midpoint))
-      else:
-        print(g)
+      mid = matmul(g, dessin.midpoint)
+      print(mid[0:2] / (1 + mid[2]))
   print('final edge gluings')
   print(dessin.edge_gluings)
   print('final vertex gluings')

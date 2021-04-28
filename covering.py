@@ -97,11 +97,7 @@ class Covering():
     self.midpoint = self.half_shift_ab[:, 2]
     
     # `flip` does a half-turn rotation around `midpoint`
-    bare_flip = np.array([
-      [0, -1, 0],
-      [1,  0, 0],
-      [0,  0, 1]
-    ])
+    bare_flip = np.diag([-1, -1, 1])
     self.flip = matmul(matmul(self.half_shift_ab, bare_flip), self.half_shift_ba)
     
     # in the notation of [KMSV],
@@ -234,28 +230,25 @@ class Covering():
       return 1 - s**self.q
   
   # find the flip address of a point in the Poincaré disk
-  def address(self, u):
+  def address(self, v):
     EPS = 1e-6
     TWIN_EPS = 1e-5
     
-    r_sq = dot(u, u)
-    if r_sq <= 1:
-      v = np.array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
-      address = []
-      onsides = 0 # how many times in a row we've been in the desired half-plane
-      while len(address) < 40:
-        for k in range(3):
-          sep = mprod(v, self.mirrors[k])
-          if sep > EPS:
-            v -= 2*sep*self.mirrors[k]
-            address += [k]
-            onsides = 0
-          else:
-            onsides += 1
-            if onsides >= 3:
-              # save the address of the selected triangle
-              z = self.apply(v)
-              return (address, 0 if z.real < 0.5 else 1)
+    address = []
+    onsides = 0 # how many times in a row we've been in the desired half-plane
+    while len(address) < 40:
+      for k in range(3):
+        sep = mprod(v, self.mirrors[k])
+        if sep > EPS:
+          v -= 2*sep*self.mirrors[k]
+          address += [k]
+          onsides = 0
+        else:
+          onsides += 1
+          if onsides >= 3:
+            # save the address of the selected triangle
+            z = self.apply(v)
+            return (address, 0 if z.real < 0.5 else 1)
     return (None, None)
 
 ##[TEST]

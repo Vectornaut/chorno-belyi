@@ -12,6 +12,7 @@ from math import sqrt, cos, sin, pi, floor
 from numpy import array, dot
 
 import covering
+import dessin
 import triangle_tree
 from triangle_tree import *
 
@@ -695,7 +696,14 @@ class TilingCanvas(app.Canvas):
     # find screen coordinate
     VIEW = 1.02
     u = VIEW*(2*array(event.pos) - self.program['resolution']) / self.program['shortdim']
-    self.set_selection(*self.bel.address(u))
+    
+    # get address
+    r_sq = dot(u, u)
+    if r_sq <= 1:
+      v = array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
+      self.set_selection(*self.bel.address(v))
+    else:
+      self.set_selection(None)
   
   def set_working(self, working):
     self.working = working
@@ -891,7 +899,8 @@ class WorkingPanel(DessinControlPanel):
       cycle_strs = [field.text() for field in self.pmt_fields]
       orbit = self.orbit_field.text()
       tag = self.tag_field.text()
-      domain = DessinDomain(cycle_strs, orbit, tag if tag else None)
+      domain = dessin.Dessin(cycle_strs, orbit, 20, tag if tag else None) ##[TEST]
+      ##[TEST] domain = DessinDomain(cycle_strs, orbit, tag if tag else None)
     except Exception as ex:
       self.error_dialog.setText("Error computing dessin metadata.")
       self.error_dialog.setDetailedText(str(ex))
