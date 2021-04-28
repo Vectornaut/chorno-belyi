@@ -549,10 +549,6 @@ void main() {
 }
 ''')
 
-# the minkowski bilinear form
-def mprod(v, w):
-  return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
-
 def tri_tree_key(index, attr):
   return 'tri_tree[{}]'.format(7*index + attr)
 
@@ -602,27 +598,10 @@ class TilingCanvas(app.Canvas):
     # save vertex orders
     self.orders = (p, q, r)
     
-    # get vertex cosines
-    sp = sin(pi/p)
-    cp = cos(pi/p)
-    cq = cos(pi/q)
-    cr = cos(pi/r)
-    
-    # find the side normals of the fundamental triangle, scaled to unit norm
-    self.mirrors = [
-      array([0, 1, 0]),
-      array([-sp, -cp, 0]),
-      array([
-        (cp*cq + cr) / sp,
-        -cq,
-        sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
-      ])
-    ]
-    for k in range(3):
-      self.program['mirrors[{}]'.format(k)] = self.mirrors[k]
-    
     # find the covering map to CP^1
     self.bel = covering.Covering(p, q, r, 20)
+    for k in range(3):
+      self.program['mirrors[{}]'.format(k)] = self.bel.mirrors[k]
     self.program['shift'] = self.bel.shift
     self.program['p'] = self.bel.p
     self.program['q'] = self.bel.q
@@ -716,30 +695,7 @@ class TilingCanvas(app.Canvas):
     # find screen coordinate
     VIEW = 1.02
     u = VIEW*(2*array(event.pos) - self.program['resolution']) / self.program['shortdim']
-    r_sq = dot(u, u)
-    
-    # reduce to fundamental domain
-    EPS = 1e-6
-    TWIN_EPS = 1e-5
-    if r_sq <= 1:
-      v = array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
-      address = []
-      onsides = 0 # how many times in a row we've been in the desired half-plane
-      while len(address) < 40:
-        for k in range(3):
-          sep = mprod(v, self.mirrors[k])
-          if sep > EPS:
-            v -= 2*sep*self.mirrors[k]
-            address += [k]
-            onsides = 0
-          else:
-            onsides += 1
-            if onsides >= 3:
-              # save the address of the selected triangle
-              z = self.bel.apply(v)
-              self.set_selection(address, 0 if z.real < 0.5 else 1)
-              return
-    self.set_selection(None)
+    self.set_selection(*self.bel.address(u))
   
   def set_working(self, working):
     self.working = working

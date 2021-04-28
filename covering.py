@@ -2,8 +2,12 @@
 
 from sage.all import QQ, CDF, polygen, PowerSeriesRing, hypergeometric
 import numpy as np
-from numpy import pi, matmul
+from numpy import pi, matmul, dot
 from scipy.special import gamma
+
+# the minkowski bilinear form
+def mprod(v, w):
+  return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
 
 def apply_series(series, w, order):
   # write cover(w) as w * deformation(w)
@@ -36,12 +40,32 @@ class Covering():
     self.q = q
     self.r = r
     
+    # --- find mirrors
+    
+    # get vertex cosines
+    sp = sin(pi/p)
+    cp = cos(pi/p)
+    cq = cos(pi/q)
+    sq = sin(pi/q)
+    cr = cos(pi/r)
+    
+    # find the side normals of the fundamental triangle, scaled to unit norm
+    self.mirrors = [
+      np.array([0, 1, 0]),
+      np.array([-sp, -cp, 0]),
+      np.array([
+        (cp*cq + cr) / sp,
+        -cq,
+        np.sqrt(-1 + (cp*cp + cq*cq + cr*cr + 2*cp*cq*cr)) / sp
+      ])
+    ]
+    
     # --- find symmetries
     
     # `shift_ba` is the Möbius transformation that translates `b` to `a` along
     # the real axis. `cosh_dist` is cosh(d(a, b)). in [KMSV], `cosh_dist` is
     # called `lambda` (and the formula for it is off by a factor of two)
-    cosh_dist = (np.cos(pi/p)*np.cos(pi/q) + np.cos(pi/r)) / (np.sin(pi/p)*np.sin(pi/q))
+    cosh_dist = (cp*cq + cr) / (sp*sq)
     sinh_dist = np.sqrt(cosh_dist**2 - 1)
     ##self.shift_ba = np.array([
     self.shift = np.array([
@@ -208,10 +232,35 @@ class Covering():
       w_shift = (v_shift[0] + 1j*v_shift[1]) / (1 + v_shift[2]);
       s = apply_series(self.cover_b, w_shift / self.K_b, self.q);
       return 1 - s**self.q
+  
+  # find the flip address of a point in the Poincaré disk
+  def address(self, u):
+    EPS = 1e-6
+    TWIN_EPS = 1e-5
+    
+    r_sq = dot(u, u)
+    if r_sq <= 1:
+      v = np.array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
+      address = []
+      onsides = 0 # how many times in a row we've been in the desired half-plane
+      while len(address) < 40:
+        for k in range(3):
+          sep = mprod(v, self.mirrors[k])
+          if sep > EPS:
+            v -= 2*sep*self.mirrors[k]
+            address += [k]
+            onsides = 0
+          else:
+            onsides += 1
+            if onsides >= 3:
+              # save the address of the selected triangle
+              z = self.apply(v)
+              return (address, 0 if z.real < 0.5 else 1)
+    return (None, None)
 
 ##[TEST]
 def test_covering(u):
-  r_sq = np.dot(u, u)
+  r_sq = dot(u, u)
   v = np.array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
   print(str(u) + ' -> ' + str(bel.apply(v)))
 
