@@ -603,7 +603,7 @@ class TilingCanvas(app.Canvas):
     self.bel = covering.Covering(p, q, r, 20)
     for k in range(3):
       self.program['mirrors[{}]'.format(k)] = self.bel.mirrors[k]
-    self.program['shift'] = self.bel.shift
+    self.program['shift'] = self.bel.shift.transpose()
     self.program['p'] = self.bel.p
     self.program['q'] = self.bel.q
     self.program['K_a'] = self.bel.K_a;
