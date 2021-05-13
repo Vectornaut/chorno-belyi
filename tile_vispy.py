@@ -12,7 +12,7 @@ from math import sqrt, cos, sin, pi, floor
 from numpy import array, dot
 
 import covering
-import dessin
+from dessin import Dessin
 import triangle_tree
 from triangle_tree import *
 
@@ -903,8 +903,7 @@ class WorkingPanel(DessinControlPanel):
       cycle_strs = [field.text() for field in self.pmt_fields]
       orbit = self.orbit_field.text()
       tag = self.tag_field.text()
-      domain = dessin.Dessin(cycle_strs, orbit, 20, tag if tag else None) ##[TEST]
-      ##[TEST] domain = DessinDomain(cycle_strs, orbit, tag if tag else None)
+      domain = Dessin(cycle_strs, orbit, 20, tag if tag else None)
     except Exception as ex:
       self.error_dialog.setText("Error computing dessin metadata.")
       self.error_dialog.setDetailedText(str(ex))
@@ -973,7 +972,7 @@ class SavedPanel(DessinControlPanel):
       if re.match(r'.*\.json$', filename):
         try:
           with open('domains/' + filename, 'r') as file:
-            dom = DessinDomain.load(file)
+            dom = Dessin.load(file, lazy=True)
         except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:
@@ -1018,6 +1017,7 @@ class SavedPanel(DessinControlPanel):
     if passport:
       orbit = self.orbit_box.currentText()
       index = self.domain_box.currentIndex()
+      self.domains[passport][orbit][index].compute()
       self.canvas.set_domain(self.domains[passport][orbit][index], working=False)
     else:
       self.canvas.set_domain(None)

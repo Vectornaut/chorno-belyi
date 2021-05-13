@@ -4,6 +4,7 @@ from sage.all import PermutationGroup
 from sage.categories.permutation_groups import PermutationGroups
 import numpy as np
 from numpy import identity, matmul, pi, cos, sin
+import json
 
 from covering import Covering
 from triangle_tree import TriangleTree
@@ -12,7 +13,7 @@ class Dessin(Covering):
   # `group` will be passed to PermutationGroup, unless it's already in the
   # PermutationGroups category. for deserialization, you can pass precomputed
   # group details and a serialized tree in the `data` dictionary
-  def __init__(self, group, orbit, prec, tag=None, data=None):
+  def __init__(self, group, orbit, prec, tag=None, data=None, lazy=False):
     # store independent metadata
     if group in PermutationGroups:
       self.group = group
@@ -27,14 +28,17 @@ class Dessin(Covering):
       self.t_number = data['t_number']
       self.orders = data['orders']
       self.passport = data['passport']
-      self.tree = TriangleTree.from_dict(data['tree'], legacy)
+      self.tree = TriangleTree.from_dict(data['tree'])
+      
+      # initialize covering
+      super().__init__(*self.orders, prec, lazy)
     else:
       self.degree = int(self.group.degree())
       self.t_number = int(self.group.gap().TransitiveIdentification())
-      self.orders = tuple(s.order() for s in self.group.gens())
+      self.orders = tuple(int(s.order()) for s in self.group.gens())
       
       # initialize covering
-      super().__init__(*self.orders, prec)
+      super().__init__(*self.orders, prec, lazy)
       
       # store passport
       label = 'T'.join(map(str, [self.degree, self.t_number]))
@@ -156,6 +160,32 @@ class Dessin(Covering):
       return all_but_tag
     else:
       return '-'.join([all_but_tag, self.tag])
+  
+  class Encoder(json.JSONEncoder):
+    def default(self, obj):
+      if obj in PermutationGroups:
+        return [s.cycle_string() for s in obj.gens()]
+      elif hasattr(obj, '__dict__'):
+        return obj.__dict__
+  
+  def dump(self, fp, **kwargs):
+    json.dump(self, fp, cls=Dessin.Encoder, **kwargs)
+  
+  def dumps(self, **kwargs):
+    return json.dumps(self, cls=Dessin.Encoder, **kwargs)
+  
+  @staticmethod
+  def from_dict(data, lazy, legacy=False):
+    prec = data['prec'] if 'prec' in data else 20 ##[GUESS PRECISION]
+    return Dessin(data['group'], data['orbit'], prec, data['tag'], data, lazy)
+  
+  @staticmethod
+  def load(fp, lazy=False, legacy=False, **kwargs):
+    return Dessin.from_dict(json.load(fp, **kwargs), lazy, legacy)
+  
+  @staticmethod
+  def loads(s, lazy=False, legacy=False, **kwargs):
+    return Dessin.from_dict(json.loads(s, **kwargs), lazy, legacy)
 
 ##[TEST]
 if __name__ == '__main__':

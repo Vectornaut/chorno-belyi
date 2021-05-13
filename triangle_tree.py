@@ -1,7 +1,6 @@
 from sage.all import PermutationGroup
 from sage.categories.permutation_groups import PermutationGroups
 import json
-from sage.all import ZZ ##[TEMP] needed for serialization of Sage integers
 
 class TriangleTree:
   def __init__(self):
@@ -152,7 +151,7 @@ class DessinDomain:
     else:
       self.degree = int(self.group.degree())
       self.t_number = int(self.group.gap().TransitiveIdentification())
-      self.orders = tuple(s.order() for s in self.group.gens())
+      self.orders = tuple(int(s.order()) for s in self.group.gens())
       
       # store passport
       label = 'T'.join(map(str, [self.degree, self.t_number]))
@@ -177,8 +176,6 @@ class DessinDomain:
     def default(self, obj):
       if obj in PermutationGroups:
         return [s.cycle_string() for s in obj.gens()]
-      elif obj in ZZ: ##[TEMP] for handling old instances
-        return int(obj)
       else:
         return obj.__dict__
   
