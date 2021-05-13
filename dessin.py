@@ -1,191 +1,136 @@
 # coding=utf-8
 
-from sage.all import PermutationGroup
-from sage.categories.permutation_groups import PermutationGroups
 import numpy as np
 from numpy import identity, matmul, pi, cos, sin
-import json
 
 from covering import Covering
-from triangle_tree import TriangleTree
+from domain import Domain
 
-class Dessin(Covering):
+class Dessin():
   # `group` will be passed to PermutationGroup, unless it's already in the
   # PermutationGroups category. for deserialization, you can pass precomputed
   # group details and a serialized tree in the `data` dictionary
-  def __init__(self, group, orbit, prec, tag=None, data=None, lazy=False):
-    # store independent metadata
-    if group in PermutationGroups:
-      self.group = group
-    else:
-      self.group = PermutationGroup(group, canonicalize=False)
-    self.orbit = orbit
-    self.tag = tag
+  def __init__(self, group, orbit, prec, tag=None):
+    # find the tiling
+    self.domain = Domain(group, orbit, tag)
     
-    # store dependent metadata and fundamental domain
-    if data:
-      self.degree = data['degree']
-      self.t_number = data['t_number']
-      self.orders = data['orders']
-      self.passport = data['passport']
-      self.tree = TriangleTree.from_dict(data['tree'])
-      
-      # initialize covering
-      super().__init__(*self.orders, prec, lazy)
-    else:
-      self.degree = int(self.group.degree())
-      self.t_number = int(self.group.gap().TransitiveIdentification())
-      self.orders = tuple(int(s.order()) for s in self.group.gens())
-      
-      # initialize covering
-      super().__init__(*self.orders, prec, lazy)
-      
-      # store passport
-      label = 'T'.join(map(str, [self.degree, self.t_number]))
-      partition_str = '_'.join([
-        '.'.join(map(str, s.cycle_type()))
-        for s in self.group.gens()
-      ])
-      self.passport = '-'.join([label, partition_str])
-      
-      # find a fundamental domain
-      s = self.group.gens()
-      self.route = [self.degree*[None], self.degree*[None]]
-      self.rep = [self.degree*[None], self.degree*[None]]
-      self.edge_gluings = []
-      self.vertex_gluings = []
-      frontier = [[1], [1]]
-      side = 1
-      color = 1
-      while True:
-        if not frontier[side]:
-          side = 1-side
-        if not frontier[side]:
-          break
-        edge = frontier[side].pop(0)
-        print('side ' + str(side) + ', edge ' + str(edge))
+    # extract tiling data, for convenience
+    degree = self.domain.degree
+    orders = self.domain.orders
+    permutations = self.domain.group.gens()
+    
+    # find the covering
+    self.covering = Covering(*orders, prec)
+    
+    # extract covering data and address map, for convenience
+    flip = self.covering.flip
+    rot_ccw = self.covering.rot_ccw
+    midpoint = self.covering.midpoint
+    address = self.covering.address
+    
+    # find a fundamental domain
+    self.route = [degree*[None], degree*[None]]
+    self.rep = [degree*[None], degree*[None]]
+    self.edge_gluings = []
+    self.vertex_gluings = []
+    frontier = [[1], [1]]
+    side = 1
+    color = 1
+    while True:
+      if not frontier[side]:
+        side = 1-side
+      if not frontier[side]:
+        break
+      edge = frontier[side].pop(0)
+      print('side ' + str(side) + ', edge ' + str(edge))
+      print('|' + str(self.route[0]))
+      print('|' + str(self.route[1]))
+      # explore the opposite half-edge
+      if self.route[1-side][edge-1] == None:
+        # route to the opposite half-edge from this one
+        if self.route[side][edge-1] == None:
+          self.route[1-side][edge-1] = []
+          self.rep[1-side][edge-1] = identity(3)
+        else:
+          self.route[1-side][edge-1] = self.route[side][edge-1]
+          self.rep[1-side][edge-1] = matmul(self.rep[side][edge-1], flip)
+        print('flip')
         print('|' + str(self.route[0]))
         print('|' + str(self.route[1]))
-        # explore the opposite half-edge
-        if self.route[1-side][edge-1] == None:
-          # route to the opposite half-edge from this one
-          if self.route[side][edge-1] == None:
-            self.route[1-side][edge-1] = []
-            self.rep[1-side][edge-1] = identity(3)
+        
+        # petal the opposite half-edge
+        for cnt in range(orders[1-side]-1):
+          next_edge = permutations[1-side](edge)
+          print('  petaling; next edge: ' + str(next_edge))
+          if self.route[1-side][next_edge-1] == None:
+            self.route[1-side][next_edge-1] = self.route[1-side][edge-1] + [1-side]
+            self.rep[1-side][next_edge-1] = matmul(self.rep[1-side][edge-1], rot_ccw[1-side])
+            frontier[1-side].append(next_edge)
           else:
-            self.route[1-side][edge-1] = self.route[side][edge-1]
-            self.rep[1-side][edge-1] = matmul(self.rep[side][edge-1], self.flip)
-          print('flip')
-          print('|' + str(self.route[0]))
-          print('|' + str(self.route[1]))
-          
-          # petal the opposite half-edge
-          for cnt in range(self.orders[1-side]-1):
-            next_edge = s[1-side](edge)
-            print('  petaling; next edge: ' + str(next_edge))
-            if self.route[1-side][next_edge-1] == None:
-              self.route[1-side][next_edge-1] = self.route[1-side][edge-1] + [1-side]
-              self.rep[1-side][next_edge-1] = matmul(self.rep[1-side][edge-1], self.rot_ccw[1-side])
-              frontier[1-side].append(next_edge)
-            else:
-              self.vertex_gluings.append((1-side, edge, next_edge, color))
-              print('  vertex gluing ' + str(self.vertex_gluings[-1]))
-              color += 1
-              break
-            print('  |' + str(self.route[0]))
-            print('  |' + str(self.route[1]))
-            edge = next_edge
-        elif side == 0:
-          # glue to the opposite half-edge
-          self.edge_gluings.append((edge, color))
-          print('  edge gluing ' + str(self.edge_gluings[-1]))
-          color += 1
-        side = 1-side
-      
-      # find the addresses of the edge representatives in our fundamental domain
-      c_nudge = cos(0.1*pi/self.orders[0])
-      s_nudge = sin(0.1*pi/self.orders[0])
-      nudge_ccw = np.array([
-        [c_nudge, -s_nudge, 0],
-        [s_nudge,  c_nudge, 0],
-        [      0,        0, 1]
-      ])
-      nudge_cw = np.array([
-        [ c_nudge, s_nudge, 0],
-        [-s_nudge, c_nudge, 0],
-        [       0,       0, 1]
-      ])
-      midpoint_upper = matmul(nudge_ccw, self.midpoint)
-      midpoint_lower = matmul(nudge_cw, self.midpoint)
-      addresses_upper = [
-        [self.address(matmul(g, midpoint_upper))[0] for g in self.rep[0]],
-        [self.address(matmul(matmul(g, self.flip), midpoint_upper))[0] for g in self.rep[1]]
-      ]
-      addresses_lower = [
-        [self.address(matmul(g, midpoint_lower))[0] for g in self.rep[0]],
-        [self.address(matmul(matmul(g, self.flip), midpoint_lower))[0] for g in self.rep[1]]
-      ]
-      
+            self.vertex_gluings.append((1-side, edge, next_edge, color))
+            print('  vertex gluing ' + str(self.vertex_gluings[-1]))
+            color += 1
+            break
+          print('  |' + str(self.route[0]))
+          print('  |' + str(self.route[1]))
+          edge = next_edge
+      elif side == 0:
+        # glue to the opposite half-edge
+        self.edge_gluings.append((edge, color))
+        print('  edge gluing ' + str(self.edge_gluings[-1]))
+        color += 1
+      side = 1-side
+    
+    # find the addresses of the edge representatives in our fundamental domain
+    c_nudge = cos(0.1*pi/orders[0])
+    s_nudge = sin(0.1*pi/orders[0])
+    nudge_ccw = np.array([
+      [c_nudge, -s_nudge, 0],
+      [s_nudge,  c_nudge, 0],
+      [      0,        0, 1]
+    ])
+    nudge_cw = np.array([
+      [ c_nudge, s_nudge, 0],
+      [-s_nudge, c_nudge, 0],
+      [       0,       0, 1]
+    ])
+    midpoint_upper = matmul(nudge_ccw, midpoint)
+    midpoint_lower = matmul(nudge_cw, midpoint)
+    addresses_upper = [
+      [address(matmul(g, midpoint_upper))[0] for g in self.rep[0]],
+      [address(matmul(matmul(g, flip), midpoint_upper))[0] for g in self.rep[1]]
+    ]
+    addresses_lower = [
+      [address(matmul(g, midpoint_lower))[0] for g in self.rep[0]],
+      [address(matmul(matmul(g, flip), midpoint_lower))[0] for g in self.rep[1]]
+    ]
+    
+    for side in range(2):
+      print('side ' + str(side) + ' representatives:')
+      for g in self.rep[side]:
+        mid = matmul(g, midpoint)
+        print(mid[0:2] / (1 + mid[2]))
+    
+    # build the triangle tree for our fundamental domain
+    tree = self.domain.tree
+    for edge in range(1, degree+1):
       for side in range(2):
-        print('side ' + str(side) + ' representatives:')
-        for g in self.rep[side]:
-          mid = matmul(g, self.midpoint)
-          print(mid[0:2] / (1 + mid[2]))
-      
-      # build the triangle tree for our fundamental domain
-      self.tree = TriangleTree()
-      for edge in range(1, self.degree+1):
-        for side in range(2):
-          self.tree.store(addresses_upper[side][edge-1], side, True, None, None)
-          self.tree.store(addresses_lower[side][edge-1], side, True, None, None)
-      for (edge, color) in self.edge_gluings:
-        for side in range(2):
-          for addresses in [addresses_upper, addresses_lower]:
-            self.tree.store(addresses[side][edge-1], side, True, None, color)
-            self.tree.store(addresses[side][edge-1], side, True, None, color)
-      for (side, edge, next_edge, color) in self.vertex_gluings:
-        if side == 0:
-          address_ccw = addresses_upper[side][edge-1]
-          address_cw = addresses_lower[side][next_edge-1]
-        else:
-          address_ccw = addresses_lower[side][edge-1]
-          address_cw = addresses_upper[side][next_edge-1]
-        self.tree.store(address_ccw, side, True, color, None)
-        self.tree.store(address_cw, side, True, color, None)
-  
-  def name(self):
-    permutation_str = ','.join([s.cycle_string() for s in self.group.gens()])
-    all_but_tag = '-'.join([self.passport, self.orbit, permutation_str])
-    if self.tag == None:
-      return all_but_tag
-    else:
-      return '-'.join([all_but_tag, self.tag])
-  
-  class Encoder(json.JSONEncoder):
-    def default(self, obj):
-      if obj in PermutationGroups:
-        return [s.cycle_string() for s in obj.gens()]
-      elif hasattr(obj, '__dict__'):
-        return obj.__dict__
-  
-  def dump(self, fp, **kwargs):
-    json.dump(self, fp, cls=Dessin.Encoder, **kwargs)
-  
-  def dumps(self, **kwargs):
-    return json.dumps(self, cls=Dessin.Encoder, **kwargs)
-  
-  @staticmethod
-  def from_dict(data, lazy, legacy=False):
-    prec = data['prec'] if 'prec' in data else 20 ##[GUESS PRECISION]
-    return Dessin(data['group'], data['orbit'], prec, data['tag'], data, lazy)
-  
-  @staticmethod
-  def load(fp, lazy=False, legacy=False, **kwargs):
-    return Dessin.from_dict(json.load(fp, **kwargs), lazy, legacy)
-  
-  @staticmethod
-  def loads(s, lazy=False, legacy=False, **kwargs):
-    return Dessin.from_dict(json.loads(s, **kwargs), lazy, legacy)
+        tree.store(addresses_upper[side][edge-1], side, True, None, None)
+        tree.store(addresses_lower[side][edge-1], side, True, None, None)
+    for (edge, color) in self.edge_gluings:
+      for side in range(2):
+        for addresses in [addresses_upper, addresses_lower]:
+          tree.store(addresses[side][edge-1], side, True, None, color)
+          tree.store(addresses[side][edge-1], side, True, None, color)
+    for (side, edge, next_edge, color) in self.vertex_gluings:
+      if side == 0:
+        address_ccw = addresses_upper[side][edge-1]
+        address_cw = addresses_lower[side][next_edge-1]
+      else:
+        address_ccw = addresses_lower[side][edge-1]
+        address_cw = addresses_upper[side][next_edge-1]
+      tree.store(address_ccw, side, True, color, None)
+      tree.store(address_cw, side, True, color, None)
 
 ##[TEST]
 if __name__ == '__main__':
@@ -197,7 +142,7 @@ if __name__ == '__main__':
   for side in range(2):
     print('side ' + str(side) + ' representatives:')
     for g in dessin.rep[side]:
-      mid = matmul(g, dessin.midpoint)
+      mid = matmul(g, dessin.covering.midpoint)
       print(mid[0:2] / (1 + mid[2]))
   print('final edge gluings')
   print(dessin.edge_gluings)

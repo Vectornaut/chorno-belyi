@@ -11,10 +11,9 @@ import vispy.io as io
 from math import sqrt, cos, sin, pi, floor
 from numpy import array, dot
 
-import covering
+from domain import Domain
+from covering import Covering
 from dessin import Dessin
-import triangle_tree
-from triangle_tree import *
 
 app.use_app(backend_name = 'PyQt5', call_reuse = True)
 
@@ -594,22 +593,21 @@ class TilingCanvas(app.Canvas):
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
   
-  def set_tiling(self, p, q, r):
-    # save vertex orders
-    self.orders = (p, q, r)
-    
-    # find the covering map to CP^1
-    self.bel = covering.Covering(p, q, r, 20)
+  def set_covering(self, covering):
+    self.covering = covering
     for k in range(3):
-      self.program['mirrors[{}]'.format(k)] = self.bel.mirrors[k]
-    self.program['shift'] = self.bel.shift.transpose()
-    self.program['p'] = self.bel.p
-    self.program['q'] = self.bel.q
-    self.program['K_a'] = self.bel.K_a;
-    self.program['K_b'] = self.bel.K_b;
-    for n in range(len(self.bel.cover_a)):
-      self.program['cover_a[{}]'.format(n)] = self.bel.cover_a[n]
-      self.program['cover_b[{}]'.format(n)] = self.bel.cover_b[n]
+      self.program['mirrors[{}]'.format(k)] = covering.mirrors[k]
+    self.program['shift'] = covering.shift.transpose()
+    self.program['p'] = covering.p
+    self.program['q'] = covering.q
+    self.program['K_a'] = covering.K_a;
+    self.program['K_b'] = covering.K_b;
+    for n in range(len(covering.cover_a)):
+      self.program['cover_a[{}]'.format(n)] = covering.cover_a[n]
+      self.program['cover_b[{}]'.format(n)] = covering.cover_b[n]
+  
+  def set_tiling(self, p, q, r):
+    self.set_covering(Covering(p, q, r, 20)) ##[TEMP] should make size adjustable
   
   def load_empty_tree(self, lit=False):
     if lit:
@@ -643,7 +641,7 @@ class TilingCanvas(app.Canvas):
     self.domain = domain
     if domain:
       self.load_tri_tree(domain.tree)
-      if domain.orders != self.orders:
+      if domain.orders != self.covering.orders:
         self.set_tiling(*domain.orders)
     else:
       self.load_empty_tree(lit)
@@ -783,7 +781,7 @@ class TilingPanel(DessinControlPanel):
     
     # add order spinners
     self.order_spinners = []
-    for n in canvas.orders:
+    for n in canvas.covering.orders:
       spinner = qt.QSpinBox()
       spinner.setValue(n)
       spinner.valueChanged.connect(self.change_controls)
@@ -903,18 +901,26 @@ class WorkingPanel(DessinControlPanel):
       cycle_strs = [field.text() for field in self.pmt_fields]
       orbit = self.orbit_field.text()
       tag = self.tag_field.text()
-      domain = Dessin(cycle_strs, orbit, 20, tag if tag else None)
+      dessin = Dessin(cycle_strs, orbit, 20, tag if tag else None)
     except Exception as ex:
       self.error_dialog.setText("Error computing dessin metadata.")
       self.error_dialog.setDetailedText(str(ex))
       self.error_dialog.exec()
     else:
-      p, q, r = domain.orders
+      p, q, r = dessin.domain.orders
       if p*q*r - q*r - r*p - p*q > 0:
         # add new domain
-        self.domains.append(domain)
+        self.domains.append(dessin.domain)
         box = self.domain_box
-        box.addItem(domain.name())
+        box.addItem(dessin.domain.name())
+        
+        # set new covering. since `covering` has the same orders as `domain`,
+        # we'll automatically skip the covering computation step in the
+        # subsequent call to
+        #
+        #   change_controls -> take_the_canvas -> set_domain
+        #
+        self.canvas.set_covering(dessin.covering)
         
         # choose new domain
         box.setCurrentIndex(box.count()-1)
@@ -972,7 +978,7 @@ class SavedPanel(DessinControlPanel):
       if re.match(r'.*\.json$', filename):
         try:
           with open('domains/' + filename, 'r') as file:
-            dom = Dessin.load(file, lazy=True)
+            dom = Domain.load(file)
         except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:
@@ -1017,7 +1023,6 @@ class SavedPanel(DessinControlPanel):
     if passport:
       orbit = self.orbit_box.currentText()
       index = self.domain_box.currentIndex()
-      self.domains[passport][orbit][index].compute()
       self.canvas.set_domain(self.domains[passport][orbit][index], working=False)
     else:
       self.canvas.set_domain(None)

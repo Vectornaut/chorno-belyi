@@ -35,27 +35,11 @@ def apply_series(series, w, order):
 #          projective line" <arXiv:1311.2081>
 #
 class Covering():
-  def __init__(self, p, q, r, prec, lazy=False):
+  def __init__(self, p, q, r, prec):
     self.p = p
     self.q = q
     self.r = r
-    
-    self.prec = prec
-    self.computed = False
-    if not lazy: self.compute()
-  
-  def compute(self):
-    # check whether the covering is already computed
-    if self.computed:
-      return
-    else:
-      self.computed = True
-    
-    # extract attributes, for convenience
-    p = self.p
-    q = self.q
-    r = self.r
-    prec = self.prec
+    self.orders = (p, q, r)
     
     # --- find mirrors
     
