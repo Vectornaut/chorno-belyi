@@ -132,13 +132,13 @@ class Dessin(Covering):
       self.tree = TriangleTree()
       for edge in range(1, self.degree+1):
         for side in range(2):
-          self.tree.store(addresses_upper[side][edge-1], side, True, 0)
-          self.tree.store(addresses_lower[side][edge-1], side, True, 0)
+          self.tree.store(addresses_upper[side][edge-1], side, True, None, None)
+          self.tree.store(addresses_lower[side][edge-1], side, True, None, None)
       for (edge, color) in self.edge_gluings:
         for side in range(2):
           for addresses in [addresses_upper, addresses_lower]:
-            self.tree.store(addresses[side][edge-1], side, True, color)
-            self.tree.store(addresses[side][edge-1], side, True, color)
+            self.tree.store(addresses[side][edge-1], side, True, None, color)
+            self.tree.store(addresses[side][edge-1], side, True, None, color)
       for (side, edge, next_edge, color) in self.vertex_gluings:
         if side == 0:
           address_ccw = addresses_upper[side][edge-1]
@@ -146,8 +146,8 @@ class Dessin(Covering):
         else:
           address_ccw = addresses_lower[side][edge-1]
           address_cw = addresses_upper[side][next_edge-1]
-        self.tree.store(address_ccw, side, True, -color)
-        self.tree.store(address_cw, side, True, -color)
+        self.tree.store(address_ccw, side, True, color, None)
+        self.tree.store(address_cw, side, True, color, None)
   
   def name(self):
     permutation_str = ','.join([s.cycle_string() for s in self.group.gens()])

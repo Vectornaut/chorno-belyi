@@ -323,8 +323,9 @@ const float PI = 3.141592653589793;
 
 vec3 strip_color(
   cjet z, float proj_scaling, float r_px,
-  float twin_dist, bvec2 lit, bool twin_lit,
-  float trim_dist, int inner_trim, int outer_trim
+  float[3] mirror_prod, int twin_k,
+  bvec2 lit, bvec2 twin_lit,
+  ivec2 outer_trim, ivec2 twin_trim, int inner_trim
 ) {
   // set up edge palette
   vec3 edge_palette [6];
@@ -350,10 +351,11 @@ vec3 strip_color(
   vec3 ribbon = vec3(edge_mix(1, 0, h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   
-  // dim unlit half-triangles
+  // dim unlit half-triangles. recall that when -mirror_prod[k] is small, it
+  // approximates the distance to mirror[k]
   vec3 shadow = vec3(0.4, 0.45, 0.5);
   float dimness = edge_mix(float(!lit[0]), float(!lit[1]), h.pt.x, scaling, r_px);
-  dimness = edge_mix(float(!twin_lit), dimness, twin_dist, proj_scaling, r_px);
+  dimness = edge_mix(float(!twin_lit[side]), dimness, -mirror_prod[twin_k], proj_scaling, r_px);
   ribbon = mix(ribbon, shadow, 0.8*dimness);
   sky = mix(sky, shadow, 0.8*dimness);
   
@@ -362,8 +364,12 @@ vec3 strip_color(
   if (inner_trim > 0) {
     trimmed = line_mix(edge_palette[inner_trim-1], sky, 10, h.pt.x, scaling, r_px);
   }
-  if (outer_trim < 0) {
-    trimmed = line_mix(edge_palette[-outer_trim-1], trimmed, 10, trim_dist, proj_scaling, r_px);
+  
+  // draw outer trim. recall that when -mirror_prod[k] is small, it
+  // approximates the distance to mirror[k]
+  int active_trim = max(outer_trim[side], twin_trim[side]);
+  if (active_trim > 0) {
+    trimmed = line_mix(edge_palette[active_trim-1], trimmed, 10, -mirror_prod[1+side], proj_scaling, r_px);
   }
   
   // combine ribbon and trim
@@ -399,9 +405,13 @@ void main_dessin() {
     // the other side of the nearest mirror. (strictly speaking, or kludgey
     // algorithm doesn't always find the nearest mirror. if two mirrors'
     // minkowski products with us are smaler than TWIN_EPS, we could get a twin
-    // across either one. to identify the twin point during the final onsides
-    // check, we also save the last minkowski product with each mirror
+    // across either one
     int twin = 0; // our twin's triangle tree index
+    
+    // to identify the twin point during the final onsides check, we also save
+    // the last minkowski product with each mirror. since the minkowski metric
+    // induces the hyperbolic metric of curvature -1 on the forward hyperboloid,
+    // a small -mirror_prod[k] approximates the distance to mirror k
     float mirror_prod [3];
     
     // the minkowski product with the nearest mirror we've flipped across so
@@ -423,21 +433,21 @@ void main_dessin() {
             twin = index;
             twin_prod = mirror_prod[k];
           } else {
-            twin = tri_tree[7*twin + k];
+            twin = tri_tree[8*twin + k];
           }
           
           // reflect across mirror k
           v -= 2.*mirror_prod[k]*mirrors[k];
           flips += 1;
           onsides = 0;
-          index = tri_tree[7*index + k];
+          index = tri_tree[8*index + k];
         } else {
           onsides += 1;
           
           if (-mirror_prod[k] < twin_prod - TWIN_EPS) {
             // the twin that did flip here would be closer than our current twin
             // twin, so start following that twin instead
-            twin = tri_tree[7*index + k];
+            twin = tri_tree[8*index + k];
             twin_prod = -mirror_prod[k];
           }
           
@@ -446,27 +456,15 @@ void main_dessin() {
             
             // find the mirror between us and our twin. along the way, we'll
             // see which side of the strip we're closest to hyperbolically
-            int side = mirror_prod[1] > mirror_prod[2] ? 0 : 1;
-            int twin_k = mirror_prod[0] > mirror_prod[side+1] ? 0 : side+1;
+            int twin_k = mirror_prod[1] > mirror_prod[0] ? 1 : 0;
+            if (mirror_prod[2] > mirror_prod[twin_k]) twin_k = 2;
             
             // fetch coloring data
-            bvec2 lit = bvec2(tri_tree[7*index + 3], tri_tree[7*index + 4]);
-            ivec2 trim = ivec2(tri_tree[7*index + 5], tri_tree[7*index + 6]);
-            bool twin_lit = bool(tri_tree[7*twin + 3 + side]);
-            int twin_trim = tri_tree[7*twin + 5 + side];
-            
-            // find trim colors
-            //int inner_trim = max(trim[0], trim[1]);
-            //int inner_trim = max(trim.x, trim.y);
-            int inner_trim = int(max(trim[0], trim[1]));
-            int outer_trim = (twin_k > 0) ? int(min(trim[side], twin_trim)) : trim[side];
-            
-            // estimate the hyperbolic distance to the nearest mirror and the
-            // nearest trim mirror, using the fact that the minkowski metric
-            // induces the hyperbolic metric of curvature -1 on the forward
-            // hyperboloid
-            float twin_dist = -mirror_prod[twin_k];
-            float trim_dist = -mirror_prod[side+1];
+            bvec2 lit = bvec2(tri_tree[8*index + 3], tri_tree[8*index + 4]);
+            ivec2 outer_trim = ivec2(tri_tree[8*index + 5], tri_tree[8*index + 6]);
+            int inner_trim = tri_tree[8*index + 7];
+            bvec2 twin_lit = bvec2(tri_tree[8*twin + 3], tri_tree[8*twin + 4]);
+            ivec2 twin_trim = ivec2(tri_tree[8*twin + 5], tri_tree[8*twin + 6]);
             
             // find the conformal scale factor of the Poincare projection
             float proj_scaling = 2. / (1.-r_sq);
@@ -475,8 +473,9 @@ void main_dessin() {
             cjet z = cover(v, r_sq);
             vec3 color = strip_color(
               add(scale(2., z), -ONE), proj_scaling, r_px,
-              twin_dist, lit, twin_lit,
-              trim_dist, inner_trim, outer_trim
+              mirror_prod, twin_k,
+              lit, twin_lit,
+              outer_trim, twin_trim, inner_trim
             );
             
             // area-sample the disk boundary
@@ -551,7 +550,7 @@ void main() {
 ''')
 
 def tri_tree_key(index, attr):
-  return 'tri_tree[{}]'.format(7*index + attr)
+  return 'tri_tree[{}]'.format(8*index + attr)
 
 class TilingCanvas(app.Canvas):
   edge_palette = ['#e7302c', '#fa9004', '#fff200', '#28b8f2', '#805af4', '#3a27b2']
@@ -619,6 +618,7 @@ class TilingCanvas(app.Canvas):
       for side in range(2):
         self.program[tri_tree_key(1, 3 + side)] = True
         self.program[tri_tree_key(1, 5 + side)] = 0
+      self.program[tri_tree_key(1, 7)] = 0
     else:
       for attr in range(7):
         self.program[tri_tree_key(1, attr)] = 0
@@ -634,7 +634,8 @@ class TilingCanvas(app.Canvas):
           self.program[tri_tree_key(tri.index, k)] = 0
       for side in range(2):
         self.program[tri_tree_key(tri.index, 3 + side)] = tri.lit[side]
-        self.program[tri_tree_key(tri.index, 5 + side)] = tri.trim[side]
+        self.program[tri_tree_key(tri.index, 5 + side)] = tri.outer_trim[side]
+      self.program[tri_tree_key(tri.index, 7)] = tri.inner_trim
     
     self.program['bdry_lit'] = False;
   
@@ -664,21 +665,24 @@ class TilingCanvas(app.Canvas):
     # update coloring
     side = None
     lit = None
+    outer_trim = None
+    inner_trim = None
     if event.key == keys.SPACE:
       self.program['show_tiling'] = not self.program['show_tiling']
       self.update()
     elif self.working:
       if event.key == 'c':
         lit = (True, True)
-        trim = (0, 0)
+        outer_trim = (0, 0)
+        inner_trim = 0
       elif event.key == 'x':
         side = self.selection_side
         lit = True
-        trim = self.paint_color
+        inner_trim = self.paint_color
       elif event.key == 's':
         side = self.selection_side
         lit = True
-        trim = -self.paint_color
+        outer_trim = self.paint_color
       elif event.key == 'z':
         lit = False
       elif event.text.isdigit():
@@ -688,7 +692,7 @@ class TilingCanvas(app.Canvas):
         if lit == False:
           self.domain.tree.drop(self.selection)
         else:
-          self.domain.tree.store(self.selection, side, lit, trim)
+          self.domain.tree.store(self.selection, side, lit, outer_trim, inner_trim)
         self.load_tri_tree(self.domain.tree)
         self.update()
   
@@ -969,7 +973,7 @@ class SavedPanel(DessinControlPanel):
       if re.match(r'.*\.json$', filename):
         try:
           with open('domains/' + filename, 'r') as file:
-            dom = DessinDomain.load(file)
+            dom = DessinDomain.load(file, True)
         except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:

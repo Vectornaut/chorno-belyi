@@ -3,25 +3,18 @@ from sage.categories.permutation_groups import PermutationGroups
 import json
 from sage.all import ZZ ##[TEMP] needed for serialization of Sage integers
 
-# old highlight styles
-NONE = 0
-L_HALF = 1
-R_HALF = 2
-L_WHOLE = 3
-R_WHOLE = 4
-WHOLE = 5
-
 class TriangleTree:
   def __init__(self):
     self.children = [None, None, None]
     self.lit = [False, False]
-    self.trim = [0, 0]
+    self.inner_trim = 0
+    self.outer_trim = [0, 0]
   
   def __str__(self):
     return self.show('*', 0)
   
   def show(self, k, level):
-    text = level*' ' + '{} [{}, {}]'.format(k, self.lit, self.trim)
+    text = level*' ' + '{} [{}, {}, {}]'.format(k, self.lit, self.outer_trim, self.inner_trim)
     if hasattr(self, 'index') and self.index != None:
       text += ' #' + str(self.index)
     for k in range(3):
@@ -32,25 +25,29 @@ class TriangleTree:
   # store the given coloring data at the given address, creating any nodes on
   # the way to the address that don't exist already. to store data for both
   # sides at once, set `side` to None and pass length-2 tuples or lists for
-  # `lit` and `trim`
-  def store(self, address, side, lit, trim):
+  # `lit` and `outer_trim`
+  def store(self, address, side, lit, outer_trim, inner_trim):
     if address == []:
       if side == None:
-        self.lit[:] = lit
-        self.trim[:] = trim
+        for side in range(2):
+          if lit[side] != None: self.lit[side] = lit[side]
+          if outer_trim[side] != None: self.outer_trim[side] = outer_trim[side]
+          if inner_trim != None: self.inner_trim = inner_trim
       else:
-        self.lit[side] = lit
-        self.trim[side] = trim
+        if lit != None: self.lit[side] = lit
+        if outer_trim != None: self.outer_trim[side] = outer_trim
+        if inner_trim != None: self.inner_trim = inner_trim
     else:
       k = address[0]
       if self.children[k] == None: self.children[k] = TriangleTree()
-      self.children[k].store(address[1:], side, lit, trim)
+      self.children[k].store(address[1:], side, lit, outer_trim, inner_trim)
   
   def drop(self, address):
     if address == []:
       # turn off the lights
       self.lit[:] = (False, False)
-      self.trim[:] = (0, 0)
+      self.outer_trim[:] = (0, 0)
+      self.inner_trim = 0
       
       # tell the node above whether this node can be severed from the tree
       return all(child == None for child in self.children)
@@ -67,7 +64,8 @@ class TriangleTree:
           self.children[(k+1)%3] == None
           and self.children[(k+2)%3] == None
           and not any(self.lit)
-          and not any(self.trim)
+          and not any(self.outer_trim)
+          and not self.inner_trim
         ):
           # this node can be severed too
           return True
@@ -108,22 +106,19 @@ class TriangleTree:
     for k in range(3):
       if child := data['children'][k]:
         tree.children[k] = TriangleTree.from_dict(child, legacy)
-    if not legacy: ##[ONESIES]
-      tree.lit = data['lit']
-      tree.trim = data['trim']
-    else: ##[ONESIES] v v v
-      highlight = data['highlight']
-      color = 1 + data['color']
-      if highlight == L_HALF:
-        tree.lit[0] = True
-        tree.trim[0] = color
-      elif highlight == R_HALF:
-        tree.lit[1] = True
-        tree.trim[1] = color
-      else:
-        tree.lit[:] = [True, True]
-        if highlight == L_WHOLE: tree.trim[1] = -color
-        elif highlight == R_WHOLE: tree.trim[0] = -color
+    tree.lit = data['lit']
+    if not legacy: ##[SIGNED]
+      tree.outer_trim = data['outer_trim']
+      tree.inner_trim = data['inner_trim']
+    else: ##[SIGNED] v v v
+      trim = data['trim']
+      tree.inner_trim = 0
+      tree.outer_trim = [0, 0]
+      for side in range(2):
+        if trim[side] > 0:
+          tree.inner_trim = max(trim[side], tree.inner_trim)
+        elif trim[side] < 0:
+          tree.outer_trim[side] = -trim[side]
     return tree
   
   @staticmethod
@@ -207,17 +202,17 @@ class DessinDomain:
 
 def tree_test():
   tree = TriangleTree()
-  tree.store([0, 0, 0], None, (True, True), (9000, 5555))
-  tree.store([0, 1], 0, True, 901)
-  tree.store([0, 1, 1], 1, True, 9011)
-  tree.store([2, 0, 1], 0, False, 9201)
-  tree.store([2], None, (False, False), (92, 55))
+  tree.store([0, 0, 0], None, (True, True), (9000, 5555), 7)
+  tree.store([0, 1], 0, True, 901, 7)
+  tree.store([0, 1, 1], 1, True, 9011, None)
+  tree.store([2, 0, 1], 0, False, 9201, None)
+  tree.store([2], None, (False, False), (92, 55), None)
   
   nodes = tree.flatten()
   print(tree)
   print()
   for node in nodes:
-    print('[{}, {}]'.format(node.lit, node.trim))
+    print('[{}, {}, {}]'.format(node.lit, node.outer_trim, node.inner_trim))
   print()
   
   for address in [[0, 1], [0, 0, 0], [0, 1, 1], [2, 0], [2, 0, 1]]:
@@ -225,13 +220,10 @@ def tree_test():
     print('drop ' + ''.join(map(str, address)))
     print(tree)
     print()
-  
-  print('note that node 2 is severable because its highlight mode is 0, even though its color is nonzero')
-  print()
 
 def root_drop_test():
   tree = TriangleTree()
-  tree.store([], 0, True, 99)
+  tree.store([], 0, True, 99, None)
   print(tree)
   print()
   
@@ -241,11 +233,11 @@ def root_drop_test():
 
 def json_test():
   dom = DessinDomain([[(1,2)], [(2,3)], [(3,1)]], 'a')
-  dom.tree.store([0, 0, 0], highlight=9000)
-  dom.tree.store([0, 1], highlight=901)
-  dom.tree.store([0, 1, 1], highlight=9011)
-  dom.tree.store([2, 0, 1], highlight=9201)
-  dom.tree.store([2], color=92)
+  dom.tree.store([0, 0, 0], 0, None, None, 9000)
+  dom.tree.store([0, 1], 0, None, None, 901)
+  dom.tree.store([0, 1, 1], 0, None, None, 9011)
+  dom.tree.store([2, 0, 1], 0, None, None, 9201)
+  dom.tree.store([2], 0, None, 82, None)
   print(dom.tree)
   print()
   
