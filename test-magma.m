@@ -1,6 +1,13 @@
 CC<I> := ComplexField();
 test_z := 0.3 - 0.2*I;
-A := 2; B := 3; C := 9;
+//A := 2; B := 3; C := 9;
+p := 2;
+q := 3;
+r := 9;
+
+A := (1/2)*(1/p - 1/q - 1/r + 1);
+B := (1/2)*(1/p - 1/q + 1/r + 1);
+C := 1 + 1/p;
 
 printf "test input = %o\n", test_z;
 print "values of series centered at 0";
