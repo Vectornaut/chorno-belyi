@@ -6,8 +6,6 @@ import vispy.util.keys as keys
 
 from covering import Covering
 
-app.use_app(backend_name = 'PyQt5', call_reuse = True)
-
 vertex = '''
 attribute vec2 position;
 
@@ -729,18 +727,18 @@ class DomainCanvas(app.Canvas):
         )
   
   def render(self):
-        self.set_current()
-        size = (400, 400)
-        fbo = gloo.FrameBuffer(
-          color=gloo.RenderBuffer(size[::-1]),
-          depth=gloo.RenderBuffer(size[::-1])
-        )
-        
-        try:
-            self.update_resolution(size)
-            fbo.activate()
-            self.events.draw()
-            return fbo.read()
-        finally:
-            fbo.deactivate()
-            self.update_resolution()
+    self.set_current()
+    size = (400, 400)
+    fbo = gloo.FrameBuffer(
+      color=gloo.RenderBuffer(size[::-1]),
+      depth=gloo.RenderBuffer(size[::-1])
+    )
+    
+    try:
+      self.update_resolution(size)
+      fbo.activate()
+      self.program.draw()
+      return fbo.read()
+    finally:
+      fbo.deactivate()
+      self.update_resolution()

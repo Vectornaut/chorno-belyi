@@ -10,6 +10,8 @@ from domain import Domain
 from dessin import Dessin
 from canvas import DomainCanvas
 
+app.use_app(backend_name='PyQt5', call_reuse=True)
+
 class DessinControlPanel(qt.QWidget):
   def __init__(self, canvas, *args, **kwargs):
     super().__init__(*args, **kwargs)

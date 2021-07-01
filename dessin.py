@@ -14,13 +14,25 @@ class Dessin():
     # find the tiling
     self.domain = Domain(group, orbit, tag)
     
+    # find the geometry type:
+    #    1   spherical
+    #    0   euclidean
+    #   -1   hyperbolic
+    p, q, r = self.domain.orders
+    self.geometry = np.sign(q*r + r*p + p*q - p*q*r)
+    
+    if self.geometry < 0:
+      # find the covering map
+      self.covering = Covering(p, q, r, prec)
+      
+      # build a fundamental domain
+      self.build_tree()
+  
+  def build_tree(self):
     # extract tiling data, for convenience
     degree = self.domain.degree
     orders = self.domain.orders
     permutations = self.domain.group.gens()
-    
-    # find the covering
-    self.covering = Covering(*orders, prec)
     
     # extract covering data and address map, for convenience
     flip = self.covering.flip
@@ -42,9 +54,9 @@ class Dessin():
       if not frontier[side]:
         break
       edge = frontier[side].pop(0)
-      print('side ' + str(side) + ', edge ' + str(edge))
-      print('|' + str(self.route[0]))
-      print('|' + str(self.route[1]))
+      ##[DOM ALG] print('side ' + str(side) + ', edge ' + str(edge))
+      ##[DOM ALG] print('|' + str(self.route[0]))
+      ##[DOM ALG] print('|' + str(self.route[1]))
       # explore the opposite half-edge
       if self.route[1-side][edge-1] == None:
         # route to the opposite half-edge from this one
@@ -54,30 +66,30 @@ class Dessin():
         else:
           self.route[1-side][edge-1] = self.route[side][edge-1]
           self.rep[1-side][edge-1] = matmul(self.rep[side][edge-1], flip)
-        print('flip')
-        print('|' + str(self.route[0]))
-        print('|' + str(self.route[1]))
+        ##[DOM ALG] print('flip')
+        ##[DOM ALG] print('|' + str(self.route[0]))
+        ##[DOM ALG] print('|' + str(self.route[1]))
         
         # petal the opposite half-edge
         for cnt in range(orders[1-side]-1):
           next_edge = permutations[1-side](edge)
-          print('  petaling; next edge: ' + str(next_edge))
+          ##[DOM ALG] print('  petaling; next edge: ' + str(next_edge))
           if self.route[1-side][next_edge-1] == None:
             self.route[1-side][next_edge-1] = self.route[1-side][edge-1] + [1-side]
             self.rep[1-side][next_edge-1] = matmul(self.rep[1-side][edge-1], rot_ccw[1-side])
             frontier[1-side].append(next_edge)
           else:
             self.vertex_gluings.append((1-side, edge, next_edge, color))
-            print('  vertex gluing ' + str(self.vertex_gluings[-1]))
+            ##[DOM ALG] print('  vertex gluing ' + str(self.vertex_gluings[-1]))
             color += 1
             break
-          print('  |' + str(self.route[0]))
-          print('  |' + str(self.route[1]))
+          ##[DOM ALG] print('  |' + str(self.route[0]))
+          ##[DOM ALG] print('  |' + str(self.route[1]))
           edge = next_edge
       elif side == 0:
         # glue to the opposite half-edge
         self.edge_gluings.append((edge, color))
-        print('  edge gluing ' + str(self.edge_gluings[-1]))
+        ##[DOM ALG] print('  edge gluing ' + str(self.edge_gluings[-1]))
         color += 1
       side = 1-side
     
@@ -106,10 +118,10 @@ class Dessin():
     ]
     
     for side in range(2):
-      print('side ' + str(side) + ' representatives:')
+      ##[DOM ALG] print('side ' + str(side) + ' representatives:')
       for g in self.rep[side]:
         mid = matmul(g, midpoint)
-        print(mid[0:2] / (1 + mid[2]))
+        ##[DOM ALG] print(mid[0:2] / (1 + mid[2]))
     
     # build the triangle tree for our fundamental domain
     tree = self.domain.tree
