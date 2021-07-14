@@ -1,6 +1,5 @@
 CC<I> := ComplexField();
 test_z := 0.3 - 0.2*I;
-//A := 2; B := 3; C := 9;
 p := 2;
 q := 3;
 r := 9;
@@ -30,7 +29,7 @@ printf "hypergeometric parameters = %o, %o, %o\n", C-A, C-B, 1-A-B+C;
 HypergeometricSeries2F1(C-A, C-B, 1-A-B+C, test_z_1);
 printf "hypergeometric parameters = %o, %o, %o\n", A, B, 1+A+B-C;
 HypergeometricSeries2F1(A, B, 1+A+B-C, test_z_1);
-
+print "\n";
 
 test_z := 1.5+0.1*I;
 test_z_1 := 1 - test_z;
