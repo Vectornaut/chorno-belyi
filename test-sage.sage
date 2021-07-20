@@ -1,7 +1,4 @@
 test_z = 0.3 - 0.2*I
-#A = 2
-#B = 3
-#C = 9
 p = 2;
 q = 3;
 r = 9;
@@ -31,7 +28,7 @@ print(h1_1(t=test_z_1))
 print("hypergeometric parameters = %s, %s, %s" % (A,B,1+A+B-C))
 h2_1 = hypergeometric([A,B], [1+A+B-C], t).series(t, prec) # y_5
 print(h2_1(t=test_z_1))
-
+print("\n")
 
 test_z = 1.5+0.1*I
 test_z_1 = 1 - test_z
