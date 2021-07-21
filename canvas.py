@@ -601,30 +601,23 @@ class DomainCanvas(app.Canvas):
   
   def walk_right(self):
     if self.path_right:
-      print('walking right')
       self.viewpoint = matmul(self.viewpoint, self.covering.shift_ab)
       self.program['viewpoint'] = self.viewpoint.transpose()
       self.viewpoint_color = 1 - self.viewpoint_color
       self.path_right = self.covering.orders[self.viewpoint_color] % 2 == 0
       self.path_left = True
       self.update()
-    else:
-      print('no path right')
   
   def walk_left(self):
     if self.path_left:
-      print('walking left')
       self.viewpoint = matmul(self.viewpoint, self.covering.shift_ba)
       self.program['viewpoint'] = self.viewpoint.transpose()
       self.viewpoint_color = 1 - self.viewpoint_color
       self.path_right = True
       self.path_left = self.covering.orders[self.viewpoint_color] % 2 == 0
       self.update()
-    else:
-      print('no path left')
   
   def turn(self, ccw):
-    print('turning {}'.format('ccw' if ccw else 'cw'))
     rot = self.covering.half_rot_ccw if ccw else self.covering.half_rot_cw
     self.viewpoint = matmul(self.viewpoint, rot[self.viewpoint_color])
     self.program['viewpoint'] = self.viewpoint.transpose()
