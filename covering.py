@@ -68,8 +68,8 @@ class Covering():
     # called `lambda` (and the formula for it is off by a factor of two)
     cosh_dist = (cp*cq + cr) / (sp*sq)
     sinh_dist = np.sqrt(cosh_dist**2 - 1)
-    ##self.shift_ba = np.array([
-    self.shift = np.array([
+    self.shift_ba = np.array([
+    ##self.shift = np.array([
       [ cosh_dist, 0, -sinh_dist],
       [         0, 1,          0],
       [-sinh_dist, 0,  cosh_dist]
@@ -129,29 +129,55 @@ class Covering():
       ])
     ]
     
+    # we use half-rotations for navigation
+    self.half_rot_ccw = [
+      np.array([
+        [cos(pi/p), -sin(pi/p), 0],
+        [sin(pi/p),  cos(pi/p), 0],
+        [          0,            0, 1]
+      ]),
+      np.array([
+        [cos(pi/q), -sin(pi/q), 0],
+        [sin(pi/q),  cos(pi/q), 0],
+        [          0,            0, 1]
+      ])
+    ]
+    self.half_rot_cw = [
+      np.array([
+        [ cos(pi/p), sin(pi/p), 0],
+        [-sin(pi/p), cos(pi/p), 0],
+        [           0,           0, 1]
+      ]),
+      np.array([
+        [ cos(pi/q), sin(pi/q), 0],
+        [-sin(pi/q), cos(pi/q), 0],
+        [           0,           0, 1]
+      ])
+    ]
+    
     # in the notation of [KMSV],
     #   delta_a = rot_a_ccw
     #   delta_b = shift_ab * rot_b_ccw_shift * shift_ba
-    self.rot_a_ccw = np.array([
-      [cos(pi/p), -sin(pi/p), 0],
-      [sin(pi/p),  cos(pi/p), 0],
-      [        0,          0, 1]
-    ])
-    self.rot_b_ccw_shift = np.array([
-      [cos(pi/q), -sin(pi/q), 0],
-      [sin(pi/q),  cos(pi/q), 0],
-      [        0,          0, 1]
-    ])
-    self.rot_a_cw = np.array([
-      [ cos(pi/p), sin(pi/p), 0],
-      [-sin(pi/p), cos(pi/p), 0],
-      [         0,         0, 1]
-    ])
-    self.rot_b_cw_shift = np.array([
-      [ cos(pi/q), sin(pi/q), 0],
-      [-sin(pi/q), cos(pi/q), 0],
-      [        0,          0, 1]
-    ])
+    ##self.rot_a_ccw = np.array([
+    ##  [cos(pi/p), -sin(pi/p), 0],
+    ##  [sin(pi/p),  cos(pi/p), 0],
+    ##  [        0,          0, 1]
+    ##)
+    ##self.rot_b_ccw_shift = np.array([
+    ##  [cos(pi/q), -sin(pi/q), 0],
+    ##  [sin(pi/q),  cos(pi/q), 0],
+    ##  [        0,          0, 1]
+    ##])
+    ##self.rot_a_cw = np.array([
+    ##  [ cos(pi/p), sin(pi/p), 0],
+    ##  [-sin(pi/p), cos(pi/p), 0],
+    ##  [         0,         0, 1]
+    ##])
+    ##self.rot_b_cw_shift = np.array([
+    ##  [ cos(pi/q), sin(pi/q), 0],
+    ##  [-sin(pi/q), cos(pi/q), 0],
+    ##  [        0,          0, 1]
+    ##])
     
     # --- find scale factors
     
@@ -218,7 +244,7 @@ class Covering():
     ]
   
   def apply(self, v):
-    v_shift = np.matmul(self.shift, v)
+    v_shift = np.matmul(self.shift_ba, v)
     if v[2] < v_shift[2]:
       # v is closer to the time axis (this comparison works because v and
       # v_shift are on the forward -1 hyperboloid)
@@ -263,7 +289,7 @@ from math import cos, sin
 
 if __name__ == '__main__':
   bel = Covering(5, 4, 3, 4)
-  print(bel.shift)
+  print(bel.shift_ba)
   print()
   print(bel.cover_a)
   print()

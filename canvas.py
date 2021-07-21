@@ -3,6 +3,7 @@
 
 from vispy import app, gloo
 import vispy.util.keys as keys
+from numpy import array, identity, matmul, dot
 
 from covering import Covering
 
@@ -15,10 +16,13 @@ void main() {
 '''
 
 fragment = ('''
+// display settings
 uniform vec2 resolution;
 uniform float shortdim;
 uniform bool show_tiling;
+uniform mat3 viewpoint;
 
+// covering map
 uniform vec3 mirrors [3];
 uniform mat3 shift;
 uniform int p;
@@ -27,8 +31,10 @@ uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
 uniform float cover_b [20]; /*[TEMP]*/
-//uniform int tri_tree [1022];
-uniform int tri_tree [672];
+
+// triangle coloring
+/*uniform int tri_tree [1022];*/
+uniform int tri_tree [672]; /*[TEMP] Sam's MacBook can't handle large uniforms*/
 uniform bool bdry_lit;
 
 // --- complex arithmetic ---
@@ -384,7 +390,7 @@ void main_dessin() {
   
   // reduce to fundamental domain
   if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
+    vec3 v = viewpoint * vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0; // how many times in a row we've been on the negative side of a mirror
     int index = 1;
@@ -491,7 +497,7 @@ void main_tiling() {
   
   // reduce to fundamental domain
   if (r_sq < 1.) {
-    vec3 v = vec3(2.*u, 1.+r_sq) / (1.-r_sq);
+    vec3 v = viewpoint * vec3(2.*u, 1.+r_sq) / (1.-r_sq);
     int flips = 0;
     int onsides = 0; // how many times in a row we've been on the negative side of a mirror
     
@@ -561,9 +567,12 @@ class DomainCanvas(app.Canvas):
     self.set_tiling(p, q, r)
     self.domain = None
     
+    # initialize viewpoint
+    self.reset_viewpoint()
+    
     # initialize triangle-coloring tree
     #for m in range(1022):
-    for m in range(672):
+    for m in range(672): ##[TEMP] Sam's MacBook can't handle large uniforms
       self.program['tri_tree[{}]'.format(m)] = 0
     if lit:
       self.load_empty_tree(True)
@@ -582,11 +591,52 @@ class DomainCanvas(app.Canvas):
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
   
+  def reset_viewpoint(self):
+    self.viewpoint = identity(3)
+    self.program['viewpoint'] = self.viewpoint.transpose()
+    self.viewpoint_color = 0
+    self.path_right = True
+    self.path_left = self.covering.orders[self.viewpoint_color] % 2 == 0
+    self.update()
+  
+  def walk_right(self):
+    if self.path_right:
+      print('walking right')
+      self.viewpoint = matmul(self.viewpoint, self.covering.shift_ab)
+      self.program['viewpoint'] = self.viewpoint.transpose()
+      self.viewpoint_color = 1 - self.viewpoint_color
+      self.path_right = self.covering.orders[self.viewpoint_color] % 2 == 0
+      self.path_left = True
+      self.update()
+    else:
+      print('no path right')
+  
+  def walk_left(self):
+    if self.path_left:
+      print('walking left')
+      self.viewpoint = matmul(self.viewpoint, self.covering.shift_ba)
+      self.program['viewpoint'] = self.viewpoint.transpose()
+      self.viewpoint_color = 1 - self.viewpoint_color
+      self.path_right = True
+      self.path_left = self.covering.orders[self.viewpoint_color] % 2 == 0
+      self.update()
+    else:
+      print('no path left')
+  
+  def turn(self, ccw):
+    print('turning {}'.format('ccw' if ccw else 'cw'))
+    rot = self.covering.half_rot_ccw if ccw else self.covering.half_rot_cw
+    self.viewpoint = matmul(self.viewpoint, rot[self.viewpoint_color])
+    self.program['viewpoint'] = self.viewpoint.transpose()
+    self.path_right = not self.path_right
+    self.path_left = not self.path_left
+    self.update()
+  
   def set_covering(self, covering):
     self.covering = covering
     for k in range(3):
       self.program['mirrors[{}]'.format(k)] = covering.mirrors[k]
-    self.program['shift'] = covering.shift.transpose()
+    self.program['shift'] = covering.shift_ba.transpose()
     self.program['p'] = covering.p
     self.program['q'] = covering.q
     self.program['K_a'] = covering.K_a;
@@ -594,6 +644,7 @@ class DomainCanvas(app.Canvas):
     for n in range(len(covering.cover_a)):
       self.program['cover_a[{}]'.format(n)] = covering.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = covering.cover_b[n]
+    self.reset_viewpoint()
   
   def set_tiling(self, p, q, r):
     self.set_covering(Covering(p, q, r, 20)) ##[TEMP] should make size adjustable
@@ -649,6 +700,16 @@ class DomainCanvas(app.Canvas):
     self.update_resolution()
   
   def on_key_press(self, event):
+    # change viewpoint
+    if event.key == keys.RIGHT:
+      self.walk_right()
+    elif event.key == keys.LEFT:
+      self.walk_left()
+    elif event.key == keys.UP:
+      self.turn(True)
+    elif event.key == keys.DOWN:
+      self.turn(False)
+    
     # update coloring
     side = None
     lit = None
@@ -692,7 +753,7 @@ class DomainCanvas(app.Canvas):
     r_sq = dot(u, u)
     if r_sq <= 1:
       v = array([2*u[0], -2*u[1], 1+r_sq]) / (1-r_sq)
-      self.set_selection(*self.bel.address(v))
+      self.set_selection(*self.covering.address(v))
     else:
       self.set_selection(None)
   
