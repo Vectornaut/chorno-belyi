@@ -342,7 +342,7 @@ class DomainExplorer(qt.QMainWindow):
 if __name__ == '__main__' and sys.flags.interactive == 0:
   # set OpenGL version and profile
   format = QSurfaceFormat()
-  format.setVersion(4, 1)
+  format.setVersion(3, 3)
   format.setProfile(QSurfaceFormat.CoreProfile)
   QSurfaceFormat.setDefaultFormat(format)
   
