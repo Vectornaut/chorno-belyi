@@ -36,7 +36,7 @@ class Dessin():
     
     # extract covering data and address map, for convenience
     flip = self.covering.flip
-    rot_ccw = self.covering.rot_ccw
+    rot_ccw = (self.covering.rot(0, 1), self.covering.rot(1, 1))
     midpoint = self.covering.midpoint
     address = self.covering.address
     

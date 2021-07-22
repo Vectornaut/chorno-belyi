@@ -1,6 +1,7 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
 # <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
+from PyQt5.QtCore import QTimer
 from vispy import app, gloo
 import vispy.util.keys as keys
 from numpy import array, identity, matmul, dot
@@ -563,12 +564,17 @@ class DomainCanvas(app.Canvas):
     self.update_resolution()
     self.program['show_tiling'] = False
     
+    # initialize step animation
+    self.step = lambda t: identity(3)
+    self.step_nframes = 8
+    self.step_frame_interval = 200/self.step_nframes
+    self.step_timer = QTimer()
+    self.step_timer.timeout.connect(self.animate_step)
+    self.step_end = 0
+    
     # initialize tiling and fundamental domain
     self.set_tiling(p, q, r)
     self.domain = None
-    
-    # initialize viewpoint
-    self.reset_viewpoint()
     
     # initialize triangle-coloring tree
     #for m in range(1022):
@@ -591,39 +597,80 @@ class DomainCanvas(app.Canvas):
     self.program['resolution'] = [width, height]
     self.program['shortdim'] = min(width, height)
   
-  def reset_viewpoint(self):
-    self.viewpoint = identity(3)
+  def get_step_frame(self):
+    return self._step_frame
+  
+  def set_step_frame(self, t):
+    self._step_frame = t
+    self.viewpoint = matmul(self.old_viewpoint, self.step(self.step_end * t/self.step_nframes))
     self.program['viewpoint'] = self.viewpoint.transpose()
+    self.update()
+  
+  step_frame = property(get_step_frame, set_step_frame)
+  
+  def animate_step(self):
+    self.step_frame += 1
+    if self.step_frame >= self.step_nframes:
+      self.step_timer.stop()
+  
+  def reset_viewpoint(self):
+    # reset step animation
+    self.step_timer.stop()
+    self.old_viewpoint = identity(3)
+    self.new_viewpoint = identity(3)
+    self.step_frame = 0
+    
+    # check paths
     self.viewpoint_color = 0
     self.path_right = True
     self.path_left = self.covering.orders[self.viewpoint_color] % 2 == 0
-    self.update()
   
   def walk_right(self):
     if self.path_right:
-      self.viewpoint = matmul(self.viewpoint, self.covering.shift_ab)
-      self.program['viewpoint'] = self.viewpoint.transpose()
+      # animate step
+      self.step_timer.stop()
+      self.step = self.covering.shift
+      self.old_viewpoint = self.new_viewpoint
+      self.new_viewpoint = matmul(self.old_viewpoint, self.covering.shift_ab)
+      self.step_end = -1
+      self.step_frame = 0
+      self.step_timer.start(self.step_frame_interval)
+      
+      # update paths
       self.viewpoint_color = 1 - self.viewpoint_color
       self.path_right = self.covering.orders[self.viewpoint_color] % 2 == 0
       self.path_left = True
-      self.update()
   
   def walk_left(self):
     if self.path_left:
-      self.viewpoint = matmul(self.viewpoint, self.covering.shift_ba)
-      self.program['viewpoint'] = self.viewpoint.transpose()
+      # animate step
+      self.step_timer.stop()
+      self.step = self.covering.shift
+      self.old_viewpoint = self.new_viewpoint
+      self.new_viewpoint = matmul(self.old_viewpoint, self.covering.shift_ba)
+      self.step_end = 1
+      self.step_frame = 0
+      self.step_timer.start(self.step_frame_interval)
+      
+      # update paths
       self.viewpoint_color = 1 - self.viewpoint_color
       self.path_right = True
       self.path_left = self.covering.orders[self.viewpoint_color] % 2 == 0
-      self.update()
   
-  def turn(self, ccw):
-    rot = self.covering.half_rot_ccw if ccw else self.covering.half_rot_cw
-    self.viewpoint = matmul(self.viewpoint, rot[self.viewpoint_color])
-    self.program['viewpoint'] = self.viewpoint.transpose()
+  # `dir` should be 1 or -1 (for couterclockwise or clockwise turns)
+  def turn(self, dir):
+    # animate step
+    self.step_timer.stop()
+    self.step = lambda t: self.covering.rot(self.viewpoint_color, t)
+    self.old_viewpoint = self.new_viewpoint
+    self.new_viewpoint = matmul(self.old_viewpoint, self.step(dir/2))
+    self.step_end = dir/2
+    self.step_frame = 0
+    self.step_timer.start(self.step_frame_interval)
+    
+    # update paths
     self.path_right = not self.path_right
     self.path_left = not self.path_left
-    self.update()
   
   def set_covering(self, covering):
     self.covering = covering
@@ -699,9 +746,9 @@ class DomainCanvas(app.Canvas):
     elif event.key == keys.LEFT:
       self.walk_left()
     elif event.key == keys.UP:
-      self.turn(True)
+      self.turn(1)
     elif event.key == keys.DOWN:
-      self.turn(False)
+      self.turn(-1)
     
     # update coloring
     side = None

@@ -63,121 +63,35 @@ class Covering():
     
     # --- find symmetries
     
-    # `shift_ba` is the Möbius transformation that translates `b` to `a` along
-    # the real axis. `cosh_dist` is cosh(d(a, b)). in [KMSV], `cosh_dist` is
-    # called `lambda` (and the formula for it is off by a factor of two)
-    cosh_dist = (cp*cq + cr) / (sp*sq)
-    sinh_dist = np.sqrt(cosh_dist**2 - 1)
+    # find the distance from `a` to `b`. in [KMSV], `cosh_ab` is called `lambda`
+    # (and the formula for it is off by a factor of two)
+    self.cosh_ab = (cp*cq + cr) / (sp*sq)
+    self.sinh_ab = np.sqrt(self.cosh_ab**2 - 1)
+    self.dist_ab = np.arccosh(self.cosh_ab)
+    
+    # `shift_ba` and `shift_ab` are the translations along `ab` that send `b` to
+    # `a` and `a` to `b`, respectively
     self.shift_ba = np.array([
-    ##self.shift = np.array([
-      [ cosh_dist, 0, -sinh_dist],
-      [         0, 1,          0],
-      [-sinh_dist, 0,  cosh_dist]
+      [ self.cosh_ab, 0, -self.sinh_ab],
+      [            0, 1,             0],
+      [-self.sinh_ab, 0,  self.cosh_ab]
     ])
     self.shift_ab = np.array([
-      [cosh_dist, 0, sinh_dist],
-      [        0, 1,         0],
-      [sinh_dist, 0, cosh_dist]
+      [self.cosh_ab, 0, self.sinh_ab],
+      [           0, 1,            0],
+      [self.sinh_ab, 0, self.cosh_ab]
     ])
     
     # `midpoint` is the midpoint of the edge in the fundamental domain.
     # `half_shift_ba` translates `b` to `midpoint` and `midpoint` to `a` along
     # the real axis. doing it twice gives `shift_ba`
-    cosh_half_dist = np.sqrt((cosh_dist + 1) / 2)
-    sinh_half_dist = np.sqrt((cosh_dist - 1) / 2)
-    self.half_shift_ba = np.array([
-      [ cosh_half_dist, 0, -sinh_half_dist],
-      [              0, 1,               0],
-      [-sinh_half_dist, 0,  cosh_half_dist]
-    ])
-    self.half_shift_ab = np.array([
-      [cosh_half_dist, 0, sinh_half_dist],
-      [             0, 1,              0],
-      [sinh_half_dist, 0, cosh_half_dist]
-    ])
+    self.half_shift_ba = self.shift(1/2)
+    self.half_shift_ab = self.shift(-1/2)
     self.midpoint = self.half_shift_ab[:, 2]
     
     # `flip` does a half-turn rotation around `midpoint`
     bare_flip = np.diag([-1, -1, 1])
     self.flip = matmul(matmul(self.half_shift_ab, bare_flip), self.half_shift_ba)
-    
-    # in the notation of [KMSV],
-    #   delta_a = rot_ccw[0]
-    #   delta_b = flip * rot_ccw[1] * flip
-    self.rot_ccw = [
-      np.array([
-        [cos(2*pi/p), -sin(2*pi/p), 0],
-        [sin(2*pi/p),  cos(2*pi/p), 0],
-        [          0,            0, 1]
-      ]),
-      np.array([
-        [cos(2*pi/q), -sin(2*pi/q), 0],
-        [sin(2*pi/q),  cos(2*pi/q), 0],
-        [          0,            0, 1]
-      ])
-    ]
-    self.rot_cw = [
-      np.array([
-        [ cos(2*pi/p), sin(2*pi/p), 0],
-        [-sin(2*pi/p), cos(2*pi/p), 0],
-        [           0,           0, 1]
-      ]),
-      np.array([
-        [ cos(2*pi/q), sin(2*pi/q), 0],
-        [-sin(2*pi/q), cos(2*pi/q), 0],
-        [           0,           0, 1]
-      ])
-    ]
-    
-    # we use half-rotations for navigation
-    self.half_rot_ccw = [
-      np.array([
-        [cos(pi/p), -sin(pi/p), 0],
-        [sin(pi/p),  cos(pi/p), 0],
-        [          0,            0, 1]
-      ]),
-      np.array([
-        [cos(pi/q), -sin(pi/q), 0],
-        [sin(pi/q),  cos(pi/q), 0],
-        [          0,            0, 1]
-      ])
-    ]
-    self.half_rot_cw = [
-      np.array([
-        [ cos(pi/p), sin(pi/p), 0],
-        [-sin(pi/p), cos(pi/p), 0],
-        [           0,           0, 1]
-      ]),
-      np.array([
-        [ cos(pi/q), sin(pi/q), 0],
-        [-sin(pi/q), cos(pi/q), 0],
-        [           0,           0, 1]
-      ])
-    ]
-    
-    # in the notation of [KMSV],
-    #   delta_a = rot_a_ccw
-    #   delta_b = shift_ab * rot_b_ccw_shift * shift_ba
-    ##self.rot_a_ccw = np.array([
-    ##  [cos(pi/p), -sin(pi/p), 0],
-    ##  [sin(pi/p),  cos(pi/p), 0],
-    ##  [        0,          0, 1]
-    ##)
-    ##self.rot_b_ccw_shift = np.array([
-    ##  [cos(pi/q), -sin(pi/q), 0],
-    ##  [sin(pi/q),  cos(pi/q), 0],
-    ##  [        0,          0, 1]
-    ##])
-    ##self.rot_a_cw = np.array([
-    ##  [ cos(pi/p), sin(pi/p), 0],
-    ##  [-sin(pi/p), cos(pi/p), 0],
-    ##  [         0,         0, 1]
-    ##])
-    ##self.rot_b_cw_shift = np.array([
-    ##  [ cos(pi/q), sin(pi/q), 0],
-    ##  [-sin(pi/q), cos(pi/q), 0],
-    ##  [        0,          0, 1]
-    ##])
     
     # --- find scale factors
     
@@ -186,7 +100,7 @@ class Covering():
     B = QQ(1)/2 * (QQ(1)/p - QQ(1)/q + QQ(1)/r + 1)
     C = 1 + QQ(1)/p
     
-    w_b = sinh_dist / (1 + cosh_dist)
+    w_b = self.sinh_ab / (1 + self.cosh_ab)
     self.K_a = (
       w_b * gamma(2-C)*gamma(C-A)*gamma(C-B)
       / (gamma(1-A)*gamma(1-B)*gamma(C))
@@ -243,8 +157,38 @@ class Covering():
       for lift in [lift_0, lift_1]
     ]
   
+  # the constant-speed family of translations along `ab` that sends `b` to `a`
+  # at time 1
+  def shift(self, t):
+    if t == 1:
+      return self.shift_ba
+    elif t == -1:
+      return self.shift_ab
+    else:
+      c = np.cosh(t*self.dist_ab)
+      s = -np.sinh(t*self.dist_ab)
+      return np.array([
+        [c, 0, s],
+        [0, 1, 0],
+        [s, 0, c]
+      ])
+  
+  # for each k, `rot(k, t)` is the family of constant-speed rotations around 0
+  # which does a full turn counterclockwise after time `orders[k]`. in the
+  # notation of [KMSV],
+  #   delta_a = rot(0, 1)
+  #   delta_b = flip * rot(1, 1) * flip
+  def rot(self, k, t):
+    c = cos(2*pi*t/self.orders[k])
+    s = sin(2*pi*t/self.orders[k])
+    return np.array([
+      [c, -s, 0],
+      [s,  c, 0],
+      [0,  0, 1]
+    ])
+  
   def apply(self, v):
-    v_shift = np.matmul(self.shift_ba, v)
+    v_shift = np.matmul(self.shift(1), v)
     if v[2] < v_shift[2]:
       # v is closer to the time axis (this comparison works because v and
       # v_shift are on the forward -1 hyperboloid)
