@@ -1,10 +1,13 @@
 # based on Anton Sherwood's programs for painting hyperbolic tilings
 # <https://commons.wikimedia.org/wiki/User:Tamfang/programs>
 
+# the step animation method is from Jonny Hyman's logistic map visualizations
+# https://github.com/jonnyhyman/Chaos/blob/master/logistic_interactive.py
+
 from PyQt5.QtCore import QTimer
 from vispy import app, gloo
 import vispy.util.keys as keys
-from numpy import array, identity, matmul, dot
+from numpy import array, identity, matmul, dot, pi
 
 from covering import Covering
 
@@ -566,8 +569,10 @@ class DomainCanvas(app.Canvas):
     
     # initialize step animation
     self.step = lambda t: identity(3)
-    self.step_nframes = 8
-    self.step_frame_interval = 200/self.step_nframes
+    self.step_frame_rate = 30
+    self.step_frame_interval = 1000 / self.step_frame_rate
+    self.step_speed = 6
+    self.step_nframes = 1
     self.step_timer = QTimer()
     self.step_timer.timeout.connect(self.animate_step)
     self.step_end = 0
@@ -608,6 +613,9 @@ class DomainCanvas(app.Canvas):
   
   step_frame = property(get_step_frame, set_step_frame)
   
+  def time_step(self, length):
+    self.step_nframes = round(length / self.step_speed * self.step_frame_rate)
+  
   def animate_step(self):
     self.step_frame += 1
     if self.step_frame >= self.step_nframes:
@@ -634,6 +642,7 @@ class DomainCanvas(app.Canvas):
       self.new_viewpoint = matmul(self.old_viewpoint, self.covering.shift_ab)
       self.step_end = -1
       self.step_frame = 0
+      self.time_step(self.covering.dist_ab)
       self.step_timer.start(self.step_frame_interval)
       
       # update paths
@@ -650,6 +659,7 @@ class DomainCanvas(app.Canvas):
       self.new_viewpoint = matmul(self.old_viewpoint, self.covering.shift_ba)
       self.step_end = 1
       self.step_frame = 0
+      self.time_step(self.covering.dist_ab)
       self.step_timer.start(self.step_frame_interval)
       
       # update paths
@@ -666,6 +676,7 @@ class DomainCanvas(app.Canvas):
     self.new_viewpoint = matmul(self.old_viewpoint, self.step(dir/2))
     self.step_end = dir/2
     self.step_frame = 0
+    self.time_step(pi/self.covering.orders[self.viewpoint_color])
     self.step_timer.start(self.step_frame_interval)
     
     # update paths
