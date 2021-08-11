@@ -1,5 +1,4 @@
 import sys, json
-from PyQt5.QtGui import QSurfaceFormat
 from itertools import chain
 from vispy import app
 import vispy.io as io
@@ -25,12 +24,6 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   except (json.JSONDecodeError, OSError) as ex:
     print(ex)
     sys.exit(1)
-  
-  # set OpenGL version and profile
-  format = QSurfaceFormat()
-  format.setVersion(3, 3)
-  format.setProfile(QSurfaceFormat.CoreProfile)
-  QSurfaceFormat.setDefaultFormat(format)
   
   # set up canvas
   canvas = DomainCanvas(4, 4, 3, size=(400, 400))

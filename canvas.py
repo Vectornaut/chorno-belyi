@@ -365,7 +365,7 @@ vec3 strip_color(
   
   // draw outer trim. recall that when -mirror_prod[k] is small, it
   // approximates the distance to mirror[k]
-  int active_trim = max(outer_trim[side], twin_trim[side]);
+  int active_trim = int(max(outer_trim[side], twin_trim[side]));
   if (active_trim > 0) {
     trimmed = line_mix(edge_palette[active_trim-1], trimmed, 10, -mirror_prod[1+side], proj_scaling, r_px);
   }

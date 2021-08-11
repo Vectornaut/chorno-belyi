@@ -1,7 +1,7 @@
 import sys, os, re, json
 import PyQt5.QtWidgets as qt
 from PyQt5.QtCore import Qt, QRegExp
-from PyQt5.QtGui import QSurfaceFormat, QValidator
+from PyQt5.QtGui import QValidator
 from vispy import app
 import vispy.io as io
 from math import floor
@@ -340,12 +340,6 @@ class DomainExplorer(qt.QMainWindow):
     io.write_png("export/" + name + ".png", image)
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
-  # set OpenGL version and profile
-  format = QSurfaceFormat()
-  format.setVersion(3, 3)
-  format.setProfile(QSurfaceFormat.CoreProfile)
-  QSurfaceFormat.setDefaultFormat(format)
-  
   main_app = qt.QApplication(sys.argv)
   window = DomainExplorer()
   window.show()
