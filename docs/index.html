@@ -134,7 +134,7 @@ for (i = 0; i < orbits.length; i++) {
   label = document.createElement('div');
   label.id = 'label-' + i;
   label.className = 'orbit-label';
-  label.innerHTML = String.fromCharCode(65 + orbits[i]);
+  label.appendChild(document.createTextNode(String.fromCharCode(65 + orbits[i])));
   box.appendChild(label);
   
   tray.appendChild(box);
