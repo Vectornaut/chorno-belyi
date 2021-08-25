@@ -99,6 +99,7 @@ p {
   left: 15px;
   font-family: 'Baloo 2', sans-serif;
   font-size: 34px;
+  visibility: hidden;
 }
 
 /* Xander Gottlieb's solution to the right padding problem for horizontally
