@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8">
+<title>WWTBAB - Puzzle 7T6-5.1.1_4.2.1_3.2.2</title>
+
+<link rel="stylesheet" href="chorno-belyi.css">
+
+<style>
+#orbit-a {
+  background-color: #28b8f2;
+}
+
+#orbit-b {
+  background-color: #fa9004;
+}
+</style>
+
+<!-- web fonts -->
+<!--
+  Lato    - main body
+  Baloo 2 - headings
+  Georama - arrows
+-->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%92%e2%86%93&display=swap" rel="stylesheet">
+
+<!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+var orbitColors = ['#28b8f2', '#fa9004'];
+
+function setOrbitDisplay() {
+  var show = document.querySelector('#show-orbits').checked;
+  var i;
+  dessins = document.querySelectorAll('.dessin');
+  for (i = 0; i < dessins.length; i++) {
+    orbit = dessins[i].dataset.orbit
+    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
+    label = dessins[i].querySelector('.orbit-label');
+    label.style.visibility = show ? 'visible' : 'hidden';
+  }
+  trivia = document.querySelector('#orbit-trivia');
+  if (trivia !== null) {
+    trivia.style.visibility = show ? 'visible' : 'hidden';
+  }
+}
+</script>
+
+<!-- MathJax -->
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
+</head>
+
+<body>
+
+<h1>Puzzle 7T6-5.1.1_4.2.1_3.2.2</h1>
+
+<div class="intro">
+  <p>
+    Flavor text goes here.
+    <div class="orbit-controls">
+      <div><a href="#FAQ">More details <span style="font-family: 'Georama'">&#x2193;</span></a></div>
+      <div><a href="">More puzzles <span style="font-family: 'Georama'">&#x2192;</span></a></div>
+    </div>
+  </p>
+  <div class="orbits">
+    <p id="orbit-trivia">
+    Answer trivia goes here.
+    </p>
+    <div class="orbit-controls">
+      <div>
+        <input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()"/>
+        <label for="show-orbits">Reveal answers</label>
+      </div>
+      <div>
+        {% for orbit in orbits %}
+        <a target="_blank" href="https://beta.lmfdb.org/Belyi/{{ orbit.passport_path }}/{{ orbit.label }}"><div id="orbit-{{ orbit.label }}" class="orbit-link">{{ orbit.label|upper }}</div></a>
+        {% endfor %}
+        View on LMFDB
+      </div>
+    </div>
+  </div>
+</div>
+<h2>Sorting bins</h2>
+<div class="tray-container">
+  <div class="tray">
+    {% for orbit in orbits %}
+      {% for dessin_name in orbit.dessin_names %}
+      <div class="dessin" data-orbit="{{ orbit.index }}">
+        <img src="{{ dessin_name }}.png"/>
+        <div class="orbit-label">{{ orbit.label|upper }}</div>
+      </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+{% for orbit in orbits|slice:'1:' %}
+<div class="tray-container"><div class="tray"></div></div>
+{% endfor %}
+
+<script>
+var trays = document.querySelectorAll('.tray');
+var i;
+for (i = 0; i < trays.length; i++) {
+  new Sortable(trays[i], {group: 'shared', animation: 150});
+}
+
+// respect initial value of "reveal answers" check box
+setOrbitDisplay();
+</script>
+
+</body>
+</html>

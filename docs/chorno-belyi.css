@@ -37,6 +37,10 @@ p {
   background-color: #d6edfe;
 }
 
+#orbit-trivia {
+  visibility: hidden;
+}
+
 .orbit-controls {
   margin-bottom: 0;
   line-height: 30px;
