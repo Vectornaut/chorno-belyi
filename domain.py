@@ -40,11 +40,9 @@ class Domain:
       # start a triangle tree
       self.tree = TriangleTree()
   
-  def permutation_str(self):
-    return ','.join([s.cycle_string() for s in self.group.gens()])
-  
   def name(self):
-    all_but_tag = '-'.join([self.passport, self.orbit, self.permutation_str()])
+    permutation_str = ','.join([s.cycle_string() for s in self.group.gens()])
+    all_but_tag = '-'.join([self.passport, self.orbit, permutation_str])
     if self.tag == None:
       return all_but_tag
     else:

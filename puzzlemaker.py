@@ -63,16 +63,11 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
       elif not os.path.isdir(passport_dir):
         os.mkdir(passport_dir, mode=0o755)
       for orbit in orbits:
-        orbit_dir = os.path.join(passport_dir, orbit.label)
-        if dry_run:
-          print(2*' ' + os.path.split(orbit_dir)[1])
-        elif not os.path.isdir(orbit_dir):
-          os.mkdir(orbit_dir, mode=0o755)
         for dessin in orbit.dessins:
           canvas.set_domain(dessin.domain)
           image = canvas.render()
-          name = dessin.domain.permutation_str()
+          name = dessin.domain.name()
           if dry_run:
-            print(4*' ' + name + '.png')
+            print(2*' ' + name + '.png')
           else:
-            io.write_png(os.path.join(orbit_dir, name + '.png'), image)
+            io.write_png(os.path.join(passport_dir, name + '.png'), image)
