@@ -31,11 +31,9 @@ class Domain:
       
       # store passport
       label = 'T'.join(map(str, [self.degree, self.t_number]))
-      partition_str = '_'.join([
-        '.'.join(map(str, s.cycle_type()))
-        for s in self.group.gens()
-      ])
-      self.passport = '-'.join([label, partition_str])
+      partition_strs = ['.'.join(map(str, s.cycle_type())) for s in self.group.gens()]
+      self.passport = '-'.join([label, '_'.join(partition_strs)])
+      self.passport_path = '/'.join([label, '/'.join(partition_strs)])
       
       # start a triangle tree
       self.tree = TriangleTree()
