@@ -159,7 +159,8 @@ class WorkingPanel(DessinControlPanel):
       cycle_strs = [field.text() for field in self.pmt_fields]
       orbit = self.orbit_field.text()
       tag = self.tag_field.text()
-      dessin = Dessin(cycle_strs, orbit, 20, tag if tag else None)
+      domain = Domain(cycle_strs, orbit, tag if tag else None)
+      dessin = Dessin(domain, 20)
     except Exception as ex:
       self.error_dialog.setText("Error computing dessin metadata.")
       self.error_dialog.setDetailedText(str(ex))
@@ -236,7 +237,7 @@ class SavedPanel(DessinControlPanel):
       if re.match(r'.*\.json$', filename):
         try:
           with open('domains/' + filename, 'r') as file:
-            dom = Domain.load(file)
+            dom = Domain.load(file, legacy=True) ##[old files don't store `geometry` attribute]
         except (json.JSONDecodeError, OSError) as ex:
           print(ex)
         else:

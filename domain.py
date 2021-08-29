@@ -1,6 +1,7 @@
+import json
+import numpy as np
 from sage.all import PermutationGroup
 from sage.categories.permutation_groups import PermutationGroups
-import json
 
 from triangle_tree import TriangleTree
 
@@ -22,6 +23,11 @@ class Domain:
       self.degree = data['degree']
       self.t_number = data['t_number']
       self.orders = data['orders']
+      if legacy:
+        p, q, r = self.orders
+        self.geometry = int(np.sign(q*r + r*p + p*q - p*q*r))
+      else:
+        self.geometry = data['geometry']
       self.passport = data['passport']
       self.tree = TriangleTree.from_dict(data['tree'], legacy)
     else:
@@ -29,11 +35,17 @@ class Domain:
       self.t_number = int(self.group.gap().TransitiveIdentification())
       self.orders = tuple(int(s.order()) for s in self.group.gens())
       
+      # find the geometry type:
+      #    1   spherical
+      #    0   euclidean
+      #   -1   hyperbolic
+      p, q, r = self.orders
+      self.geometry = int(np.sign(q*r + r*p + p*q - p*q*r))
+      
       # store passport
       label = 'T'.join(map(str, [self.degree, self.t_number]))
       partition_strs = ['.'.join(map(str, s.cycle_type())) for s in self.group.gens()]
       self.passport = '-'.join([label, '_'.join(partition_strs)])
-      self.passport_path = '/'.join([label, '/'.join(partition_strs)])
       
       # start a triangle tree
       self.tree = TriangleTree()

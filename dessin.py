@@ -7,25 +7,15 @@ from covering import Covering
 from domain import Domain
 
 class Dessin():
-  # `group` will be passed to PermutationGroup, unless it's already in the
-  # PermutationGroups category. for deserialization, you can pass precomputed
-  # group details and a serialized tree in the `data` dictionary
-  def __init__(self, group, orbit, prec, tag=None):
-    # find the tiling
-    self.domain = Domain(group, orbit, tag)
+  # for deserialization, you can pass precomputed group details and a serialized
+  # tree in the `data` dictionary [IMPLEMENT]
+  def __init__(self, domain, prec):
+    self.domain = domain
     
-    # find the geometry type:
-    #    1   spherical
-    #    0   euclidean
-    #   -1   hyperbolic
-    p, q, r = self.domain.orders
-    self.geometry = np.sign(q*r + r*p + p*q - p*q*r)
-    
-    if self.geometry < 0:
-      # find the covering map
-      self.covering = Covering(p, q, r, prec)
-      
-      # build a fundamental domain
+    # if the dessin is hyperbolic, find its covering map and build a fundamental
+    # domain
+    if domain.geometry < 0:
+      self.covering = Covering(*domain.orders, prec)
       self.build_tree()
   
   def build_tree(self):
@@ -146,8 +136,8 @@ class Dessin():
 
 ##[TEST]
 if __name__ == '__main__':
-  ##dessin = Dessin([(1,2,3,4),(1,3,4,2),(1,3,4)], 'a', 20) # 4T5-4_4_3.1
-  dessin = Dessin([(1,2,3,4,5),(1,2,5,4),(1,2,4,3)], 'a', 20) # 5T3-5_4.1_4.1
+  ##dessin = Dessin(Domain([(1,2,3,4),(1,3,4,2),(1,3,4)], 'a'), 20) # 4T5-4_4_3.1
+  dessin = Dessin(Domain([(1,2,3,4,5),(1,2,5,4),(1,2,4,3)], 'a'), 20) # 5T3-5_4.1_4.1
   print('final routes')
   print(dessin.route[0])
   print(dessin.route[1])

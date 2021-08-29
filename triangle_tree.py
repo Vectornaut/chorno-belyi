@@ -104,18 +104,8 @@ class TriangleTree:
       if child := data['children'][k]:
         tree.children[k] = TriangleTree.from_dict(child, legacy)
     tree.lit = data['lit']
-    if not legacy: ##[SIGNED]
-      tree.outer_trim = data['outer_trim']
-      tree.inner_trim = data['inner_trim']
-    else: ##[SIGNED] v v v
-      trim = data['trim']
-      tree.inner_trim = 0
-      tree.outer_trim = [0, 0]
-      for side in range(2):
-        if trim[side] > 0:
-          tree.inner_trim = max(trim[side], tree.inner_trim)
-        elif trim[side] < 0:
-          tree.outer_trim[side] = -trim[side]
+    tree.outer_trim = data['outer_trim']
+    tree.inner_trim = data['inner_trim']
     return tree
   
   @staticmethod
