@@ -1,4 +1,5 @@
 import sys, os, json
+from argparse import ArgumentParser
 from django.conf import settings
 from django.template import Engine, Context
 from vispy import app
@@ -72,7 +73,7 @@ class Orbit:
       'passport_path': self.passport_path,
       'label': self.label,
       'index': self.index,
-      'dessin_names': [dessin.domain.name() for dessin in self.dessins()]
+      'dessin_names': [domain.name() for domain in self.domains()]
     }
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
@@ -93,37 +94,53 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
     if (not hyp_passports) or (not hyp_passports[-1].append(orbit)):
       hyp_passports.append(Passport(orbit))
   
-  # set up canvas
+  # set up canvas and Django engine
   canvas = DomainCanvas(4, 4, 3, size=(400, 400))
-  
-  # render dessins
-  dry_run = '--dry-run' in sys.argv[1:]
-  n_max = 20
   settings.configure() # use Django's default settings
-  puzzle_template = Engine(dirs='.').get_template('puzzle.html')
-  n_done = 0
+  engine = Engine(dirs='.')
+  
+  # handle command line options
+  parser = ArgumentParser()
+  parser.add_argument('-n', dest='n_max', action='store', default=20)
+  parser.add_argument('--dry-run', dest='dry_run', action='store_true')
+  parser.add_argument('--no-puzzles', dest='puzzles', action='store_false')
+  parser.add_argument('--no-pics', dest='pics', action='store_false')
+  ##[SELECT PAGES] parser.add_argument('pages', metavar='pages', nargs='*', help='pages to render')
+  args = parser.parse_args()
+  
+  # render dessins and puzzle pages
+  puzzle_template = engine.get_template('puzzle.html')
+  puzzles = []
   for passport in hyp_passports:
     orbits = passport.orbits
-    if len(orbits) > 1 and not all(len(orbit.dessins()) == 1 for orbit in orbits):
+    if len(orbits) > 1 and not all(len(orbit.triples) == 1 for orbit in orbits):
       passport_dir = os.path.join('docs', passport.name)
-      if dry_run:
+      if args.dry_run:
         print(os.path.split(passport_dir)[1])
-      else:
+      elif args.puzzles:
         if not os.path.isdir(passport_dir):
           os.mkdir(passport_dir, mode=0o755)
         passport_context = Context(passport.to_dict())
         puzzle_page = puzzle_template.render(passport_context)
         with open(os.path.join(passport_dir, 'index.html'), 'w') as file:
           file.write(puzzle_page)
-      for orbit in orbits:
-        for dessin in orbit.dessins():
-          canvas.set_domain(dessin.domain)
-          image = canvas.render()
-          name = dessin.domain.name()
-          if dry_run:
-            print(2*' ' + name + '.png')
-          else:
-            io.write_png(os.path.join(passport_dir, name + '.png'), image)
-      n_done += 1
-      if n_done >= n_max:
+      if args.pics:
+        for orbit in orbits:
+          for dessin in orbit.dessins():
+            canvas.set_domain(dessin.domain)
+            image = canvas.render()
+            name = dessin.domain.name()
+            if args.dry_run:
+              print(2*' ' + name + '.png')
+            else:
+              io.write_png(os.path.join(passport_dir, name + '.png'), image)
+      
+      puzzles.append(passport)
+      if len(puzzles) >= args.n_max:
         break
+  
+  list_template = engine.get_template('puzzles.html')
+  list_context = Context({'passports': [passport.to_dict() for passport in puzzles]})
+  list_page = list_template.render(list_context)
+  with open(os.path.join('docs', 'puzzles.html'), 'w') as file:
+    file.write(list_page)

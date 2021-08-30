@@ -15,6 +15,14 @@
 #orbit-b {
   background-color: #fa9004;
 }
+
+#orbit-c {
+  background-color: #fff200;
+}
+
+#orbit-d {
+  background-color: #805af4;
+}
 </style>
 
 <!-- web fonts -->
@@ -25,13 +33,13 @@
 -->
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%92%e2%86%93&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%90&display=swap" rel="stylesheet">
 
 <!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 <script>
-var orbitColors = ['#28b8f2', '#fa9004'];
+var orbitColors = ['#28b8f2', '#fa9004', '#fff200', '#805af4'];
 
 function setOrbitDisplay() {
   var show = document.querySelector('#show-orbits').checked;
@@ -65,8 +73,7 @@ function setOrbitDisplay() {
   <p>
     Flavor text goes here.
     <div class="orbit-controls">
-      <div><a href="#FAQ">More details <span style="font-family: 'Georama'">&#x2193;</span></a></div>
-      <div><a href="">More puzzles <span style="font-family: 'Georama'">&#x2192;</span></a></div>
+      <div><a href="../puzzles.html"><span style="font-family: 'Georama'">&#x2190;</span> Back to list</a></div>
     </div>
   </p>
   <div class="orbits">

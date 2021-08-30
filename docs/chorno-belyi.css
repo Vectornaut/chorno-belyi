@@ -27,6 +27,18 @@ p {
   margin: 0 0 20px 0;
 }
 
+th {
+  text-align: left;
+}
+
+th:not(:first-child), td:not(:first-child) {
+  padding-left: 40px;
+}
+
+tr:not(:first-child) td {
+  padding-top: 10px;
+}
+
 .intro {
   max-width: 900px;
 }
