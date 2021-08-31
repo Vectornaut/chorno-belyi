@@ -18,3 +18,14 @@ Python 3, Sage, GLSL.
 1. Call `python3 explorer.py`. A window with a tiling should appear.
   - If the interpreter complains that there's "`no module named 'sage.all'`", try using Sage's internal Python distribution by calling `sage -python explorer.py`.
     - If this also gives you trouble, call `sage -python --version` to make sure your Sage has Python 3 or above.
+
+## How to run `puzzlemaker.py`
+
+### Install dependencies
+1. Install Vispy, as described above.
+2. Install Django by calling `pip3 install django`.
+
+### Run program
+1. [*Optional.*] Do a dry run by calling `python3 puzzlemaker.py --dry-run`. The program should print 20 passports, with each one's dessins listed underneath. You can change the maximum number of passports listed with the option `-n N_MAX`, where *N_MAX* is a number.
+2. Render puzzle pages and dessins by calling `python3 puzzlemaker.py`. For each passport listed in the dry run, the program should create a directory in `docs/` and stock it with a puzzle page `index.html` and an image of each dessin. It should also make the puzzle list `docs/puzzles.html`.
+3. [*As needed.*] Use the `--no-pics` option to quickly remake the puzzle pages and the puzzle list without redrawing the pictures. (Drawing the pictures can take a while, because the `Dessin` constructor is weirdly slow.)
