@@ -161,16 +161,16 @@ setOrbitDisplay();
 <h2 id="dessin">What is a dessin d'enfant?</h2>
 <div class="text-col">
   <p>
-    A dessin d'enfant is a special kind of ribbon graph. A <i>ribbon graph</i> is a finite set of rectangular strips glued together at the ends. Each end is divided in half, and each half-end is glued to another half-end.
+    A dessin d'enfant is a special kind of ribbon graph. A <i>ribbon graph</i> is a finite set of dots connected by ribbons, which glue to their edges.
   </p>
 </div>
 <div class="two-col">
   <div class="text-col">
     <p>
-      A <i>dessin d'enfant</i> is an orientable ribbon graph where each strip is black on one end and white on the other. Ends can only be glued if their colors match. We require dessins to be connected.
+      A <i>dessin d'enfant</i> is an orientable ribbon graph where each ribbon has a black end and a white end. Black ends glue to black dots, and white ends glue to white dots. We require dessins to be connected.
     </p>
     <p>
-      A ribbon graph is <i>completed</i> when it's embedded in a surface so that its complement is a set of disks. Any ribbon graph can be completed, by gluing disks along the loops formed by the sides of the strips. Since a dessin is a kind of ribbon graph, dessins can be completed too.
+      A ribbon graph is <i>completed</i> when it's embedded in a surface so that its complement is a set of disks. Any ribbon graph can be completed, by gluing disks along the loops formed by the sides of the ribbons. Since a dessin is a kind of ribbon graph, dessins can be completed too.
     </p>
   </div>
   <div class="image-col">
@@ -188,11 +188,11 @@ setOrbitDisplay();
       In 1984, Alexander Grothendieck pointed out that a Belyi map \(X \to \widehat{\mathbb{C}}\) gives a completed dessin d'enfant on \(X\) by pulling a prototype dessin back from \(\widehat{\mathbb{C}}\). He proved that the Belyi map is fully described by its dessin, and that every completed dessin on \(X\) describes a Belyi map.
     </p>
     <p>
-      The prototype dessin on \(\widehat{\mathbb{C}}\) has one strip, which runs along the interval \([0, 1]\). The white end is at \(0\) and the black end is at \(1\). Each end of the strip has its halves glued together.
+      The prototype dessin on \(\widehat{\mathbb{C}}\) has a white dot at \(0\) and a black dot at \(1\), connected by a ribbon along the interval \([0, 1]\).
     </p>
   </div>
   <div class="image-col">
-    <img src="images/dessin-pullback.png" alt="The dessin given by a Belyi map">
+    <img src="images/thick-dessin-pullback.png" alt="The dessin given by a Belyi map">
       </div>
     </div>
 

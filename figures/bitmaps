@@ -1,2 +1,3 @@
-convert -density 165.197 thick_dessin_image.pdf ../docs/images/thick-dessin.png
+convert -density 165.197 thick_dessin_image.pdf[0] ../docs/images/thick-dessin.png
+convert -density 165.197 thick_dessin_image.pdf[1] ../docs/images/thick-dessin-pullback.png
 convert -density 178.593 belyi_image_alone.pdf ../docs/images/belyi-map.png
