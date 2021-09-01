@@ -3,4 +3,5 @@
 *.sig
 output/
 docs/*/
+!docs/images/
 __pycache__/

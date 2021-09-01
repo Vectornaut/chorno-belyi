@@ -1,0 +1,2 @@
+convert -density 165.197 thick_dessin_image.pdf ../docs/images/thick-dessin.png
+convert -density 178.593 belyi_image_alone.pdf ../docs/images/belyi-map.png

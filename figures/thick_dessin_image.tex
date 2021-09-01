@@ -1,0 +1,55 @@
+\documentclass[border=1pt]{standalone}
+
+\usepackage{tikz}
+
+\makeatletter
+\@ifundefined{tsp}{\pagecolor{cyan}}{}
+\makeatother
+
+\begin{document}
+\begin{tikzpicture}[
+  vwhite/.style={circle, minimum width=4mm, fill=white},
+  vblack/.style={circle, minimum width=4mm, fill=black}
+]
+\newcommand{\hsep}{1.5}
+
+% vertices
+\node[vwhite, minimum width=6mm] (v2) at (2*\hsep, 0) {};
+\node[vwhite, minimum width=4mm] (v3) at (3*\hsep, 0) {};
+\node[vwhite, minimum width=4mm] (v5) at (5*\hsep, 0) {};
+\node[vblack, minimum width=4.5mm] (v0) at (0, 0) {};
+\node[vblack, minimum width=4mm] (v1) at (1*\hsep, 0) {};
+\node[vblack, minimum width=5mm] (v4) at (4*\hsep, 0) {};
+
+% edge midpoints
+\coordinate (m21) at (1.5*\hsep, 0) {};
+\coordinate (m34) at (3.5*\hsep, 0) {};
+\coordinate (m54) at (4.5*\hsep, 0) {};
+\coordinate (m20a) at (0.85*\hsep, 1.4) {};
+\coordinate (m20b) at (0.85*\hsep, -1.4) {};
+\coordinate (m24a) at (3.3*\hsep, 0.9) {};
+\coordinate (m24b) at (3.3*\hsep, -0.9) {};
+
+% edges
+\begin{scope}[line width=2mm]
+\begin{scope}[white]
+\draw (v2.center) -- (m21);
+\draw (v3.center) -- (m34);
+\draw (v5.center) -- (m54);
+\draw (v2.center) to[out=36+72, in=0] (m20a);
+\draw (v2.center) to[out=-36-72, in=0] (m20b);
+\draw (v2.center) to[out=36, in=180] (m24a);
+\draw (v2.center) to[out=-36, in=180] (m24b);
+\end{scope}
+\begin{scope}[black]
+\draw (m21) -- (v1.center);
+\draw (m34) -- (v4.center);
+\draw (m54) -- (v4.center);
+\draw (m20a) to[out=180, in=90] (v0.center);
+\draw (m20b) to[out=180, in=-90] (v0.center);
+\draw (m24a) to[out=0, in=90] (v4.center);
+\draw (m24b) to[out=0, in=-90] (v4.center);
+\end{scope}
+\end{scope}
+\end{tikzpicture}
+\end{document}
