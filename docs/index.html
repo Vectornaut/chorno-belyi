@@ -36,8 +36,7 @@ var orbitColors = ['#28b8f2', '#fa9004'];
 function setOrbitDisplay() {
   var show = document.querySelector('#show-orbits').checked;
   var dessins = document.querySelectorAll('.dessin');
-  var i;
-  for (i = 0; i < dessins.length; i++) {
+  for (var i = 0; i < dessins.length; i++) {
     orbit = dessins[i].dataset.orbit
     dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
     label = dessins[i].querySelector('.orbit-label');
@@ -87,19 +86,19 @@ function setOrbitDisplay() {
   <h2>Drawings to sort <div style="display:inline; margin-left: 30px; font-style: italic; font-family: 'Lato'; font-size: 19px">Click and drag into the bins below</div></h2>
   <div class="tray">
     <div class="dessin" data-orbit="1">
-      <img src="dessins/7T6-5.1.1_4.2.1_3.2.2-b-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).png"/>
+      <img src="7T6-5.1.1_4.2.1_3.2.2/7T6-5.1.1_4.2.1_3.2.2-b-(1,4,6,2,7),(1,2,4,3)(5,6),(1,7)(2,5,6)(3,4).png"/>
       <div class="orbit-label">B</div>
     </div>
     <div class="dessin" data-orbit="1">
-      <img src="dessins/7T6-5.1.1_4.2.1_3.2.2-b-(1,5,7,6,4),(1,2,3,4)(5,6),(1,3,2)(4,5)(6,7).png"/>
+      <img src="7T6-5.1.1_4.2.1_3.2.2/7T6-5.1.1_4.2.1_3.2.2-b-(1,5,7,6,4),(1,2,3,4)(5,6),(1,3,2)(4,5)(6,7).png"/>
       <div class="orbit-label">B</div>
     </div>
     <div class="dessin" data-orbit="0">
-      <img src="dessins/7T6-5.1.1_4.2.1_3.2.2-a-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).png"/>
+      <img src="7T6-5.1.1_4.2.1_3.2.2/7T6-5.1.1_4.2.1_3.2.2-a-(1,5,7,6,3),(1,2,3,4)(5,6),(1,2)(3,5,4)(6,7).png"/>
       <div class="orbit-label">A</div>
     </div>
     <div class="dessin" data-orbit="1">
-      <img src="dessins/7T6-5.1.1_4.2.1_3.2.2-b-(1,6,4,2,7),(1,2,3,4)(5,6),(1,7)(2,3)(4,5,6).png"/>
+      <img src="7T6-5.1.1_4.2.1_3.2.2/7T6-5.1.1_4.2.1_3.2.2-b-(1,6,4,2,7),(1,2,3,4)(5,6),(1,7)(2,3)(4,5,6).png"/>
       <div class="orbit-label">B</div>
     </div>
   </div>

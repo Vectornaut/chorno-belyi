@@ -44,18 +44,15 @@ var orbitColors = ['#28b8f2', '#fa9004', '#fff200', '#805af4'];
 // hat tip Alexey Lebedev and vsync at StackOverflow
 // https://stackoverflow.com/a/11972692/1644283
 function shuffleChildren(node) {
-  copy = node.cloneNode(true);
-  for (let top = copy.children.length; top > 0; top--) {
-    copy.appendChild(copy.children[Math.floor(Math.random() * top)]);
+  for (let top = node.children.length; top > 0; top--) {
+    node.appendChild(node.children[Math.floor(Math.random() * top)]);
   }
-  node.parentNode.replaceChild(copy, node);
 }
 
 function setOrbitDisplay() {
   var show = document.querySelector('#show-orbits').checked;
-  var i;
   dessins = document.querySelectorAll('.dessin');
-  for (i = 0; i < dessins.length; i++) {
+  for (var i = 0; i < dessins.length; i++) {
     orbit = dessins[i].dataset.orbit
     dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
     label = dessins[i].querySelector('.orbit-label');
@@ -123,8 +120,7 @@ function setOrbitDisplay() {
 
 <script>
 var trays = document.querySelectorAll('.tray');
-var i;
-for (i = 0; i < trays.length; i++) {
+for (var i = 0; i < trays.length; i++) {
   new Sortable(trays[i], {group: 'shared', animation: 150});
 }
 
