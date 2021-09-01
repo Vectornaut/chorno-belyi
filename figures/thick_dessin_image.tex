@@ -2,8 +2,16 @@
 
 \usepackage{tikz}
 
+% colors
+\definecolor{page}{HTML}{b8e5fe}
+\definecolor{outline}{rgb}{0.6, 0.75, 0.9}
+
 \makeatletter
-\@ifundefined{tsp}{\pagecolor{cyan}}{}
+
+\@ifundefined{tsp}{\pagecolor{page}}{}
+
+\tikzset{nopreaction/.code=\let\tikz@preactions\pgfutil@empty}
+
 \makeatother
 
 \begin{document}
@@ -14,12 +22,14 @@
 \newcommand{\hsep}{1.5}
 
 % vertices
+\begin{scope}[every node/.style={preaction={draw, line width=1mm, outline, nopreaction}}]
 \node[vwhite, minimum width=6mm] (v2) at (2*\hsep, 0) {};
 \node[vwhite, minimum width=4mm] (v3) at (3*\hsep, 0) {};
 \node[vwhite, minimum width=4mm] (v5) at (5*\hsep, 0) {};
 \node[vblack, minimum width=4.5mm] (v0) at (0, 0) {};
 \node[vblack, minimum width=4mm] (v1) at (1*\hsep, 0) {};
 \node[vblack, minimum width=5mm] (v4) at (4*\hsep, 0) {};
+\end{scope}
 
 % edge midpoints
 \coordinate (m21) at (1.5*\hsep, 0) {};
@@ -31,7 +41,7 @@
 \coordinate (m24b) at (3.3*\hsep, -0.9) {};
 
 % edges
-\begin{scope}[line width=2mm]
+\begin{scope}[line width=2mm, every path/.style={preaction={draw, line width=3mm, outline, nopreaction}}]
 \begin{scope}[white]
 \draw (v2.center) -- (m21);
 \draw (v3.center) -- (m34);
