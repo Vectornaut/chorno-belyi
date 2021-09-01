@@ -6,13 +6,28 @@
 \definecolor{page}{HTML}{b8e5fe}
 \definecolor{outline}{rgb}{0.6, 0.75, 0.9}
 
-\makeatletter
+\makeatletter %@@@@@@@@@
 
 \@ifundefined{tsp}{\pagecolor{page}}{}
 
 \tikzset{nopreaction/.code=\let\tikz@preactions\pgfutil@empty}
 
-\makeatother
+\pgfkeys{%
+  /tikz/on layer/.code={
+    \pgfonlayer{#1}\begingroup
+    \aftergroup\endpgfonlayer
+    \aftergroup\endgroup
+  },
+  /tikz/node on layer/.code={
+    \pgfonlayer{#1}\begingroup
+    \expandafter\def\expandafter\tikz@node@finish\expandafter{\expandafter\endgroup\expandafter\endpgfonlayer\tikz@node@finish}%
+  },
+}
+
+\makeatother %@@@@@@@@@
+
+\pgfdeclarelayer{back}
+\pgfsetlayers{back, main}
 
 \begin{document}
 \begin{tikzpicture}[
@@ -22,7 +37,7 @@
 \newcommand{\hsep}{1.5}
 
 % vertices
-\begin{scope}[every node/.style={preaction={draw, line width=1mm, outline, nopreaction}}]
+\begin{scope}[every node/.style={preaction={draw, on layer=back, line width=1mm, outline, nopreaction}}]
 \node[vwhite, minimum width=6mm] (v2) at (2*\hsep, 0) {};
 \node[vwhite, minimum width=4mm] (v3) at (3*\hsep, 0) {};
 \node[vwhite, minimum width=4mm] (v5) at (5*\hsep, 0) {};
@@ -41,7 +56,7 @@
 \coordinate (m24b) at (3.3*\hsep, -0.9) {};
 
 % edges
-\begin{scope}[line width=2mm, every path/.style={preaction={draw, line width=3mm, outline, nopreaction}}]
+\begin{scope}[line width=2mm, every path/.style={preaction={draw, on layer=back, line width=3mm, outline, nopreaction}}]
 \begin{scope}[white]
 \draw (v2.center) -- (m21);
 \draw (v3.center) -- (m34);
