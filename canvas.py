@@ -31,6 +31,8 @@ uniform vec3 mirrors [3];
 uniform mat3 shift;
 uniform int p;
 uniform int q;
+uniform float R_sq_a;
+uniform float R_sq_b;
 uniform float K_a;
 uniform float K_b;
 uniform float cover_a [20]; /*[TEMP] should make size adjustable*/
@@ -220,31 +222,38 @@ cjet apply_series(float[20] series, cjet w, int order) {
   return mul(w, deformation);
 }
 
+vec2 disk_proj(vec3 v) {
+  return v.xy / (1. + v.z);
+}
+
 // if `v` came from somewhere else in the hyperbolic plane, we can factor in
 // the conformal scale factor of the mobius transformation that brought it here
 // by passing its original `r_sq` as `r_sq_orig`
 cjet cover(vec3 v, float r_sq_orig) {
-  vec3 v_shift = shift * v;
-  if (v.z < v_shift.z) {
-    // v is closer to the time axis (this comparison works because v and v_shift
-    // are on the forward -1 hyperboloid)
-    
-    // project to the Poincare disk, and find the conformal scale factor of the
-    // Mobius transformation that brought us here
-    vec2 w_pt = v.xy / (1. + v.z);
-    float r_sq = dot(w_pt, w_pt);
-    float pre_scaling = (1-r_sq) / (1-r_sq_orig);
+  // project to the Poincare disk in the original and shifted charts
+  vec2 w_pt = disk_proj(v);
+  vec2 w_shift_pt = disk_proj(shift * v);
+  
+  // in each chart, compare our distance from the origin with the convergence
+  // radius of the covering series
+  float r_sq_a = dot(w_pt, w_pt);
+  float r_sq_b = dot(w_shift_pt, w_shift_pt);
+  float ratio_a = r_sq_a / R_sq_a;
+  float ratio_b = r_sq_b / R_sq_b;
+  
+  if (ratio_a < ratio_b) {
+    // find the conformal scale factor of the Mobius transformation that brought
+    // us here
+    float pre_scaling = (1.-r_sq_a) / (1.-r_sq_orig);
     
     // apply the covering map
     cjet w = cjet(w_pt, mat2(pre_scaling));
     cjet s = apply_series(cover_a, scale(1./K_a, w), p);
     return cpow(s, p);
   } else {
-    // project to the Poincare disk, and find the conformal scale factor of the
-    // Mobius transformation that brought us here
-    vec2 w_shift_pt = v_shift.xy / (1. + v_shift.z);
-    float r_sq = dot(w_shift_pt, w_shift_pt);
-    float pre_scaling = (1-r_sq) / (1-r_sq_orig);
+    // find the conformal scale factor of the Mobius transformation that brought
+    // us here
+    float pre_scaling = (1.-r_sq_b) / (1.-r_sq_orig);
     
     // apply the covering map
     cjet w_shift = cjet(w_shift_pt, mat2(pre_scaling));
@@ -690,8 +699,10 @@ class DomainCanvas(app.Canvas):
     self.program['shift'] = covering.shift_ba.transpose()
     self.program['p'] = covering.p
     self.program['q'] = covering.q
-    self.program['K_a'] = covering.K_a;
-    self.program['K_b'] = covering.K_b;
+    self.program['R_sq_a'] = covering.R_sq_a
+    self.program['R_sq_b'] = covering.R_sq_b
+    self.program['K_a'] = covering.K_a
+    self.program['K_b'] = covering.K_b
     for n in range(len(covering.cover_a)):
       self.program['cover_a[{}]'.format(n)] = covering.cover_a[n]
       self.program['cover_b[{}]'.format(n)] = covering.cover_b[n]

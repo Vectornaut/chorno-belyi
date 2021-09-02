@@ -2,12 +2,23 @@
 
 from sage.all import QQ, CDF, polygen, PowerSeriesRing, hypergeometric
 import numpy as np
-from numpy import pi, matmul, dot
+from numpy import pi, matmul, dot, cross
 from scipy.special import gamma
 
 # the minkowski bilinear form
 def mprod(v, w):
   return dot(v[:-1], w[:-1]) - v[-1]*w[-1]
+
+# the lorentzian cross product
+def mcross(v, w):
+  result = cross(v, w)
+  result[0] = -result[0]
+  result[1] = -result[1]
+  return result
+
+# projection to the Poincaré disk
+def disk_proj(v):
+  return np.array(v[:-1]) / (1 + v[-1])
 
 def apply_series(series, w, order):
   # write cover(w) as w * deformation(w)
@@ -92,6 +103,17 @@ class Covering():
     # `flip` does a half-turn rotation around `midpoint`
     bare_flip = np.diag([-1, -1, 1])
     self.flip = matmul(matmul(self.half_shift_ab, bare_flip), self.half_shift_ba)
+    
+    # --- find convergence disks
+    
+    # find vertex c on the Poincaré disk in the original and shifted charts
+    c_vec = mcross(self.mirrors[1], self.mirrors[2])
+    c_disk = disk_proj(c_vec)
+    c_shift_disk = disk_proj(matmul(self.shift_ba, c_vec))
+    
+    # find |a-c|^2 in the original chart and |b-c|^2 in the shifted chart
+    self.R_sq_a = dot(c_disk, c_disk)
+    self.R_sq_b = dot(c_shift_disk, c_shift_disk)
     
     # --- find scale factors
     
