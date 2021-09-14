@@ -328,21 +328,26 @@ vec4 line_mix(vec4 stroke, vec4 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
+const vec3 edge_palette [7] = vec3[](
+  vec3(231.,  48.,  44.) / 255.,
+  vec3(250., 144.,   4.) / 255.,
+  vec3(255., 242.,   0.) / 255.,
+  vec3( 40., 184., 242.) / 255.,
+  vec3(128.,  90., 244.) / 255.,
+  vec3( 58.,  39., 178.) / 255.,
+  vec3(0., 1., 0.)
+);
+
+vec3 edge_color(int trim) {
+  return edge_palette[int(min(trim, edge_palette.length()))-1];
+}
+
 vec3 strip_color(
   cjet z, float proj_scaling, float r_px,
   float[3] mirror_prod, int twin_k,
   bvec2 lit, bvec2 twin_lit,
   ivec2 outer_trim, ivec2 twin_trim, int inner_trim
 ) {
-  // set up edge palette
-  vec3 edge_palette [6];
-  edge_palette[0] = vec3(231.,  48.,  44.) / 255.;
-  edge_palette[1] = vec3(250., 144.,   4.) / 255.;
-  edge_palette[2] = vec3(255., 242.,   0.) / 255.;
-  edge_palette[3] = vec3( 40., 184., 242.) / 255.;
-  edge_palette[4] = vec3(128.,  90., 244.) / 255.;
-  edge_palette[5] = vec3( 58.,  39., 178.) / 255.;
-  
   // get strip coordinate and side
   cjet h = scale(8./PI, casin(z));
   int side = h.pt.x < 0. ? 0 : 1;
@@ -369,14 +374,14 @@ vec3 strip_color(
   // draw inner trim
   vec3 trimmed = sky;
   if (inner_trim > 0) {
-    trimmed = line_mix(edge_palette[inner_trim-1], sky, 10, h.pt.x, scaling, r_px);
+    trimmed = line_mix(edge_color(inner_trim), sky, 10, h.pt.x, scaling, r_px);
   }
   
   // draw outer trim. recall that when -mirror_prod[k] is small, it
   // approximates the distance to mirror[k]
   int active_trim = int(max(outer_trim[side], twin_trim[side]));
   if (active_trim > 0) {
-    trimmed = line_mix(edge_palette[active_trim-1], trimmed, 10, -mirror_prod[1+side], proj_scaling, r_px);
+    trimmed = line_mix(edge_color(active_trim), trimmed, 10, -mirror_prod[1+side], proj_scaling, r_px);
   }
   
   // combine ribbon and trim
