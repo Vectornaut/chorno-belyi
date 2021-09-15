@@ -830,9 +830,8 @@ class DomainCanvas(app.Canvas):
           'Side {} of triangle {}'.format(self.selection_side, self.selection)
         )
   
-  def render(self):
+  def render(self, size=(400, 400)):
     self.set_current()
-    size = (400, 400)
     fbo = gloo.FrameBuffer(
       color=gloo.RenderBuffer(size[::-1]),
       depth=gloo.RenderBuffer(size[::-1])

@@ -5,9 +5,8 @@ from django.template import Engine, Context
 from vispy import app
 import vispy.io as io
 
-from domain import Domain
-from dessin import Dessin
 from canvas import DomainCanvas
+from batch import Orbit
 
 app.use_app(backend_name='PyQt5', call_reuse=True)
 
@@ -31,49 +30,6 @@ class Passport:
     return {
       'passport': self.name,
       'orbits': [orbit.to_dict() for orbit in self.orbits]
-    }
-
-class Orbit:
-  def __init__(self, orbit_spec):
-    name, triple_str = orbit_spec.split('|')
-    label_sep = name.rindex('-')
-    self.passport = name[:label_sep]
-    self.passport_path = self.passport.replace('-', '/').replace('_', '/')
-    self.label = name[label_sep + 1:]
-    self.index = None
-    self.triples = json.loads(triple_str)
-    assert self.triples and isinstance(self.triples, list), 'Orbit ' + name + ' must come with a non-empty list of permutation triples'
-    
-    # initialize lazy attributes
-    self._geometry = None
-    self._domains = None
-    self._dessins = None
-  
-  def geometry(self):
-    if not self._domains:
-      # just compute the first domain
-      self._domains = [Domain(self.triples[0], self.label)]
-    return self._domains[0].geometry
-  
-  def domains(self):
-    if not self._domains:
-      self._domains = [Domain(triple, self.label) for triple in self.triples]
-    elif len(self._domains) < len(self.triples):
-      # the `geometry` method has computed the first domain already
-      self._domains.extend(Domain(triple, self.label) for triple in self.triples[1:])
-    return self._domains
-  
-  def dessins(self):
-    if not self._dessins:
-      self._dessins = [Dessin(domain, 20) for domain in self.domains()]
-    return self._dessins
-  
-  def to_dict(self):
-    return {
-      'passport_path': self.passport_path,
-      'label': self.label,
-      'index': self.index,
-      'dessin_names': [domain.name() for domain in self.domains()]
     }
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
@@ -101,7 +57,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   
   # handle command line options
   parser = ArgumentParser()
-  parser.add_argument('-n', dest='n_max', action='store', default=20)
+  parser.add_argument('-n', dest='n_max', type=int, action='store', default=20)
   parser.add_argument('--dry-run', dest='dry_run', action='store_true')
   parser.add_argument('--no-puzzles', dest='puzzles', action='store_false')
   parser.add_argument('--no-pics', dest='pics', action='store_false')
@@ -117,13 +73,16 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
       passport_dir = os.path.join('docs', passport.name)
       if args.dry_run:
         print(os.path.split(passport_dir)[1])
-      elif args.puzzles:
-        if not os.path.isdir(passport_dir):
-          os.mkdir(passport_dir, mode=0o755)
+      elif (args.puzzles or args.pics) and not os.path.isdir(passport_dir):
+        os.mkdir(passport_dir, mode=0o755)
+      if args.puzzles:
         passport_context = Context(passport.to_dict())
         puzzle_page = puzzle_template.render(passport_context)
-        with open(os.path.join(passport_dir, 'index.html'), 'w') as file:
-          file.write(puzzle_page)
+        if args.dry_run:
+          print('  index.html')
+        else:
+          with open(os.path.join(passport_dir, 'index.html'), 'w') as file:
+            file.write(puzzle_page)
       if args.pics:
         for orbit in orbits:
           for dessin in orbit.dessins():
