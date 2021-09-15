@@ -334,10 +334,9 @@ vec3 strip_color(
     // cut off the scaling near the singularities of inverse sine
     scaling = 1e2;
   }
-  /*return vec3(scaling == 1e2 ? 1. : 0., 0., erfc_appx(scaling));*/
   
   // draw ribbon graph
-  vec3 ribbon = vec3(edge_mix(1, 0.5, h.pt.x, scaling, r_px));
+  vec3 ribbon = vec3(edge_mix(1., 0., h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   
   // dim unlit half-triangles. recall that when -mirror_prod[k] is small, it
