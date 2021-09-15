@@ -328,11 +328,12 @@ vec3 strip_color(
   // find the conformal scale factor of the map from screen space to pattern
   // space
   float scaling;
-  if (abs(z.pt.y) > 1e-4 || abs(abs(z.pt.x) - 1.) > 1e-4) {
-    scaling = length(h.push[0]);
-  } else {
+  vec2 denom_sq = ONE - mul(z.pt, z.pt);
+  if (dot(denom_sq, denom_sq) < 1e-8) {
     // cut off the scaling near the singularities of inverse sine
-    scaling = 1e2;
+    scaling = 1e2 * length(z.push[0]);
+  } else {
+    scaling = length(h.push[0]);
   }
   
   // draw ribbon graph
