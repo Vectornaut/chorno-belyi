@@ -19,6 +19,7 @@ uniform float shortdim;
 const vec2 ZERO = vec2(0.);
 const vec2 ONE  = vec2(1., 0.);
 const vec2 I    = vec2(0., 1.);
+const mat2 mul_I = mat2(0., 1., -1., 0.);
 
 //  the complex conjugate of `z`
 vec2 conj(vec2 z) {
@@ -106,9 +107,25 @@ vec2 RF(vec2 x, vec2 y, vec2 z) {
 }
 
 // inverse sine (Carlson 1995, equation 4.18)
-vec2 casin(vec2 z) {
+vec2 casin_old(vec2 z) {
     vec2 z_sq = mul(z, z);
     return mul(z, RF(ONE - z_sq, ONE, ONE));
+}
+
+// --- inverse sine (following fastmath.jl) ---
+// <https://github.com/JuliaLang/julia/blob/bb5b98e72a151c41471d8cc14cacb495d647fb7f/base/fastmath.jl>
+
+// logarithm
+vec2 clog(vec2 z) {
+  return vec2(0.5*log(dot(z, z)), atan(z.y, z.x));
+}
+
+vec2 casinh(vec2 z) {
+  return clog(z + csqrt(ONE + mul(z, z)));
+}
+
+vec2 casin(vec2 z) {
+  return -mul_I * casinh(mul_I * z);
 }
 
 // --- display ---

@@ -47,7 +47,8 @@ uniform bool bdry_lit;
 
 const vec2 ZERO = vec2(0.);
 const vec2 ONE  = vec2(1., 0.);
-const vec2 I    = vec2(0., 1.);
+/*const vec2 I    = vec2(0., 1.);*/
+const mat2 mul_I = mat2(0., 1., -1., 0.);
 
 //  the complex conjugate of `z`
 vec2 conj(vec2 z) {
@@ -100,6 +101,10 @@ cjet add(cjet f, vec2 c) {
 
 cjet scale(float a, cjet f) {
   return cjet(a*f.pt, a*f.push);
+}
+
+cjet apply(mat2 a, cjet f) {
+    return cjet(a*f.pt, a*f.push);
 }
 
 cjet mul(cjet f, cjet g) {
@@ -191,13 +196,33 @@ vec2 RF(vec2 x, vec2 y, vec2 z) {
 }
 
 // inverse sine (Carlson 1995, equation 4.18)
-cjet casin(cjet z) {
+cjet casin_old(cjet z) {
   mat2 mul_z = mul(z.pt);
   vec2 z_sq = mul_z * z.pt;
   return cjet(
     mul_z * RF(ONE - z_sq, ONE, ONE),
     mul(rcp(csqrt(ONE - z_sq))) * z.push
   );
+}
+
+// --- inverse sine (following fastmath.jl) ---
+// <https://github.com/JuliaLang/julia/blob/bb5b98e72a151c41471d8cc14cacb495d647fb7f/base/fastmath.jl>
+
+// logarithm
+vec2 clog(vec2 z) {
+  return vec2(0.5*log(dot(z, z)), atan(z.y, z.x));
+}
+
+cjet casinh(cjet z) {
+  vec2 z_sq_1p = ONE + mul(z.pt, z.pt);
+  return cjet(
+    clog(z.pt + csqrt(z_sq_1p)),
+    mul(rcp(csqrt(z_sq_1p))) * z.push
+  );
+}
+
+cjet casin(cjet z) {
+  return apply(-mul_I, casinh(apply(mul_I, z)));
 }
 
 // --- minkowski geometry ---
@@ -360,7 +385,7 @@ vec3 strip_color(
   float scaling = length(h.push[0]);
   
   // draw ribbon graph
-  vec3 ribbon = vec3(edge_mix(1, 0, h.pt.x, scaling, r_px));
+  vec3 ribbon = vec3(edge_mix(1, 0.5, h.pt.x, scaling, r_px));
   vec3 sky = mix(vec3(0.8, 0.9, 1.0), vec3(0.6, 0.75, 0.9), 0.5 / max(h_pos.y, 0.5));
   
   // dim unlit half-triangles. recall that when -mirror_prod[k] is small, it
