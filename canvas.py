@@ -47,7 +47,6 @@ uniform bool bdry_lit;
 
 const vec2 ZERO = vec2(0.);
 const vec2 ONE  = vec2(1., 0.);
-/*const vec2 I    = vec2(0., 1.);*/
 const mat2 mul_I = mat2(0., 1., -1., 0.);
 
 //  the complex conjugate of `z`
@@ -69,16 +68,6 @@ vec2 mul(vec2 z, vec2 w) {
 vec2 rcp(vec2 z) {
   // 1/z = z'/(z'*z) = z'/|z|^2
   return conj(z) / dot(z, z);
-}
-
-// `z^n`
-vec2 cpow(vec2 z, int n) {
-  vec2 z_power = ONE;
-  mat2 mul_z = mul(z);
-  for (int k = 0; k < n; k++) {
-    z_power = mul_z * z_power;
-  }
-  return z_power;
 }
 
 // --- automatic differentiation ---
@@ -159,52 +148,6 @@ vec2 csqrt(vec2 z) {
     }
 }
 
-// --- elliptic integral of the first kind ---
-//
-// B. C. Carlson, "Numerical computation of real or complex elliptic integrals"
-// Numerical Algorithms, vol. 10, pp. 13--26, 1995
-// <doi:10.1007/BF02198293>
-//
-// William Press and Saul Teukolsky, "Elliptic Integrals"
-// Computers in Physics, vol. 4, pp. 92--96, 1990
-// <doi:10.1063/1.4822893>
-
-const int N = 12;
-
-const vec2 C1 = 1./24. * ONE;
-const vec2 C2 = 0.1    * ONE;
-const vec2 C3 = 3./44. * ONE;
-const vec2 C4 = 1./14. * ONE;
-
-vec2 RF(vec2 x, vec2 y, vec2 z) {
-  for (int n = 0; n < N; n++) {
-    vec2 sqrt_x = csqrt(x);
-    vec2 sqrt_y = csqrt(y);
-    vec2 sqrt_z = csqrt(z);
-    vec2 lambda = mul(sqrt_x, sqrt_y) + mul(sqrt_y, sqrt_z) + mul(sqrt_z, sqrt_x);
-    x = 0.25*(x + lambda);
-    y = 0.25*(y + lambda);
-    z = 0.25*(z + lambda);
-  }
-  vec2 avg = (x + y + z)/3.;
-  vec2 off_x = x - avg;
-  vec2 off_y = y - avg;
-  vec2 off_z = z - avg;
-  vec2 e2 = mul(off_x, off_y) - mul(off_z, off_z);
-  vec2 e3 = mul(mul(off_x, off_y), off_z);
-  return mul(ONE + mul(mul(C1, e2) - C2 - mul(C3, e3), e2) + mul(C4, e3), rcp(csqrt(avg)));
-}
-
-// inverse sine (Carlson 1995, equation 4.18)
-cjet casin_old(cjet z) {
-  mat2 mul_z = mul(z.pt);
-  vec2 z_sq = mul_z * z.pt;
-  return cjet(
-    mul_z * RF(ONE - z_sq, ONE, ONE),
-    mul(rcp(csqrt(ONE - z_sq))) * z.push
-  );
-}
-
 // --- inverse sine (following fastmath.jl) ---
 // <https://github.com/JuliaLang/julia/blob/bb5b98e72a151c41471d8cc14cacb495d647fb7f/base/fastmath.jl>
 
@@ -213,6 +156,7 @@ vec2 clog(vec2 z) {
   return vec2(0.5*log(dot(z, z)), atan(z.y, z.x));
 }
 
+// inverse hyperbolic sine
 cjet casinh(cjet z) {
   vec2 z_sq_1p = ONE + mul(z.pt, z.pt);
   return cjet(
@@ -221,6 +165,7 @@ cjet casinh(cjet z) {
   );
 }
 
+// inverse sine
 cjet casin(cjet z) {
   return apply(-mul_I, casinh(apply(mul_I, z)));
 }
