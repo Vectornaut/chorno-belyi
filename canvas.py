@@ -328,6 +328,7 @@ vec3 strip_color(
   // find the conformal scale factor of the map from screen space to pattern
   // space
   float scaling = length(h.push[0]);
+  return vec3(scaling == scaling ? 0. : 1., 0., erfc_appx(scaling));
   
   // draw ribbon graph
   vec3 ribbon = vec3(edge_mix(1, 0.5, h.pt.x, scaling, r_px));
