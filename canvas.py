@@ -158,10 +158,10 @@ vec2 clog(vec2 z) {
 
 // inverse hyperbolic sine
 cjet casinh(cjet z) {
-  vec2 z_sq_1p = ONE + mul(z.pt, z.pt);
+  vec2 sqrt1p_z_sq = csqrt(ONE + mul(z.pt, z.pt));
   return cjet(
-    clog(z.pt + csqrt(z_sq_1p)),
-    mul(rcp(csqrt(z_sq_1p))) * z.push
+    clog(z.pt + sqrt1p_z_sq),
+    mul(rcp(sqrt1p_z_sq)) * z.push
   );
 }
 
@@ -327,8 +327,14 @@ vec3 strip_color(
   
   // find the conformal scale factor of the map from screen space to pattern
   // space
-  float scaling = length(h.push[0]);
-  return vec3(scaling == scaling ? 0. : 1., 0., erfc_appx(scaling));
+  float scaling;
+  if (abs(z.pt.y) > 1e-4 || abs(abs(z.pt.x) - 1.) > 1e-4) {
+    scaling = length(h.push[0]);
+  } else {
+    // cut off the scaling near the singularities of inverse sine
+    scaling = 1e2;
+  }
+  /*return vec3(scaling == 1e2 ? 1. : 0., 0., erfc_appx(scaling));*/
   
   // draw ribbon graph
   vec3 ribbon = vec3(edge_mix(1, 0.5, h.pt.x, scaling, r_px));
