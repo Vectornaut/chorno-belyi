@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8">
+<title>WWTBAB - Puzzle 6T16-6_6_5.1</title>
+
+<link rel="stylesheet" href="../chorno-belyi.css">
+
+<style>
+#orbit-a {
+  background-color: #28b8f2;
+}
+
+#orbit-b {
+  background-color: #fa9004;
+}
+
+#orbit-c {
+  background-color: #fff200;
+}
+
+#orbit-d {
+  background-color: #805af4;
+}
+</style>
+
+<!-- web fonts -->
+<!--
+  Lato    - main body
+  Baloo 2 - headings
+  Georama - arrows
+-->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%90&display=swap" rel="stylesheet">
+
+<!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+var orbitColors = ['#28b8f2', '#fa9004', '#fff200', '#805af4'];
+
+// hat tip Alexey Lebedev and vsync at StackOverflow
+// https://stackoverflow.com/a/11972692/1644283
+function shuffleChildren(node) {
+  for (let top = node.children.length; top > 0; top--) {
+    node.appendChild(node.children[Math.floor(Math.random() * top)]);
+  }
+}
+
+function setOrbitDisplay() {
+  var show = document.querySelector('#show-orbits').checked;
+  dessins = document.querySelectorAll('.dessin');
+  for (var i = 0; i < dessins.length; i++) {
+    orbit = dessins[i].dataset.orbit
+    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
+    label = dessins[i].querySelector('.orbit-label');
+    label.style.visibility = show ? 'visible' : 'hidden';
+  }
+  trivia = document.querySelector('#orbit-trivia');
+  if (trivia !== null) {
+    trivia.style.visibility = show ? 'visible' : 'hidden';
+  }
+}
+</script>
+
+<!-- MathJax -->
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
+</head>
+
+<body>
+
+<h1>Puzzle 6T16-6_6_5.1</h1>
+
+<div class="intro">
+  <p>
+    Flavor text goes here.
+    <div class="orbit-controls">
+      <div><a href="../puzzles.html"><span style="font-family: 'Georama'">&#x2190;</span> Back to list</a></div>
+    </div>
+  </p>
+  <div class="orbits">
+    <p id="orbit-trivia">
+    Answer trivia goes here.
+    </p>
+    <div class="orbit-controls">
+      <div>
+        <input type="checkbox" id="show-orbits" onclick="setOrbitDisplay()"/>
+        <label for="show-orbits">Reveal answers</label>
+      </div>
+      <div>
+        
+        <a target="_blank" href="https://beta.lmfdb.org/Belyi/6T16/6/6/5.1/a"><div id="orbit-a" class="orbit-link">A</div></a>
+        
+        <a target="_blank" href="https://beta.lmfdb.org/Belyi/6T16/6/6/5.1/b"><div id="orbit-b" class="orbit-link">B</div></a>
+        
+        View on LMFDB
+      </div>
+    </div>
+  </div>
+</div>
+<h2>Sorting bins</h2>
+<div class="tray-container">
+  <div class="tray">
+    
+      
+      <div class="dessin" data-orbit="0">
+        <img src="6T16-6_6_5.1-a-(1,3,5,6,2,4),(1,3,6,5,2,4),(1,2,3,4,5).png"/>
+        <div class="orbit-label">A</div>
+      </div>
+      
+    
+      
+      <div class="dessin" data-orbit="1">
+        <img src="6T16-6_6_5.1-b-(1,2,3,4,5,6),(1,4,2,6,5,3),(1,2,3,4,5).png"/>
+        <div class="orbit-label">B</div>
+      </div>
+      
+      <div class="dessin" data-orbit="1">
+        <img src="6T16-6_6_5.1-b-(1,3,4,2,5,6),(1,2,6,5,3,4),(1,2,3,4,5).png"/>
+        <div class="orbit-label">B</div>
+      </div>
+      
+      <div class="dessin" data-orbit="1">
+        <img src="6T16-6_6_5.1-b-(1,4,2,3,5,6),(1,3,4,2,6,5),(1,2,3,4,5).png"/>
+        <div class="orbit-label">B</div>
+      </div>
+      
+      <div class="dessin" data-orbit="1">
+        <img src="6T16-6_6_5.1-b-(1,2,4,5,6,3),(1,4,6,5,2,3),(1,2,3,4,5).png"/>
+        <div class="orbit-label">B</div>
+      </div>
+      
+      <div class="dessin" data-orbit="1">
+        <img src="6T16-6_6_5.1-b-(1,2,4,5,3,6),(1,4,5,2,6,3),(1,2,3,4,5).png"/>
+        <div class="orbit-label">B</div>
+      </div>
+      
+      <div class="dessin" data-orbit="1">
+        <img src="6T16-6_6_5.1-b-(1,4,2,5,6,3),(1,2,3,4,6,5),(1,2,3,4,5).png"/>
+        <div class="orbit-label">B</div>
+      </div>
+      
+    
+  </div>
+</div>
+
+<div class="tray-container"><div class="tray"></div></div>
+
+
+<script>
+var trays = document.querySelectorAll('.tray');
+for (var i = 0; i < trays.length; i++) {
+  new Sortable(trays[i], {group: 'shared', animation: 150});
+}
+
+// shuffle dessins
+shuffleChildren(trays[0]);
+
+// respect initial value of "reveal answers" check box
+setOrbitDisplay();
+</script>
+
+</body>
+</html>
