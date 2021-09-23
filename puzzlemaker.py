@@ -67,6 +67,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   # render dessins and puzzle pages
   puzzle_template = engine.get_template('puzzle.html')
   puzzles = []
+  n_colors = 0
   for passport in hyp_passports:
     orbits = passport.orbits
     if len(orbits) > 1 and not all(len(orbit.triples) == 1 for orbit in orbits):
@@ -93,10 +94,12 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
               print(2*' ' + name + '.png')
             else:
               io.write_png(os.path.join(passport_dir, name + '.png'), image)
+            n_colors = max(n_colors, dessin.n_colors)
       
       puzzles.append(passport)
       if len(puzzles) >= args.n_max:
         break
+  print('{} puzzles, {} edge colors'.format(len(puzzles), n_colors))
   
   list_template = engine.get_template('puzzles.html')
   list_context = Context({'passports': [passport.to_dict() for passport in puzzles]})
