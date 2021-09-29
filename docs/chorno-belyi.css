@@ -90,6 +90,7 @@ tr:not(:first-child) td {
   padding-top: 10px;
   padding-bottom: 10px;
   background-color: #d6edfe;
+  scrollbar-color: #77c3ef #d6edfe;
 }
 
 .tray > div {
