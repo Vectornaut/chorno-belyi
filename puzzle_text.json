@@ -1,13 +1,13 @@
 {
   "7T6-5.1.1_4.2.1_3.2.2": {
-    "features": "From the introduction",
+    "features": "From introduction",
     "flavor": "This is the puzzle from the introduction.",
-    "trivia": "The Belyi map in orbit A stands alone because we can describe it with rational numbers, which have no symmetries besides the identity. To describe the maps in orbit B, we also need a root of the polynomial \\(x^3 - x^2 + 2x - 38\\). These three maps are related by the symmetries that exchange the roots of the polynomial.",
+    "trivia": "The Belyi map in orbit <b>A</b> stands alone because we can describe it with rational numbers, which have no symmetries besides the identity. To describe the maps in orbit <b>B</b>, we also need a root of the polynomial \\(x^3 - x^2 + 2x - 38\\). These three maps are related by the symmetries that exchange the roots of the polynomial.",
     "mathjax": true
   },
   "7T6-7_7_3.1.1.1.1": {
     "features": "Celebrity torus",
     "flavor": "These pictures each describe a Belyi map from a torus to the sphere. The torus has a different shape in each orbit. <a target=\"_blank\" rel=\"noopener\" href=\"https://www.lmfdb.org/EllipticCurve/2.2.21.1/735.1/i/2\">One of the tori</a> has an unusually small <a target=\"_blank\" rel=\"noopener\" href=\"https://www.lmfdb.org/knowledge/show/ec.conductor\">conductor</a>. Can you guess which orbit it belongs to?",
-    "trivia": "The torus with a small conductor belongs to orbit A."
+    "trivia": "The torus with a small conductor belongs to orbit <b>A</b>."
   }
 }
