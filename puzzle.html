@@ -35,6 +35,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%90&display=swap" rel="stylesheet">
 
+{% if mathjax %}
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+{% endif %}
+
 <!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
@@ -78,14 +84,14 @@ function setOrbitDisplay() {
 
 <div class="intro">
   <p>
-    Flavor text goes here.
+    {{ flavor|safe }}
     <div class="orbit-controls">
       <div><a href="../puzzles.html"><span style="font-family: 'Georama'">&#x2190;</span> Back to list</a></div>
     </div>
   </p>
   <div class="orbits">
     <p id="orbit-trivia">
-    Answer trivia goes here.
+    {{ trivia|safe }}
     </p>
     <div class="orbit-controls">
       <div>
@@ -94,7 +100,7 @@ function setOrbitDisplay() {
       </div>
       <div>
         {% for orbit in orbits %}
-        <a target="_blank" href="https://beta.lmfdb.org/Belyi/{{ orbit.passport_path }}/{{ orbit.label }}"><div id="orbit-{{ orbit.label }}" class="orbit-link">{{ orbit.label|upper }}</div></a>
+        <a target="_blank" rel="noopener" href="https://beta.lmfdb.org/Belyi/{{ orbit.passport_path }}/{{ orbit.label }}"><div id="orbit-{{ orbit.label }}" class="orbit-link">{{ orbit.label|upper }}</div></a>
         {% endfor %}
         View on LMFDB
       </div>
@@ -105,9 +111,9 @@ function setOrbitDisplay() {
 <div class="tray-container">
   <div class="tray">
     {% for orbit in orbits %}
-      {% for dessin_name in orbit.dessin_names %}
+      {% for dessin in orbit.dessins %}
       <div class="dessin" data-orbit="{{ orbit.index }}">
-        <img src="{{ dessin_name }}.png"/>
+        <img src="{{ dessin.name }}.png" title="{{ dessin.permutation_str }}"/>
         <div class="orbit-label">{{ orbit.label|upper }}</div>
       </div>
       {% endfor %}

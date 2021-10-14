@@ -50,7 +50,7 @@ class Orbit:
       'passport_path': self.passport_path,
       'label': self.label,
       'index': self.index,
-      'dessin_names': [domain.name() for domain in self.domains()]
+      'dessins': self.domains()
     }
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
