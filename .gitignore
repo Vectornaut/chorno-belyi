@@ -2,7 +2,4 @@
 *.swp
 *.sig
 output/
-docs/puzzles.html
-docs/*/
-!docs/images/
 __pycache__/

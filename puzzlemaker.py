@@ -68,7 +68,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   
   # handle command line options
   parser = ArgumentParser()
-  parser.add_argument('-n', dest='n_max', type=int, action='store', default=30)
+  parser.add_argument('-n', dest='n_max', type=int, action='store', default=20)
   parser.add_argument('--dry-run', dest='dry_run', action='store_true')
   parser.add_argument('--no-puzzles', dest='puzzles', action='store_false')
   parser.add_argument('--no-pics', dest='pics', action='store_false')
