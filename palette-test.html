@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8">
+<title>Palette test</title>
+
+<style>
+#orbit-d {
+  background-color: #805af4;
+}
+
+div {
+  display: inline-block;
+  width: 150px;
+  height: 150px;
+  margin: 6px;
+  border-radius: 12px;
+}
+</style>
+
+<body>
+</body>
+
+<script>
+  body = document.querySelector('body')
+  colors = [
+    '#e7302c',
+    '#fa9004',
+    '#fff200',
+    '#28b8f2',
+    '#4a27b2',
+    '#94da92',
+    '#ffb5d8',
+    '#41a181'
+  ]
+  for (let k = 0; k < colors.length; k++) {
+    swatch = document.createElement('div')
+    swatch.style.background = colors[k]
+    body.appendChild(swatch)
+  }
+</script>
+
+</html>

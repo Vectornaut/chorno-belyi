@@ -298,13 +298,15 @@ vec4 line_mix(vec4 stroke, vec4 bg, float width, float pattern_disp, float scali
 
 const float PI = 3.141592653589793;
 
-const vec3 edge_palette [7] = vec3[](
+const vec3 edge_palette [9] = vec3[](
   vec3(231.,  48.,  44.) / 255.,
   vec3(250., 144.,   4.) / 255.,
   vec3(255., 242.,   0.) / 255.,
   vec3( 40., 184., 242.) / 255.,
-  vec3(128.,  90., 244.) / 255.,
   vec3( 58.,  39., 178.) / 255.,
+  vec3(148., 218., 146.) / 255.,
+  vec3(255., 181., 216.) / 255.,
+  vec3( 65., 161., 129.) / 255.,
   vec3(0., 1., 0.)
 );
 
@@ -542,7 +544,16 @@ def tri_tree_key(index, attr):
   return 'tri_tree[{}]'.format(8*index + attr)
 
 class DomainCanvas(app.Canvas):
-  edge_palette = ['#e7302c', '#fa9004', '#fff200', '#28b8f2', '#805af4', '#3a27b2']
+  edge_palette = colors = [
+    '#e7302c',
+    '#fa9004',
+    '#fff200',
+    '#28b8f2',
+    '#4a27b2',
+    '#94da92',
+    '#ffb5d8',
+    '#41a181'
+  ]
   
   def __init__(self, p, q, r, lit=True, *args, **kwargs):
     super().__init__(*args, **kwargs)

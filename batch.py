@@ -50,7 +50,7 @@ class Orbit:
       'passport_path': self.passport_path,
       'label': self.label,
       'index': self.index,
-      'dessin_names': [domain.name() for domain in self.domains()]
+      'dessins': self.domains()
     }
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
@@ -75,6 +75,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   
   # render dessins
   n = 0
+  n_colors = 0
   for orbit in hyp_orbits:
     for dessin in orbit.dessins():
       canvas.set_domain(dessin.domain)
@@ -84,7 +85,10 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
         print(name + '.png')
       else:
         io.write_png(os.path.join('batch-export', name + '.png'), image)
+      n_colors = max(n_colors, dessin.n_colors)
       
       n += 1
       if args.partial and n >= args.n_max:
+        print('{} dessins, {} edge colors'.format(n, n_colors))
         sys.exit(0)
+  print('{} dessins, {} edge colors'.format(n, n_colors))

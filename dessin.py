@@ -83,6 +83,9 @@ class Dessin():
         color += 1
       side = 1-side
     
+    # remember how many gluing colors we used
+    self.n_colors = color - 1
+    
     # find the addresses of the edge representatives in our fundamental domain
     c_nudge = cos(0.1*pi/orders[0])
     s_nudge = sin(0.1*pi/orders[0])

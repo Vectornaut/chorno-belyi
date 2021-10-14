@@ -14,8 +14,8 @@
   Georama - arrows
 -->
 <link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%92%e2%86%93&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;1,400;0,700&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georama:wght@600&text=%e2%86%90%e2%86%92%e2%86%93&display=swap" rel="stylesheet">
 
 </head>
 
@@ -24,18 +24,27 @@
 <h1>Puzzles</h1>
 
 <div class="intro">
+<p>
+  <div class="orbit-controls">
+    <div><a href="index.html"><span style="font-family: 'Georama'">&#x2190;</span> Back to introduction</a></div>
+  </div>
+</p>
+<p>
 <table>
   <tr>
     <th>Passport</th>
     <th>Orbits</th>
+    <th>Special features</th>
   </tr>
   {% for passport in passports %}
   <tr>
     <td><a href="{{ passport.passport }}">{{ passport.passport }}</a></td>
     <td>{{ passport.orbits|length }}</td>
+    <td>{{ passport.features }}</td>
   </tr>
   {% endfor %}
 </table>
+</p>
 </div>
 
 </body>

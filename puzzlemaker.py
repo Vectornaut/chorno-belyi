@@ -12,9 +12,16 @@ app.use_app(backend_name='PyQt5', call_reuse=True)
 
 class Passport:
   def __init__(self, first_orbit):
+    # basic info
     self.name = first_orbit.passport
     self.orbits = [first_orbit]
     first_orbit.index = 0
+    
+    # puzzle text
+    self.features = ''
+    self.flavor = ''
+    self.trivia = ''
+    self.mathjax = False
   
   # if `orbit` belongs to this passport, add it and return True. otherwise,
   # return False
@@ -29,7 +36,11 @@ class Passport:
   def to_dict(self):
     return {
       'passport': self.name,
-      'orbits': [orbit.to_dict() for orbit in self.orbits]
+      'orbits': [orbit.to_dict() for orbit in self.orbits],
+      'features': self.features,
+      'flavor': self.flavor,
+      'trivia': self.trivia,
+      'mathjax': self.mathjax
     }
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
@@ -64,12 +75,26 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   ##[SELECT PAGES] parser.add_argument('pages', metavar='pages', nargs='*', help='pages to render')
   args = parser.parse_args()
   
+  # read puzzle text
+  try:
+    with open('puzzle_text.json', 'r') as file:
+      puzzle_text = json.loads(file.read())
+  except (json.JSONDecodeError, OSError) as ex:
+    print(ex)
+    sys.exit(1)
+  
   # render dessins and puzzle pages
   puzzle_template = engine.get_template('puzzle.html')
   puzzles = []
+  n_colors = 0
   for passport in hyp_passports:
     orbits = passport.orbits
     if len(orbits) > 1 and not all(len(orbit.triples) == 1 for orbit in orbits):
+      if passport.name in puzzle_text:
+        text = puzzle_text[passport.name]
+        if 'features' in text: passport.features = text['features']
+        if 'flavor' in text: passport.flavor = text['flavor']
+        if 'trivia' in text: passport.trivia = text['trivia']
       passport_dir = os.path.join('docs', passport.name)
       if args.dry_run:
         print(os.path.split(passport_dir)[1])
@@ -93,10 +118,12 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
               print(2*' ' + name + '.png')
             else:
               io.write_png(os.path.join(passport_dir, name + '.png'), image)
+            n_colors = max(n_colors, dessin.n_colors)
       
       puzzles.append(passport)
       if len(puzzles) >= args.n_max:
         break
+  print('{} puzzles, {} edge colors'.format(len(puzzles), n_colors))
   
   list_template = engine.get_template('puzzles.html')
   list_context = Context({'passports': [passport.to_dict() for passport in puzzles]})
