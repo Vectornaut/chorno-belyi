@@ -9,13 +9,13 @@
   "6T15-5.1_4.2_4.2": {
     "features": "Two interesting elliptic curves",
     "flavor": "These dessins correspond to Belyi maps from elliptic curves to the Riemann sphere.",
-    "trivia": "The elliptic curves in this puzzle are defined over the number fields \\(\mathbb{Q}(\sqrt{-15})\\) and \\(\mathbb{Q}(\sqrt{15})\\). The curve from orbit <b>A</b> is defined over \\(\mathbb{Q}(\sqrt{-15})\\) and has conductor norm 11520, while the curve from orbit <b>B</b>, which has <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/2.2.60.1/90.1/a/3\">LMFDB label 2.2.60.1-90.1-a3</a>, is defined over \\(\mathbb{Q}(\sqrt{15})\\) and has conductor norm 90."
+    "trivia": "The elliptic curves in this puzzle are defined over the number fields \\(\\mathbb{Q}(\\sqrt{-15})\\) and \\(\\mathbb{Q}(\\sqrt{15})\\). The curve from orbit <b>A</b> is defined over \\(\\mathbb{Q}(\\sqrt{-15})\\) and has conductor norm 11520, while the curve from orbit <b>B</b>, which has <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/2.2.60.1/90.1/a/3\">LMFDB label 2.2.60.1-90.1-a3</a>, is defined over \\(\\mathbb{Q}(\\sqrt{15})\\) and has conductor norm 90."
   },
 
   "6T15-5.1_5.1_4.2": {
     "features": "Two more interesting elliptic curves",
     "flavor": "These dessins correspond to Belyi maps from elliptic curves to the Riemann sphere.",
-    "trivia": "The elliptic curve in orbit <b>A</b> is defined over the biquadratic field \\(\mathbb{Q}(\sqrt{-6}, \sqrt{10})\\) and has conductor norm 40500, while the curve from orbit <b>B</b> is defined over a \\(D_4\\) number field and has conductor norm 36."
+    "trivia": "The elliptic curve in orbit <b>A</b> is defined over the biquadratic field \\(\\mathbb{Q}(\\sqrt{-6}, \\sqrt{10})\\) and has conductor norm 40500, while the curve from orbit <b>B</b> is defined over a \\(D_4\\) number field and has conductor norm 36."
   },
 
   "6T15-5.1_5.1_5.1": {
@@ -26,37 +26,37 @@
 
   "6T16-5.1_3.2.1_3.2.1": {
     "features": "One distinguished dessin",
-    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other 6 are related by Galois symmetries.",
-    "trivia": "The 6 related maps are defined over the degree 6 number field with defining polynomial \\(t^{6} + 3 t^{4} - 10 t^{3} + 3 t^{2} + 1\\)."
+    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other six are related by Galois symmetries.",
+    "trivia": "The six related maps are defined over the degree 6 number field with defining polynomial \\(t^{6} + 3 t^{4} - 10 t^{3} + 3 t^{2} + 1\\)."
   },
 
   "6T16-6_6_5.1": {
     "features": "Genus 2 Belyi maps",
-    "flavor": "These dessins correspond to Belyi maps defined on genus 2 hyperelliptic curves. Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other 6 are related by Galois symmetries.",
+    "flavor": "These dessins correspond to Belyi maps defined on genus 2 hyperelliptic curves. Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other six are related by Galois symmetries.",
     "trivia": ""
   },
 
   "7T5-7_7_3.3.1": {
     "features": "Genus 2 Belyi maps",
     "flavor": "These dessins correspond to Belyi maps defined on genus 2 hyperelliptic curves.",
-    "trivia": "Both Belyi map orbits are defined over the number field \\(\mathbb{Q}(\sqrt{-7})\\)."
+    "trivia": "Both Belyi map orbits are defined over the number field \\(\\mathbb{Q}(\\sqrt{-7})\\)."
   },
 
   "7T6-4.2.1_4.2.1_3.2.2": {
     "features": "",
     "flavor": "",
-    "trivia": "This passport consists of one orbit of size 2, defined over the field \\(\mathbb{Q}(\sqrt{7})\\) and one of size 4, define over a \\(D_4\\) number field."
+    "trivia": "This passport consists of one orbit of size 2, defined over the field \\(\\mathbb{Q}(\\sqrt{7})\\), and one of size 4, defined over a \\(D_4\\) number field."
   },
 
   "7T6-5.1.1_3.2.2_5.1.1": {
     "features": "",
     "flavor": "",
-    "trivia": "This passport consists of two orbits of size 2, one defined over the real quadratic field \\(\mathbb{Q}(\sqrt{3})\\), and the other defined over the imaginary quadratic field \\(\mathbb{Q}(\sqrt{-5})\\)."
+    "trivia": "This passport consists of two orbits of size 2, one defined over the real quadratic field \\(\\mathbb{Q}(\\sqrt{3})\\), and the other defined over the imaginary quadratic field \\(\\mathbb{Q}(\\sqrt{-5})\\)."
   },
 
   "7T6-5.1.1_4.2.1_3.2.2": {
     "features": "",
-    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other 3 are related by Galois symmetries.",
+    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other three are related by Galois symmetries.",
     "trivia": ""
   },
 
@@ -69,13 +69,13 @@
   "7T6-7_4.2.1_3.2.2": {
     "features": "",
     "flavor": "The Belyi maps corresponding to these dessins are defined on elliptic curves.",
-    "trivia": "The Belyi maps in the Galois orbit of size 2 is defined on an elliptic curve over the real quadratic field \((\mathbb{Q}(\sqrt{70})\\) with conductor norm 13230. The maps in the orbit of size 6 are defined on an elliptic curve with conductor norm 882000."
+    "trivia": "The Belyi maps in the Galois orbit of size 2 is defined on an elliptic curve over the real quadratic field \\(\\mathbb{Q}(\\sqrt{70})\\) with conductor norm 13230. The maps in the orbit of size 6 are defined on an elliptic curve with conductor norm 882000."
   },
 
   "7T6-7_4.2.1_4.2.1": {
     "features": "More genus 1 maps",
     "flavor": "",
-    "trivia": "The maps in the orbit of size 2 are defined on an elliptic curve over \\(\mathbb{Q}(\sqrt{21})\\) with conductor norm 2822400."
+    "trivia": "The maps in the orbit of size 2 are defined on an elliptic curve over \\(\\mathbb{Q}(\\sqrt{21})\\) with conductor norm 2822400."
   },
 
   "7T6-7_4.2.1_5.1.1": {
@@ -86,7 +86,7 @@
 
   "7T6-7_5.1.1_3.2.2": {
     "features": "Even more genus 1 maps",
-    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other 6 are related by Galois symmetries.",
+    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other six are related by Galois symmetries.",
     "trivia": "The map in the Galois orbit of size 1 is defined on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/7350/ck/1\">LMFDB label 7350.ck1</a>."
 
   },
@@ -106,24 +106,24 @@
   "7T6-7_7_2.2.1.1.1": {
     "features": "Even more genus 1 maps",
     "flavor": "",
-    "trivia": "The map in the Galois orbit of size 1 is defined on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/490/e/2\">LMFDB label 490.e2</a>. The maps in the orbit of size 2 are defined on an elliptic curve over \\(\mathbb{Q}(\sqrt{21})\\) with conductor norm 2940."
+    "trivia": "The map in the Galois orbit of size 1 is defined on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/490/e/2\">LMFDB label 490.e2</a>. The maps in the orbit of size 2 are defined on an elliptic curve over \\(\\mathbb{Q}(\\sqrt{21})\\) with conductor norm 2940."
   },
 
   "7T6-7_7_3.1.1.1.1": {
-    "features": "Celebrity torus",
-    "flavor": "These pictures each describe a Belyi map from a torus to the sphere. The torus has a different shape in each orbit. <a target=\"_blank\" rel=\"noopener\" href=\"https://www.lmfdb.org/EllipticCurve/2.2.21.1/735.1/i/2\">One of the tori</a> has an unusually small <a target=\"_blank\" rel=\"noopener\" href=\"https://www.lmfdb.org/knowledge/show/ec.conductor\">conductor</a>. Can you guess which orbit it belongs to?",
-    "trivia": "The torus with a small conductor belongs to orbit <b>A</b>."
+    "features": "Celebrity elliptic curve",
+    "flavor": "These pictures each describe a Belyi map from a torus to a sphere. The torus has a different &ldquo;elliptic curve&rdquo; structure in each orbit. <a target=\"_blank\" rel=\"noopener\" href=\"https://www.lmfdb.org/EllipticCurve/2.2.21.1/735.1/i/2\">One of the elliptic curves</a> has an unusually small <a target=\"_blank\" rel=\"noopener\" href=\"https://www.lmfdb.org/knowledge/show/ec.conductor\">conductor</a>. Can you guess which orbit it belongs to?",
+    "trivia": "The elliptic curve with a small conductor belongs to orbit <b>A</b>."
   },
 
   "7T6-7_7_3.2.2": {
     "features": "Genus 2 passport with many orbits",
     "flavor": "",
-    "trivia": "This passport decomposes into 4 orbits defined over \\(\mathbb{Q}, \mathbb{Q}(\sqrt{21}), \mathbb{Q}(\sqrt{7})\\), and \\(\mathbb{Q}(\sqrt{-1})\\), respectively. The map in the orbit of size 1 is defined on a genus 2 curve with conductor 129654."
+    "trivia": "This passport decomposes into four orbits defined over \\(\\mathbb{Q}, \\mathbb{Q}(\\sqrt{21}), \\mathbb{Q}(\\sqrt{7})\\), and \\(\\mathbb{Q}(\\sqrt{-1})\\), respectively. The map in the orbit of size 1 is defined on a genus 2 curve with conductor 129654."
   },
 
   "7T6-7_7_3.3.1": {
     "features": "Genus 2 passport with several orbits",
     "flavor": "",
-    "trivia": "This passport decomposes into 3 orbits defined over \\(\mathbb{Q}, \mathbb{Q}(\sqrt{5})\\), and a quintic number field, respectively. The map in the orbit of size 1 is defined on a genus 2 curve with conductor 1555848."
+    "trivia": "This passport decomposes into 3 orbits defined over \\(\\mathbb{Q}, \\mathbb{Q}(\\sqrt{5})\\), and a quintic number field, respectively. The map in the orbit of size 1 is defined on a genus 2 curve with conductor 1555848."
   }
 }
