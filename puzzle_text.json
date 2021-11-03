@@ -7,7 +7,7 @@
   },
 
   "6T15-5.1_4.2_4.2": {
-    "features": "Two interesting elliptic curves",
+    "features": "Real and imaginary quadratic number fields",
     "flavor": "These dessins correspond to Belyi maps from elliptic curves to the Riemann sphere.",
     "trivia": "The elliptic curves in this puzzle are defined over the number fields \\(\mathbb{Q}(\sqrt{-15})\\) and \\(\mathbb{Q}(\sqrt{15})\\). The curve from orbit <b>A</b> is defined over \\(\mathbb{Q}(\sqrt{-15})\\) and has conductor norm 11520, while the curve from orbit <b>B</b>, which has <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/2.2.60.1/90.1/a/3\">LMFDB label 2.2.60.1-90.1-a3</a>, is defined over \\(\mathbb{Q}(\sqrt{15})\\) and has conductor norm 90."
   },
@@ -52,12 +52,6 @@
     "features": "",
     "flavor": "",
     "trivia": "This passport consists of two orbits of size 2, one defined over the real quadratic field \\(\mathbb{Q}(\sqrt{3})\\), and the other defined over the imaginary quadratic field \\(\mathbb{Q}(\sqrt{-5})\\)."
-  },
-
-  "7T6-5.1.1_4.2.1_3.2.2": {
-    "features": "",
-    "flavor": "Just as in the first puzzle, one of the maps stands alone and is defined over the rational numbers, while the other 3 are related by Galois symmetries.",
-    "trivia": ""
   },
 
   "7T6-5.1.1_4.2.1_4.2.1": {
