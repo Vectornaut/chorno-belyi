@@ -32,13 +32,28 @@ class Passport:
       return True
     else:
       return False
-  
+
+  # see KMSV p. 7 for formula (or just use Riemann-Hurwitz)
+  def genus(self):
+    name_spl = self.name.split("-")
+    G = name_spl[0]
+    d = int(G.split("T")[0])
+    rams = name_spl[1]
+    rams = rams.split("_")
+    e = 0
+    for ram in rams:
+      ram_spl = ram.split(".")
+      for el in ram_spl:
+        e += int(el)-1
+    return int(1 - d + e//2)
+
   def to_dict(self):
     return {
       'passport': self.name,
       'orbits': [orbit.to_dict() for orbit in self.orbits],
       'features': self.features,
       'flavor': self.flavor,
+      'genus': self.genus,
       'trivia': self.trivia,
       'mathjax': self.mathjax
     }
