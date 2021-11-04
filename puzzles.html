@@ -33,15 +33,15 @@
 <table>
   <tr>
     <th>Passport</th>
-    <th>Orbits</th>
     <th>Genus</th>
+    <th>Orbits</th>
     <th>Special features</th>
   </tr>
   {% for passport in passports %}
   <tr>
     <td><a href="{{ passport.passport }}">{{ passport.passport }}</a></td>
-    <td>{{ passport.orbits|length }}</td>
     <td>{{ passport.genus }}</td>
+    <td>{{ passport.orbits|length }}</td>
     <td>{{ passport.features }}</td>
   </tr>
   {% endfor %}
