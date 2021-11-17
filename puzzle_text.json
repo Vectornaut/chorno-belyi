@@ -147,13 +147,13 @@
   "7T7-5.2_5.2_3.3.1": {
     "features": "",
     "flavor": "",
-    "trivia": "In this puzzle, the passport decomposes as 6 = 3 + 1 + 1 + 1, yielding three Belyi maps defined over \\(\mathbb{Q}\\). Two of these three maps are defined on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/735/b/1\">LMFDB label 735.b1</a>, <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/7350/cr/2\">7350.cr2</a>, and the other on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"\">LMFDB label 7350.cr2</a>."
+    "trivia": "In this puzzle, the passport decomposes as 6 = 3 + 1 + 1 + 1, yielding three Belyi maps defined over \\(\\mathbb{Q}\\). Two of these three maps are defined on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/735/b/1\">LMFDB label 735.b1</a>, <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/7350/cr/2\">7350.cr2</a>, and the other on the elliptic curve with <a target=\"_blank\" rel=\"noopener\" href=\"\">LMFDB label 7350.cr2</a>."
   },
   
   "7T7-5.2_5.2_5.1.1": {
     "features": "",
     "flavor": "",
-    "trivia": "In this puzzle, the passport decomposes as 10 = 6 + 3 + 1. This means that one of the Belyi maps is defined over \\(\mathbb{Q}\\). This map is defined on the ellipt curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/490/f/2\">LMFDB label 490.f2</a>."
+    "trivia": "In this puzzle, the passport decomposes as 10 = 6 + 3 + 1. This means that one of the Belyi maps is defined over \\(\\mathbb{Q}\\). This map is defined on the ellipt curve with <a target=\"_blank\" rel=\"noopener\" href=\"https://beta.lmfdb.org/EllipticCurve/Q/490/f/2\">LMFDB label 490.f2</a>."
   },
   
   "7T7-6.1_6.1_3.2.2": {
