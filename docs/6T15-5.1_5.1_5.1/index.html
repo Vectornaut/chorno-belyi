@@ -174,7 +174,12 @@ function setOrbitDisplay() {
 <script>
 var trays = document.querySelectorAll('.tray');
 for (var i = 0; i < trays.length; i++) {
-  new Sortable(trays[i], {group: 'shared', animation: 150});
+  new Sortable(trays[i], {
+    group: 'shared',
+    delay: 150,
+    delayOnTouchOnly: true,
+    animation: 150
+  });
 }
 
 // shuffle dessins
