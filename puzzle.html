@@ -60,7 +60,7 @@ function setOrbitDisplay() {
   dessins = document.querySelectorAll('.dessin');
   for (var i = 0; i < dessins.length; i++) {
     orbit = dessins[i].dataset.orbit
-    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
+    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'transparent';
     label = dessins[i].querySelector('.orbit-label');
     label.style.visibility = show ? 'visible' : 'hidden';
   }
