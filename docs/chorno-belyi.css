@@ -112,6 +112,10 @@ tr:not(:first-child) td {
   margin-right: 10px;
 }
 
+.sortable-chosen {
+  opacity: 0.5;
+}
+
 .orbit-label {
   position: absolute;
   top: 0;
