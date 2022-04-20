@@ -60,7 +60,7 @@ function setOrbitDisplay() {
   dessins = document.querySelectorAll('.dessin');
   for (var i = 0; i < dessins.length; i++) {
     orbit = dessins[i].dataset.orbit
-    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
+    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'transparent';
     label = dessins[i].querySelector('.orbit-label');
     label.style.visibility = show ? 'visible' : 'hidden';
   }
@@ -127,7 +127,12 @@ function setOrbitDisplay() {
 <script>
 var trays = document.querySelectorAll('.tray');
 for (var i = 0; i < trays.length; i++) {
-  new Sortable(trays[i], {group: 'shared', animation: 150});
+  new Sortable(trays[i], {
+    group: 'shared',
+    delay: 150,
+    delayOnTouchOnly: true,
+    animation: 150
+  });
 }
 
 // shuffle dessins
