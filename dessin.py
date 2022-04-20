@@ -18,15 +18,20 @@ class Dessin():
       self.covering = Covering(*domain.orders, prec)
       self.build_tree()
   
-  def build_tree(self):
+  ##def build_tree(self, ccw=False):
+  def build_tree(self, ccw=True):
     # extract tiling data, for convenience
     degree = self.domain.degree
     orders = self.domain.orders
-    permutations = self.domain.group.gens()
+    if ccw:
+      permutations = self.domain.group.gens()
+    else:
+      permutations = [s.inverse() for s in self.domain.group.gens()]
     
     # extract covering data and address map, for convenience
     flip = self.covering.flip
-    rot_ccw = (self.covering.rot(0, 1), self.covering.rot(1, 1))
+    dir = 1 if ccw else -1
+    rot = (self.covering.rot(0, dir), self.covering.rot(1, dir))
     midpoint = self.covering.midpoint
     address = self.covering.address
     
@@ -66,7 +71,7 @@ class Dessin():
           ##[DOM ALG] print('  petaling; next edge: ' + str(next_edge))
           if self.route[1-side][next_edge-1] == None:
             self.route[1-side][next_edge-1] = self.route[1-side][edge-1] + [1-side]
-            self.rep[1-side][next_edge-1] = matmul(self.rep[1-side][edge-1], rot_ccw[1-side])
+            self.rep[1-side][next_edge-1] = matmul(self.rep[1-side][edge-1], rot[1-side])
             frontier[1-side].append(next_edge)
           else:
             self.vertex_gluings.append((1-side, edge, next_edge, color))
@@ -99,8 +104,12 @@ class Dessin():
       [-s_nudge, c_nudge, 0],
       [       0,       0, 1]
     ])
-    midpoint_upper = matmul(nudge_ccw, midpoint)
-    midpoint_lower = matmul(nudge_cw, midpoint)
+    if ccw:
+      midpoint_upper = matmul(nudge_ccw, midpoint)
+      midpoint_lower = matmul(nudge_cw, midpoint)
+    else:
+      midpoint_upper = matmul(nudge_cw, midpoint)
+      midpoint_lower = matmul(nudge_ccw, midpoint)
     addresses_upper = [
       [address(matmul(g, midpoint_upper))[0] for g in self.rep[0]],
       [address(matmul(matmul(g, flip), midpoint_upper))[0] for g in self.rep[1]]
@@ -128,7 +137,7 @@ class Dessin():
           tree.store(addresses[side][edge-1], side, True, None, color)
           tree.store(addresses[side][edge-1], side, True, None, color)
     for (side, edge, next_edge, color) in self.vertex_gluings:
-      if side == 0:
+      if side == 0 and ccw:
         address_ccw = addresses_upper[side][edge-1]
         address_cw = addresses_lower[side][next_edge-1]
       else:
