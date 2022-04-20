@@ -56,7 +56,7 @@ function setOrbitDisplay() {
   dessins = document.querySelectorAll('.dessin');
   for (var i = 0; i < dessins.length; i++) {
     orbit = dessins[i].dataset.orbit
-    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'inherit';
+    dessins[i].style.backgroundColor = show ? orbitColors[orbit] : 'transparent';
     label = dessins[i].querySelector('.orbit-label');
     label.style.visibility = show ? 'visible' : 'hidden';
   }
@@ -107,7 +107,7 @@ function setOrbitDisplay() {
 </div>
 <h2>Sorting bins</h2>
 <div class="tray-container">
-  <div class="tray">
+  <div class="tray" oncontextmenu="event.preventDefault(); return false">
     
       
       <div class="dessin" data-orbit="0">
@@ -146,7 +146,7 @@ function setOrbitDisplay() {
   </div>
 </div>
 
-<div class="tray-container"><div class="tray"></div></div>
+<div class="tray-container"><div class="tray" oncontextmenu="event.preventDefault(); return false"></div></div>
 
 
 <script>
