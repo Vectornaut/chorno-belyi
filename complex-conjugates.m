@@ -14,12 +14,14 @@ function LineToOrbit(str)
   return orbit;
 end function;
 
-function AreComplexConjugate(sigma, sigmap)
+function AreComplexConjugateBruteForce(sigma, sigmap)
   // perms that conjugate sigma_0 to sigmap_0
   S := Parent(sigma[1]);
+  C0 := Centralizer(S,sigma[1]);
+  T := Transversal(S,C0);
   conjs_0 := [];
   // could be improved by using cosets of centralizers
-  for rho in S do
+  for rho in T do
     if sigma[1]^rho eq sigmap[1]^-1 then
       Append(~conjs_0, rho);
     end if;
@@ -37,6 +39,18 @@ function AreComplexConjugate(sigma, sigmap)
     return false;
   else
     return true, conjugators;
+  end if;
+end function;
+
+function AreComplexConjugate(sigma, sigmap)
+  S := Parent(sigma[1]);
+  pair := [sigma[1], sigma[2]];
+  pair_p := [sigmap[1]^-1, sigmap[2]^-1];
+  bool, conj := IsConjugate(S, pair, pair_p);
+  if not bool then
+    return false;
+  else 
+    return bool, conj;
   end if;
 end function;
 
@@ -61,22 +75,42 @@ function IdentifyComplexConjugatePairs(orbit)
   return pairs;
 end function;
 
-function PermutationTripleToOneLineNotation(sigma);
-  return [Eltseq(el) : el in sigma];
+function IdentifyComplexConjugates(orbit)
+  nonconjs := [];
+  conjs := [];
+  //for i := 1 to #orbit do
+  i := 1;
+  while i le #orbit do
+    sigma := orbit[i];
+    conj_bool := false;
+    //for j := #orbit to 1 by -1 do
+    j := #orbit;
+    while j gt i do
+      sigmap := orbit[j];
+      if AreComplexConjugate(sigma, sigmap) then
+        conj_bool := true;
+        Remove(~orbit, j);
+      end if;
+      j +:= -1;
+    end while;
+    if conj_bool then
+      Append(~conjs, sigma);
+    else
+      Append(~nonconjs, sigma);
+    end if;
+    i +:= 1;
+  end while;
+  return nonconjs, conjs;
 end function;
 
-function PairsToString(pairs)
-  pairs_one := [];
-  for pair in pairs do
-    pair_one := [];
-    for sigma in pair do
-      Append(~pair_one, PermutationTripleToOneLineNotation(sigma));
-    end for;
-    Append(~pairs_one, pair_one);
+function ListOfTriplesToString(list)
+  list_one := [];
+  for sigma in list do
+    Append(~list_one, [Eltseq(el) : el in sigma]);
   end for;
-  pairs_str := Sprint(pairs_one);
-  pairs_str := ReplaceAll("\n", "", pairs_str);
-  return pairs_str;
+  list_str := Sprint(list_one);
+  list_str := ReplaceAll("\n", "", list_str);
+  return list_str;
 end function;
 
 function ProcessOrbits(input,output)
@@ -85,19 +119,21 @@ function ProcessOrbits(input,output)
   eof_bool := false;
   while not eof_bool do
     str := Gets(file);
-    print Split(str, "|")[1];
     if IsEof(str) then
       eof_bool := true;
       break;
     end if;
+    label := Split(str, "|")[1];
+    print label;
     orbit := LineToOrbit(str);
     print "identifying complex conjugate pairs...";
     t0 := Cputime();
-    pairs := IdentifyComplexConjugatePairs(orbit);
+    nonconjs, conjs := IdentifyComplexConjugates(orbit);
     t1 := Cputime();
     printf "done. Took %o seconds\n", t1-t0;
-    pairs_str := PairsToString(pairs);
-    output_str := Sprintf("%o|%o", str, pairs_str);
+    nonconjs_str := ListOfTriplesToString(nonconjs);
+    conjs_str := ListOfTriplesToString(conjs);
+    output_str := Sprintf("%o|%o|%o", label, nonconjs_str, conjs_str);
     Write(output, output_str);
   end while;
   T1 := Cputime();
