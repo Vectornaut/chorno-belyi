@@ -9,7 +9,7 @@ class Domain:
   # `group` will be passed to PermutationGroup, unless it's already in the
   # PermutationGroups category. for deserialization, you can pass precomputed
   # group details and a serialized tree in the `data` dictionary
-  def __init__(self, group, orbit, tag=None, data=None, legacy=False):
+  def __init__(self, group, orbit, tag=None, ccw=True, data=None, legacy=False):
     # store independent metadata
     if group in PermutationGroups:
       self.group = group
@@ -17,6 +17,7 @@ class Domain:
       self.group = PermutationGroup(group, canonicalize=False)
     self.orbit = orbit
     self.tag = tag
+    self.ccw = ccw
     
     # store dependent metadata and tree
     if data:
@@ -62,7 +63,13 @@ class Domain:
       'passport': self.passport
     }
     gens = [s.inverse() for s in self.group.gens()]
-    return Domain(PermutationGroup(gens, canonicalize=False), self.orbit, tag=self.tag, data=data)
+    return Domain(
+      PermutationGroup(gens, canonicalize=False),
+      self.orbit,
+      tag=self.tag,
+      ccw=not self.ccw,
+      data=data
+    )
   
   def permutation_str(self, delim='_'):
     return delim.join([s.cycle_string() for s in self.group.gens()])
@@ -89,7 +96,11 @@ class Domain:
   
   @staticmethod
   def from_dict(data, legacy=False):
-    return Domain(data['group'], data['orbit'], data['tag'], data, legacy)
+    if 'ccw' in data:
+      ccw = data['ccw']
+    else:
+      ccw = True
+    return Domain(data['group'], data['orbit'], data['tag'], ccw, data, legacy)
   
   @staticmethod
   def load(fp, legacy=False, **kwargs):
