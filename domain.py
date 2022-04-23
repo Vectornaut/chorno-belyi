@@ -29,7 +29,10 @@ class Domain:
       else:
         self.geometry = data['geometry']
       self.passport = data['passport']
-      self.tree = TriangleTree.from_dict(data['tree'], legacy)
+      if 'tree' in data:
+        self.tree = TriangleTree.from_dict(data['tree'], legacy)
+      else:
+        self.tree = TriangleTree()
     else:
       self.degree = int(self.group.degree())
       self.t_number = int(self.group.gap().TransitiveIdentification())
@@ -49,6 +52,17 @@ class Domain:
       
       # start a triangle tree
       self.tree = TriangleTree()
+  
+  def conj(self):
+    data = {
+      'degree': self.degree,
+      't_number': self.t_number,
+      'orders': self.orders,
+      'geometry': self.geometry,
+      'passport': self.passport
+    }
+    gens = [s.inverse() for s in self.group.gens()]
+    return Domain(PermutationGroup(gens, canonicalize=False), self.orbit, tag=self.tag, data=data)
   
   def permutation_str(self, delim='_'):
     return delim.join([s.cycle_string() for s in self.group.gens()])
