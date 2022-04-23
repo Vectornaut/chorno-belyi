@@ -61,9 +61,9 @@ class Passport:
 if __name__ == '__main__' and sys.flags.interactive == 0:
   # read dessins
   try:
-    with open('LMFDB_triples.txt', 'r') as file:
+    with open('LMFDB_triples_conjugates.txt', 'r') as file:
       orbits = map(Orbit, file.readlines()[1:])
-      hyp_orbits = filter(lambda orbit : orbit.geometry() < 0, orbits)
+      hyp_orbits = filter(lambda orbit : orbit.geometry < 0, orbits)
   except (json.JSONDecodeError, OSError) as ex:
     print(ex)
     sys.exit(1)
@@ -104,7 +104,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   n_colors = 0
   for passport in hyp_passports:
     orbits = passport.orbits
-    if len(orbits) > 1 and not all(len(orbit.triples) == 1 for orbit in orbits):
+    if len(orbits) > 1 and not all(len(orbit.domains) == 1 for orbit in orbits):
       if passport.name in puzzle_text:
         text = puzzle_text[passport.name]
         if 'features' in text: passport.features = text['features']

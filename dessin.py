@@ -16,10 +16,9 @@ class Dessin():
     # domain
     if domain.geometry < 0:
       self.covering = Covering(*domain.orders, prec)
-      self.build_tree()
+      self.build_tree(domain.ccw)
   
-  ##def build_tree(self, ccw=False):
-  def build_tree(self, ccw=True):
+  def build_tree(self, ccw):
     # extract tiling data, for convenience
     degree = self.domain.degree
     orders = self.domain.orders
