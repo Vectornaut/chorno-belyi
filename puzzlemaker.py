@@ -93,7 +93,7 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
   # read puzzle text
   try:
     with open('puzzle_text.json', 'r') as file:
-      puzzle_text = json.loads(file.read())
+      puzzle_text = json.load(file)
   except (json.JSONDecodeError, OSError) as ex:
     print(ex)
     sys.exit(1)
