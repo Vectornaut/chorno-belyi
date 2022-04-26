@@ -1,4 +1,5 @@
 import sys, os, json
+import numpy as np
 from sage.all import PermutationGroup
 
 # the medial graph of a dessin d'enfant. a dessin is a ribbon graph with black
@@ -32,15 +33,15 @@ class DessinMedialGraph:
   @staticmethod
   def from_triple(triple, label, geometry):
     return DessinMedialGraph(
-      list(enumerate(triples[0], 1))
-      list(enumerate(triples[1], 1))
+      list(enumerate(triple[0], 1)),
+      list(enumerate(triple[1], 1)),
       label,
       geometry
     )
   
   def to_dict(self):
     return {
-      'black_arrows': self.black_arrows
+      'black_arrows': self.black_arrows,
       'white_arrows': self.white_arrows
     }
   
@@ -57,7 +58,7 @@ class TrainingOrbit:
   def __init__(self, passport, label, geometry, dessins):
     self.passport = passport
     self.label = label
-    sefl.geometry = geometry
+    self.geometry = geometry
     self.dessins = dessins
   
   @staticmethod
@@ -68,7 +69,7 @@ class TrainingOrbit:
     passport = name[:label_sep]
     label = name[label_sep + 1:]
     triples = json.loads(triple_str)
-    assert triples and isinstance(self.triples, list), 'Orbit ' + name + ' must come with a non-empty list of permutation triples'
+    assert triples and isinstance(triples, list), 'Orbit ' + name + ' must come with a non-empty list of permutation triples'
     
     # find the geometry type:
     #    1   spherical
@@ -81,7 +82,7 @@ class TrainingOrbit:
     geometry = int(np.sign(q*r + r*p + p*q - p*q*r))
     
     # build dessins
-    self.dessins = [DessinMedialGraph.from_triple(triple, label, geometry) for triple in triples]
+    dessins = [DessinMedialGraph.from_triple(triple, label, geometry) for triple in triples]
     
     # build orbit
     return TrainingOrbit(passport, label, geometry, dessins)
@@ -102,28 +103,41 @@ class TrainingOrbit:
     dessins = [DessinMedialGraph.from_dict(dessin, label, geometry) for dessin in data['dessins']]
     return TrainingOrbit(passport, label, geometry, dessins)
 
+# read a training data file into a dictionary that maps each passport string
+# to the list of orbits in that passport, encoded as TrainingOrbit objects
+def load_training_data(path):
+  try:
+    with open(path, 'r') as file:
+      passports = json.load(file)
+  except (json.JSONDecodeError, OSError) as ex:
+    print(ex)
+    sys.exit(1)
+  return {
+    passport: [TrainingOrbit.from_dict(data) for data in orbits]
+    for passport, orbits in passports.items()
+  }
+
 if __name__ == '__main__' and sys.flags.interactive == 0:
   # read orbit specifications
   try:
     with open('LMFDB_triples.txt', 'r') as in_file:
-      orbits = map(Orbit, file.readlines()[1:])
+      orbits = map(TrainingOrbit.from_spec, in_file.readlines()[1:])
   except (json.JSONDecodeError, OSError) as ex:
-    print(ex)
+    print('Couldn\'t read training data:', ex)
     sys.exit(1)
   
   # sort orbits into passports
   passports = {}
   for orbit in orbits:
-    if passports.has_key(orbit.passport):
-      passports[orbit.passport].push(orbit.to_dict)
+    if orbit.passport in passports:
+      passports[orbit.passport].append(orbit.to_dict())
     else:
-      passports[orbit.passport] = [orbit.to_dict]
+      passports[orbit.passport] = [orbit.to_dict()]
   
   # write orbits with dessin medial graphs
   try:
     with open('dessin_training.json', 'w') as out_file:
-      json.dump([orbit.to_dict() for orbit in orbits])
+      json.dump(passports, out_file)
   except (TypeError, ValueError, OSError) as ex:
-    self.error_dialog.setText('Error saving file.')
-    self.error_dialog.setDetailedText(str(PicklingError))
-    self.error_dialog.exec()
+    print('Couldn\'t write training data:', ex)
+    sys.exit(1)
