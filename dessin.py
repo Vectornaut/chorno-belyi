@@ -136,7 +136,7 @@ class Dessin():
           tree.store(addresses[side][edge-1], side, True, None, color)
           tree.store(addresses[side][edge-1], side, True, None, color)
     for (side, edge, next_edge, color) in self.vertex_gluings:
-      if side == 0 and ccw:
+      if side == 0:
         address_ccw = addresses_upper[side][edge-1]
         address_cw = addresses_lower[side][next_edge-1]
       else:
