@@ -1,6 +1,7 @@
 .DS_Store
 *.swp
 *.sig
+*.~
 output/
 docs/puzzles.html
 docs/*/
