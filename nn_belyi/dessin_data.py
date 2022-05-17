@@ -2,6 +2,12 @@ import sys, os, json
 import numpy as np
 from sage.all import PermutationGroup
 
+################################################################################
+#
+# Classes
+#
+################################################################################
+
 # the medial graph of a dessin d'enfant. a dessin is a ribbon graph with black
 # and white vertices. the vertices of the medial graph are the edges of the
 # dessin, represented by integers 1, ..., n. the arrows of the medial graph
@@ -69,7 +75,8 @@ class TrainingOrbit:
     passport = name[:label_sep]
     label = name[label_sep + 1:]
     triples = json.loads(triple_str)
-    assert triples and isinstance(triples, list), 'Orbit ' + name + ' must come with a non-empty list of permutation triples'
+    assert triples and isinstance(triples, list), (
+      'Orbit ' + name + ' must come with a non-empty list of permutation triples')
     
     # find the geometry type:
     #    1   spherical
@@ -103,6 +110,16 @@ class TrainingOrbit:
     dessins = [DessinMedialGraph.from_dict(dessin, label, geometry) for dessin in data['dessins']]
     return TrainingOrbit(passport, label, geometry, dessins)
 
+  
+# TODO: Need some idea for how to encode these graphs into a format TF can eat.
+  
+################################################################################
+#
+# Read, write, and create training data.
+#
+################################################################################
+
+
 # read a training data file into a dictionary that maps each passport string
 # to the list of orbits in that passport, encoded as TrainingOrbit objects
 def load_training_data(path):
@@ -117,15 +134,13 @@ def load_training_data(path):
     for passport, orbits in passports.items()
   }
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
-  # read orbit specifications
-  try:
-    with open('LMFDB_triples.txt', 'r') as in_file:
-      orbits = map(TrainingOrbit.from_spec, in_file.readlines()[1:])
-  except (json.JSONDecodeError, OSError) as ex:
-    print('Couldn\'t read training data:', ex)
-    sys.exit(1)
-  
+
+def read_lmfdb_data():
+  with open('../LMFDB_triples.txt', 'r') as in_file:
+    return map(TrainingOrbit.from_spec, in_file.readlines()[1:])
+
+
+def orbits_to_passports(orbits):
   # sort orbits into passports
   passports = {}
   for orbit in orbits:
@@ -133,11 +148,20 @@ if __name__ == '__main__' and sys.flags.interactive == 0:
       passports[orbit.passport].append(orbit.to_dict())
     else:
       passports[orbit.passport] = [orbit.to_dict()]
-  
+      
+  return passports
+
+
+def write_training_data(passports):
   # write orbits with dessin medial graphs
-  try:
-    with open('dessin_training.json', 'w') as out_file:
-      json.dump(passports, out_file)
-  except (TypeError, ValueError, OSError) as ex:
-    print('Couldn\'t write training data:', ex)
-    sys.exit(1)
+  with open('../data-nn/dessin_training.json', 'w') as out_file:
+    json.dump(passports, out_file)
+
+
+def make_data_from_lmfdb():
+  orbits = read_lmfdb_data()
+  passports = orbits_to_passports(orbits)
+  write_training_data(passports)
+  
+#if __name__ == '__main__' and sys.flags.interactive == 0:
+

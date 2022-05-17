@@ -30,6 +30,14 @@ from keras.layers import Conv2D, MaxPooling2D, Activation, Dropout, Flatten, Den
 from keras.utils import to_categorical
 from keras import optimizers
 
+##################################################
+# Local imports
+
+from dessin_data import TrainingOrbit
+
+
+def train_belyi(data):
+    pass
 
 def train_model_bundle(data, NumMats,
                        DoPCA = True,
