@@ -2,34 +2,70 @@ import sys, os, json
 import numpy as np
 from sage.all import PermutationGroup
 
+DATA_FILE = "../data-nn/dessin_training.json"
+
 ################################################################################
 #
 # Classes
 #
 ################################################################################
 
-# the medial graph of a dessin d'enfant. a dessin is a ribbon graph with black
-# and white vertices. the vertices of the medial graph are the edges of the
-# dessin, represented by integers 1, ..., n. the arrows of the medial graph
-# are the counterclockwise edge adjacencies of the dessin; the ordered pair
-# (a, b) represents the arrow a --> b, which says that going counterclockwise
-# from edge `a` brings you to edge `b`. each arrow of the medial graph inherits
-# the color of the associated dessin vertex. the black and white arrows are
-# stored in the lists `black_arrows` and `white_arrows`, respectively
-#
-# within each passport, the orbits are arbitrarily labeled 'a', 'b', 'c', ....
-# the dessin's label is stored in the string `label`. we want a classifier that
-# takes two medial graphs, which are guaranteed to come from the same passport,
-# and decides whether they come from the same orbit
-#
-# within each passport, all the dessins can be embedded in the same topological
-# surface. the integer `geometry` tells you whether that surface is:
-#
-#    1   spherical
-#    0   euclidean
-#   -1   hyperbolic
-#
+class Passport:
+  """
+  A collection of Dessins with a Galois action. The Passport stores
+  the orbits of the Dessins as TrainingOrbit objects
+  """
+
+  def __init__(self, label, orbits):
+    self._label = label
+    self._orbits = orbits
+    
+  def orbits(self):
+    return self._orbits
+
+  def label(self):
+    return self._label
+
+  def labelled_training_set(self):
+
+    n = len(self.orbits())
+    for x in range(n):
+      for y in range(n):
+        if x == y:
+          pass
+        else:
+          pass
+        
+    return [1,2,3], [0]
+  
+##############################
+# DessinMedialGraph class
+
 class DessinMedialGraph:
+  """
+  The medial graph of a dessin d'enfant. a dessin is a ribbon graph with black
+  and white vertices. the vertices of the medial graph are the edges of the
+  dessin, represented by integers 1, ..., n. the arrows of the medial graph
+  are the counterclockwise edge adjacencies of the dessin; the ordered pair
+  (a, b) represents the arrow a --> b, which says that going counterclockwise
+  from edge `a` brings you to edge `b`. each arrow of the medial graph inherits
+  the color of the associated dessin vertex. the black and white arrows are
+  stored in the lists `black_arrows` and `white_arrows`, respectively
+
+  within each passport, the orbits are arbitrarily labeled 'a', 'b', 'c', ....
+  the dessin's label is stored in the string `label`. we want a classifier that
+  takes two medial graphs, which are guaranteed to come from the same passport,
+  and decides whether they come from the same orbit
+
+  within each passport, all the dessins can be embedded in the same topological
+  surface. the integer `geometry` tells you whether that surface is:
+
+    1   spherical
+    0   euclidean
+   -1   hyperbolic
+
+  """
+
   def __init__(self, black_arrows, white_arrows, label, geometry):
     self.black_arrows = black_arrows
     self.white_arrows = white_arrows
@@ -60,7 +96,32 @@ class DessinMedialGraph:
       geometry
     )
 
+  def vectorize(self):
+    """
+    Test function to see if we can feed tensor-flow reasonably well
+    """
+    
+    edges = sum(self.white_arrows) + sum(self.black_arrows)
+
+    # Normalize so that the length of this vector is 40. 
+    if len(edges) < 30:
+      edges = edges + [0 for i in range(30-len(edges))]
+    else:
+      edges = edges[0:30]
+
+    return edges
+
+  
+##############################
+# Training Orbit class
+
 class TrainingOrbit:
+  """
+  A TrainingOrbit consists of, essentially, a list of DessinMedial graphs. These dessins
+  all lie in the same Galois orbit, hence, why they are organized within a TrainingOrbit
+  list.
+  """
+
   def __init__(self, passport, label, geometry, dessins):
     self.passport = passport
     self.label = label
@@ -111,27 +172,22 @@ class TrainingOrbit:
     return TrainingOrbit(passport, label, geometry, dessins)
 
   
-# TODO: Need some idea for how to encode these graphs into a format TF can eat.
-  
 ################################################################################
 #
-# Read, write, and create training data.
+# Read, write, and create raw training data.
 #
 ################################################################################
 
 
 # read a training data file into a dictionary that maps each passport string
 # to the list of orbits in that passport, encoded as TrainingOrbit objects
-def load_training_data(path):
-  try:
-    with open(path, 'r') as file:
-      passports = json.load(file)
-  except (json.JSONDecodeError, OSError) as ex:
-    print(ex)
-    sys.exit(1)
+def load_json_data(path):
+  with open(path, 'r') as file:
+    passports = json.load(file)
+
   return {
-    passport: [TrainingOrbit.from_dict(data) for data in orbits]
-    for passport, orbits in passports.items()
+    label: Passport(label, [TrainingOrbit.from_dict(data) for data in orbits])
+    for label, orbits in passports.items()
   }
 
 
@@ -140,7 +196,7 @@ def read_lmfdb_data():
     return map(TrainingOrbit.from_spec, in_file.readlines()[1:])
 
 
-def orbits_to_passports(orbits):
+def sort_orbits_into_passports(orbits):
   # sort orbits into passports
   passports = {}
   for orbit in orbits:
@@ -152,7 +208,7 @@ def orbits_to_passports(orbits):
   return passports
 
 
-def write_training_data(passports):
+def write_json_data(passports):
   # write orbits with dessin medial graphs
   with open('../data-nn/dessin_training.json', 'w') as out_file:
     json.dump(passports, out_file)
@@ -160,8 +216,24 @@ def write_training_data(passports):
 
 def make_data_from_lmfdb():
   orbits = read_lmfdb_data()
-  passports = orbits_to_passports(orbits)
+  passports = sort_orbits_into_passports(orbits)
   write_training_data(passports)
   
-#if __name__ == '__main__' and sys.flags.interactive == 0:
+
+################################################################################
+#
+# Create training data
+#
+################################################################################
+
+def labelled_training_data(data):
+  xvalues = np.empty((0, 3))
+  yvalues = np.empty((0, 1))
+
+  for datum in data:
+    x, y = datum.labelled_training_set()
+    xvalues = np.append(xvalues, np.array([x]), axis=0)
+    yvalues = np.append(yvalues, np.array([y]), axis=0)
+
+  return xvalues, yvalues
 
