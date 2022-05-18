@@ -10,6 +10,9 @@ DATA_FILE = "../data-nn/dessin_training.json"
 #
 ################################################################################
 
+##############################
+# Passport class
+
 class Passport:
   """
   A collection of Dessins with a Galois action. The Passport stores
@@ -28,15 +31,25 @@ class Passport:
 
   def labelled_training_set(self):
 
+    # Extract the dessins in the training orbits
+    
     n = len(self.orbits())
-    for x in range(n):
-      for y in range(n):
-        if x == y:
-          pass
+    #orbit_label = {self.orbits().dessins[i] : i for i in range(n)}
+
+    dessins = sum([x.dessins for x in self.orbits()], [])
+
+    output = []
+    
+    # Don't vectorize. Just label.
+    for x in dessins:
+      for y in dessins:
+        if x.label == y.label:
+          output.append([(x, y), 1])
         else:
-          pass
-        
-    return [1,2,3], [0]
+          output.append([(x, y), 0])
+
+    a, b = zip(*output)
+    return list(a), list(b)
   
 ##############################
 # DessinMedialGraph class

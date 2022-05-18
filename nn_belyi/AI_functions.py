@@ -47,7 +47,7 @@ def train_belyi(data,
     train_x, train_y = data
     bs, ep = BatchSize, EpochNum
 
-        # ** SUPERVISED: MULTILAYER PERCEPTRON
+    # ** SUPERVISED: MULTILAYER PERCEPTRON
     print("\nSTEP: Training Filter 1 (MLP using X,Y)... ")
     
     hlsizes, numiters, act  = (10, 10, 10), 100, "relu"
