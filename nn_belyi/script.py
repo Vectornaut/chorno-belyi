@@ -1,4 +1,6 @@
 # Script for running from shell.
 
-if __name__ == '__main__' and sys.flags.interactive == 0:
-    pass
+from importlib import reload
+import dessin_data as dd
+
+data = dd.load_json_data(dd.DATA_FILE)

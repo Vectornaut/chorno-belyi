@@ -36,79 +36,31 @@ from keras import optimizers
 from dessin_data import TrainingOrbit
 
 
-def train_belyi(data):
-    pass
-
-def train_model_bundle(data, NumMats,
-                       DoPCA = True,
-                       PCAk = 23,
-                       BatchSize = 2000,
-                       EpochNum = 100,
-                       StepSizeMLP = 1e-5,
-                       StepSizeCNN = 1e-5,
-                       Balancing = True):
-
-    train_x, train_y, train_M = data
+def train_belyi(data,
+                PCAk = 23,
+                BatchSize = 6,
+                EpochNum = 10,
+                StepSizeMLP = 1e-5,
+                StepSizeCNN = 1e-5,
+                Balancing = False):
+    
+    train_x, train_y = data
     bs, ep = BatchSize, EpochNum
-    
-    if Balancing:
-        train_x,train_y,train_M = UpSampleToBalance(train_x,train_y,train_M)
 
-    # Substantial data processing.
-    if DoPCA:
-        train_x,pca = PerformPCA(PCAk, train_x)
-    else:
-        pca = None
-
-    # ** SUPERVISED: MULTILAYER PERCEPTRON
-    print("\n\nSTEP 3: Training Filter 1 (MLP using X,Y)... ")
+        # ** SUPERVISED: MULTILAYER PERCEPTRON
+    print("\nSTEP: Training Filter 1 (MLP using X,Y)... ")
     
-    # hlsizes,numiters,act  = (100,1000,1000,1000,1000,100,100), 100, "relu"
-    hlsizes, numiters, act  = (100,1000,1000), 100, "relu"
-    NN = MLPClassifier0(hlsizes,StepSizeMLP,act,train_x.shape[1])
+    hlsizes, numiters, act  = (10, 10, 10), 100, "relu"
+    NN = MLPClassifier(hlsizes, StepSizeMLP, act, train_x.shape[1])
 
     NN.fit(train_x, train_y, batch_size=bs, epochs=ep, verbose=1) # Main MLP-Training.
     print("        ...done.")
 
-    # ** SUPERVISED: CONVNET
-    # hyperparameters are contained in util.py
-    print("\n\nSTEP 4: Training Filter 2 (CNN using M,Y)... ")
-    CN = CNNClassifier(NumMats, train_M.shape[1], StepSizeCNN)
-    CN.fit(train_M, train_y, batch_size=bs, epochs=ep, verbose=1) # Main CNN-Training
-    print("        ...done.\n")
-
-    # ** SAVE WEIGHTS & MODELS
-    paramsNN,paramsCN    = [hlsizes,StepSizeMLP,StepSizeCNN,numiters],[bs,ep]
-
-    return ModelBundle(generate_network_name(), pca, NN, CN), paramsNN, paramsCN
-
-
+    return NN
 
 
 ###############################################################################################
 # Classifier constructors.
-
-def CNNClassifier(k,l,ss):
-    model = Sequential()
-    # model.add(Conv2D(22, (3, 3), activation='relu',input_shape=(21, 21, k)))
-    if l==5:
-         model.add(Conv2D(64, kernel_size=3, activation='relu',input_shape=(l, l, l)))
-    elif l==21:
-        model.add(Conv2D(64, kernel_size=3, activation='relu',input_shape=(l, l, k)))
-    # model.add(Conv2D(32, kernel_size=3, activation='relu'))
-    model.add(Conv2D(16, kernel_size=3, activation='relu'))
-    # model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Flatten())  #converts 2D feature maps to 1D feature vectors
-    model.add(Dense(100, activation='relu'))
-    # model.add(Dropout(0.5))
-    model.add(Dense(1, activation='sigmoid'))
-
-    sgd = optimizers.SGD(lr=ss, decay=1e-6, momentum=0.9, nesterov=True)
-    opti = optimizers.Adam()
-    model.compile(loss='binary_crossentropy',
-                  optimizer=opti,
-                  metrics=['accuracy'])
-    return model
 
 def MLPClassifier(hlsizes, ss, act, insz):
     model = Sequential()
