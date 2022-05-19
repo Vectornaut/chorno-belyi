@@ -3,38 +3,33 @@
 # INTERESTING: Try to train a network that recognizes the (0,1)-dessign from a (0, inf)-dessign 
 
 ###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
 # Utilities for creating and fine-tuning neural networks in Keras.
-
 
 
 import os, sys, scipy.io, scipy.linalg, time, random, pickle
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
-
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2' #don't display warnings; only errors
-import numpy as np, tensorflow as tf, matplotlib.pylab as plt
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-from numpy import genfromtxt
-#from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import confusion_matrix
-from time import time, asctime
-import pickle as pk
 
+import numpy as np
 import tensorflow as tf
-from keras.models import Sequential,load_model
-from keras.layers import Conv2D, MaxPooling2D, Activation, Dropout, Flatten, Dense
-from keras.utils import to_categorical
-from keras import optimizers
+import matplotlib.pylab as plt
+
+# Keras imports
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Activation, Dropout, Flatten, Dense
+from tensorflow.keras import optimizers
+
+from sklearn.metrics import confusion_matrix
 
 ##################################################
 # Local imports
 
 from dessin_data import TrainingOrbit
 
+##################################################
+# Training functions.
 
 def train_belyi(data,
                 PCAk = 23,
@@ -44,7 +39,10 @@ def train_belyi(data,
                 StepSizeCNN = 1e-5,
                 Balancing = False):
     
-    train_x, train_y = data
+    raw_train_x, raw_train_y = data
+    train_x = parse_dessin_pairs(raw_train_x)
+    train_y = parse_labels(raw_train_y)
+    
     bs, ep = BatchSize, EpochNum
 
     # ** SUPERVISED: MULTILAYER PERCEPTRON
@@ -57,6 +55,7 @@ def train_belyi(data,
     print("        ...done.")
 
     return NN
+
 
 
 ###############################################################################################
@@ -77,3 +76,26 @@ def MLPClassifier(hlsizes, ss, act, insz):
                   metrics=['accuracy'])
     return model
 
+
+###############################################################################################
+# Data handling
+
+def parse_dessin_pairs(train_x, network_type = "MLP"):
+    """
+    Format the data so that it can be fed into a neural network of the given type.
+
+    Each datapoint of train_x consists of a pair of dessins from the same passport.
+    """
+    formatted_data = np.empty((0, 6))
+    if network_type == "MLP":
+       for x, y in train_x:
+           a = np.array([[1,2,3,1,2,3]])
+           formatted_data = np.append(formatted_data, a, axis=0)
+    else:
+        raise NotImplementedError
+
+    return formatted_data
+
+def parse_labels(train_y):
+    return np.array(train_y)
+    
