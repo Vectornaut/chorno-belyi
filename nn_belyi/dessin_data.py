@@ -240,13 +240,13 @@ def make_data_from_lmfdb():
 ################################################################################
 
 def labelled_training_data(data):
-  xvalues = np.empty((0, 3))
-  yvalues = np.empty((0, 1))
+  xvalues = []
+  yvalues = []
 
   for datum in data:
     x, y = datum.labelled_training_set()
-    xvalues = np.append(xvalues, np.array([x]), axis=0)
-    yvalues = np.append(yvalues, np.array([y]), axis=0)
+    xvalues += x
+    yvalues += y
 
   return xvalues, yvalues
 
