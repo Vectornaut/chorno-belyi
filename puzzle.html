@@ -109,7 +109,7 @@ function setOrbitDisplay() {
 </div>
 <h2>Sorting bins</h2>
 <div class="tray-container">
-  <div class="tray" oncontextmenu="event.preventDefault(); event.stopPropagation(); return false">
+  <div class="tray">
     {% for orbit in orbits %}
       {% for dessin in orbit.dessins %}
       <div class="dessin" data-orbit="{{ orbit.index }}">
@@ -121,7 +121,7 @@ function setOrbitDisplay() {
   </div>
 </div>
 {% for orbit in orbits|slice:'1:' %}
-<div class="tray-container"><div class="tray" oncontextmenu="event.preventDefault(); event.stopPropagation(); return false"></div></div>
+<div class="tray-container"><div class="tray"></div></div>
 {% endfor %}
 
 <script>
