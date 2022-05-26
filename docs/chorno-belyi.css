@@ -110,6 +110,7 @@ tr:not(:first-child) td {
   height: 300px;
   margin-left: 10px;
   margin-right: 10px;
+  pointer-events: none;
 }
 
 .sortable-chosen {

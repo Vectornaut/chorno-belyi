@@ -124,11 +124,16 @@ class WorkingPanel(DessinControlPanel):
     self.orbit_field.returnPressed.connect(self.new_domain)
     self.tag_field = qt.QLineEdit()
     self.tag_field.returnPressed.connect(self.new_domain)
+    self.cw_toggle = qt.QPushButton("\u21BA")
+    self.cw_toggle.setMinimumWidth(30)
+    self.cw_toggle.setCheckable(True);
+    self.cw_toggle.toggled.connect(self.set_petal_dir_icon)
     self.new_button = qt.QPushButton('New')
     self.new_button.setEnabled(False)
     self.new_button.clicked.connect(self.new_domain)
     entry_bar.layout().addWidget(self.orbit_field)
     entry_bar.layout().addWidget(self.tag_field)
+    entry_bar.layout().addWidget(self.cw_toggle);
     entry_bar.layout().addWidget(self.new_button)
     self.layout().addWidget(entry_bar)
     
@@ -154,12 +159,15 @@ class WorkingPanel(DessinControlPanel):
       and self.orbit_field.text() != ''
     )
   
+  def set_petal_dir_icon(self, cw):
+    self.cw_toggle.setText('\u21bb' if cw else '\u21ba')
+  
   def new_domain(self):
     try:
       cycle_strs = [field.text() for field in self.pmt_fields]
       orbit = self.orbit_field.text()
       tag = self.tag_field.text()
-      domain = Domain(cycle_strs, orbit, tag if tag else None)
+      domain = Domain(cycle_strs, orbit, tag if tag else None, not self.cw_toggle.isChecked())
       dessin = Dessin(domain, 20)
     except Exception as ex:
       self.error_dialog.setText("Error computing dessin metadata.")
