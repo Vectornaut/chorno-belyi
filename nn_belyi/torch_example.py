@@ -2,8 +2,14 @@ import torch
 from torch import Tensor
 from torch_geometric.nn import GCNConv
 from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import TUDataset
 
 dataset = Planetoid(root='.', name='Cora')
+# dataset = TUDataset(root='/tmp/ENZYMES', name='ENZYMES', use_node_attr=True)
+
+train_dataset = dataset[:540]
+test_dataset = dataset[540:]
+
 
 class GCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
@@ -25,14 +31,15 @@ import torch.nn.functional as F
 data = dataset[0]
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-for epoch in range(200):
-    pred = model(data.x, data.edge_index)
-    loss = F.cross_entropy(pred[data.train_mask], data.y[data.train_mask])
+if True:
+    for epoch in range(200):
+        pred = model(data.x, data.edge_index)
+        loss = F.cross_entropy(pred, data.y)
 
-    # Backpropagation
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+        # Backpropagation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-print(loss)
 
+print("Nothing broken so far")

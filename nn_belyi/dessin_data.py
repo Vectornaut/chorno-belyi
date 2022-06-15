@@ -1,6 +1,7 @@
 import sys, os, json
 import numpy as np
 from sage.all import PermutationGroup
+import torch, torch_geometric
 
 DATA_FILE = "../data-nn/dessin_training.json"
 
@@ -124,7 +125,23 @@ class DessinMedialGraph:
 
     return edges
 
-  
+  def to_geom_data(self):
+
+      # build edge tensor
+      edge_index = torch.tensor(self.black_arrows + self.white_arrows)
+
+      # build label
+      if self.geometry > 0:
+        y = [1, 0, 0]
+      elif self.geometry == 0:
+        y = [0, 1, 0]
+      else:
+        y = [0, 0, 1]
+
+      return torch_geometric.data.Data(
+        edge_index = edge_index.t().contiguous(), y=torch.tensor(y, dtype=torch.float))
+
+    
 ##############################
 # Training Orbit class
 
@@ -250,3 +267,21 @@ def labelled_training_data(data):
 
   return xvalues, yvalues
 
+def geometry_training_set(data):
+  xvalues = []
+  yvalues = []
+
+  dessins = sum(list(sum([x.dessins for x in datum.orbits()], []) for datum in data), [])
+
+  return [x.to_geom_data() for x in dessins]
+
+
+    
+    
+
+
+################################################################################
+#
+# Turn dessin into torch_geometric.data.Data
+#
+################################################################################
