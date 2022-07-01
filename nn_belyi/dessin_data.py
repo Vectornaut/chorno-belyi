@@ -30,6 +30,9 @@ class Passport:
   def label(self):
     return self._label
 
+  def dessins(self):
+    return sum([x.dessins for x in self.orbits()], [])
+  
   def labelled_training_set(self):
 
     # Extract the dessins in the training orbits
@@ -37,7 +40,7 @@ class Passport:
     n = len(self.orbits())
     #orbit_label = {self.orbits().dessins[i] : i for i in range(n)}
 
-    dessins = sum([x.dessins for x in self.orbits()], [])
+    dessins = self.dessins()
 
     output = []
     
@@ -127,19 +130,36 @@ class DessinMedialGraph:
 
   def to_geom_data(self):
 
-      # build edge tensor
-      edge_index = torch.tensor(self.black_arrows + self.white_arrows)
+    # build edge tensor
+    # Pytorch *really* assumes everything in sight is 0-indexed.
+    edges = [[a-1, b-1] for [a,b] in self.black_arrows + self.white_arrows]
+    edge_index = torch.tensor(edges)
+    
+    # buld vertex tensor
+    vertsb = {x for x in sum(self.black_arrows, [])}
+    vertsw = {x for x in sum(self.white_arrows, [])}
+    verts = [[1] for x in vertsb.union(vertsw)]
 
-      # build label
-      if self.geometry > 0:
-        y = [1, 0, 0]
-      elif self.geometry == 0:
-        y = [0, 1, 0]
-      else:
-        y = [0, 0, 1]
+    # build label
+    # if self.geometry > 0:
+    #   y = [1, 0, 0]
+    # elif self.geometry == 0:
+    #   y = [0, 1, 0]
+    # else:
+    #   y = [0, 0, 1]
 
-      return torch_geometric.data.Data(
-        edge_index = edge_index.t().contiguous(), y=torch.tensor(y, dtype=torch.float))
+    # Set the label to be one of three values.
+    if self.geometry > 0:
+      y = 2
+    elif self.geometry == 0:
+      y = 1
+    else:
+      y = 0
+    
+    return torch_geometric.data.Data(
+      x=torch.tensor(verts, dtype=torch.float),
+      edge_index = edge_index.t().contiguous(),
+      y=torch.tensor([y], dtype=torch.long))
 
     
 ##############################
@@ -248,7 +268,47 @@ def make_data_from_lmfdb():
   orbits = read_lmfdb_data()
   passports = sort_orbits_into_passports(orbits)
   write_training_data(passports)
+
   
+################################################################################
+#
+# Create a pytorch style Dataset
+#
+################################################################################
+
+import shutil, os
+import torch
+from torch_geometric.data import InMemoryDataset
+
+class DessinGeometryDataset(InMemoryDataset):
+  def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
+    super().__init__(root, transform, pre_transform, pre_filter)
+    self.data, self.slices = torch.load(self.processed_paths[0])
+  
+  @property
+  def raw_file_names(self):
+    return ['dessin_training.json']
+  
+  @property
+  def processed_file_names(self):
+    return ['I_hope_this_works.data']
+  
+  def download(self):
+    shutil.copyfile("../data-nn/dessin_training.json", self.raw_paths[0])
+  
+  def process(self):
+    ## whatever your script does to read dessin_training.json and spit out a
+    ## list of x.to_geom_data() outputs
+
+    raw_file = self.raw_paths[0]
+    data = list(load_json_data(raw_file).values())
+
+    
+    data_list = geometry_training_set(data) ## the list of x.to_geom_data() outputs
+    
+    data, slices = self.collate(data_list)
+    torch.save((data, slices), self.processed_paths[0])
+
 
 ################################################################################
 #
@@ -276,7 +336,6 @@ def geometry_training_set(data):
   return [x.to_geom_data() for x in dessins]
 
 
-    
     
 
 
