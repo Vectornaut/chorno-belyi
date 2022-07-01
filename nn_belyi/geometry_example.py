@@ -32,16 +32,30 @@ print(f'Is undirected: {data.is_undirected()}')
 torch.manual_seed(12345)
 dataset = dataset.shuffle()
 
-train_dataset = dataset[:150]
-test_dataset = dataset[150:]
+train_dataset = dataset[:2500]
+test_dataset = dataset[2500:]
 
 print(f'Number of training graphs: {len(train_dataset)}')
 print(f'Number of test graphs: {len(test_dataset)}')
 
 from torch_geometric.loader import DataLoader
 
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+# Set up balanced sampling
+batch_size = 25
+class_sample_count = [len([x for x in dataset if x.y == i]) for i in range(3)]
+weights = 1 / torch.Tensor(class_sample_count)
+sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, batch_size)
+train_loader = DataLoader(train_dataset,
+                          batch_size = batch_size,
+                          sampler = sampler)
+
+#test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset,
+                         batch_size = batch_size,
+                         sampler = sampler)
+
+
+print(f'Weights: {weights}')
 
 for step, data in enumerate(train_loader):
     print(f'Step {step + 1}:')
@@ -60,18 +74,18 @@ class GCN(torch.nn.Module):
     def __init__(self, hidden_channels):
         super(GCN, self).__init__()
         torch.manual_seed(12345)
-        self.conv1 = GCNConv(dataset.num_node_features, hidden_channels, add_self_loops=False)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.conv1 = GCNConv(dataset.num_node_features, hidden_channels)
+        #self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        #self.conv3 = GCNConv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, dataset.num_classes)
 
     def forward(self, x, edge_index, batch):
         # 1. Obtain node embeddings 
         x = self.conv1(x, edge_index)
         x = x.relu()
-        x = self.conv2(x, edge_index)
-        x = x.relu()
-        x = self.conv3(x, edge_index)
+        #x = self.conv2(x, edge_index)
+        #x = x.relu()
+        #x = self.conv3(x, edge_index)
 
         # 2. Readout layer
         x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
@@ -82,10 +96,8 @@ class GCN(torch.nn.Module):
         
         return x
 
-# from IPython.display import Javascript
-# display(Javascript('''google.colab.output.setIframeHeight(0, true, {maxHeight: 300})'''))
 
-model = GCN(hidden_channels=64)
+model = GCN(hidden_channels=8)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 criterion = torch.nn.CrossEntropyLoss()
 
@@ -109,11 +121,13 @@ def test(loader):
          correct += int((pred == data.y).sum())  # Check against ground-truth labels.
      return correct / len(loader.dataset)  # Derive ratio of correct predictions.
 
+ 
+print(f'Initial_params: {list(model.parameters())}')
 
-for epoch in range(1, 171):
+for epoch in range(1, 70):
     train()
     train_acc = test(train_loader)
     test_acc = test(test_loader)
     print(f'Epoch: {epoch:03d}, Train Acc: {train_acc:.4f}, Test Acc: {test_acc:.4f}')
-
+    print(list(model.parameters())[:10])
 

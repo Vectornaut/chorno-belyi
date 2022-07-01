@@ -138,7 +138,8 @@ class DessinMedialGraph:
     # buld vertex tensor
     vertsb = {x for x in sum(self.black_arrows, [])}
     vertsw = {x for x in sum(self.white_arrows, [])}
-    verts = [[1] for x in vertsb.union(vertsw)]
+    verts = [[len([arrow for arrow in self.black_arrows if x in arrow])]
+             for x in vertsb.union(vertsw)]
 
     # build label
     # if self.geometry > 0:
