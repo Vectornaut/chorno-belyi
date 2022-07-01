@@ -32,30 +32,44 @@ print(f'Is undirected: {data.is_undirected()}')
 torch.manual_seed(12345)
 dataset = dataset.shuffle()
 
-train_dataset = dataset[:2500]
-test_dataset = dataset[2500:]
+T = 800
+N = 1000
+train_dataset = dataset[:T]
+test_dataset = dataset[T:N]
 
 print(f'Number of training graphs: {len(train_dataset)}')
 print(f'Number of test graphs: {len(test_dataset)}')
 
-from torch_geometric.loader import DataLoader
+from torch_geometric.loader import DataLoader, ImbalancedSampler
 
 # Set up balanced sampling
-batch_size = 25
-class_sample_count = [len([x for x in dataset if x.y == i]) for i in range(3)]
-weights = 1 / torch.Tensor(class_sample_count)
-sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, batch_size)
+batch_size = 64
+class_sample_count = [len([G for G in dataset if G.y == i]) for i in range(3)]
+class_weights = 1. / torch.Tensor(class_sample_count)
+trweights = [class_weights[G.y] for G in train_dataset]
+teweights = [class_weights[G.y] for G in test_dataset]
+
+trsampler = torch.utils.data.sampler.WeightedRandomSampler(trweights, len(train_dataset),
+                                                           replacement=True)
+
+tesampler = torch.utils.data.sampler.WeightedRandomSampler(teweights, len(test_dataset),
+                                                           replacement=True)
+
+#trsampler = ImbalancedSampler(train_dataset)
+#tesampler = ImbalancedSampler(test_dataset)
+
+# Create the dataloaders
 train_loader = DataLoader(train_dataset,
                           batch_size = batch_size,
-                          sampler = sampler)
+                          sampler = trsampler)
 
 #test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset,
                          batch_size = batch_size,
-                         sampler = sampler)
+                         sampler = tesampler)
 
 
-print(f'Weights: {weights}')
+print(f'Weights: {class_weights}')
 
 for step, data in enumerate(train_loader):
     print(f'Step {step + 1}:')
@@ -74,18 +88,18 @@ class GCN(torch.nn.Module):
     def __init__(self, hidden_channels):
         super(GCN, self).__init__()
         torch.manual_seed(12345)
-        self.conv1 = GCNConv(dataset.num_node_features, hidden_channels)
-        #self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        #self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        self.lin = Linear(hidden_channels, dataset.num_classes)
+        self.conv1 = GCNConv(dataset.num_node_features, hidden_channels, bias=False)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.lin = Linear(hidden_channels, dataset.num_classes, bias=False)
 
     def forward(self, x, edge_index, batch):
         # 1. Obtain node embeddings 
         x = self.conv1(x, edge_index)
         x = x.relu()
-        #x = self.conv2(x, edge_index)
-        #x = x.relu()
-        #x = self.conv3(x, edge_index)
+        x = self.conv2(x, edge_index)
+        x = x.relu()
+        x = self.conv3(x, edge_index)
 
         # 2. Readout layer
         x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
@@ -93,11 +107,10 @@ class GCN(torch.nn.Module):
         # 3. Apply a final classifier
         x = F.dropout(x, p=0.5, training=self.training)
         x = self.lin(x)
-        
         return x
 
 
-model = GCN(hidden_channels=8)
+model = GCN(hidden_channels=4)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 criterion = torch.nn.CrossEntropyLoss()
 
@@ -118,7 +131,7 @@ def test(loader):
      for data in loader:  # Iterate in batches over the training/test dataset.
          out = model(data.x, data.edge_index, data.batch)  
          pred = out.argmax(dim=1)  # Use the class with highest probability.
-         correct += int((pred == data.y).sum())  # Check against ground-truth labels.
+         correct += int((pred == data.y).sum())  # Check against ground-truth labels.         
      return correct / len(loader.dataset)  # Derive ratio of correct predictions.
 
  
@@ -129,5 +142,7 @@ for epoch in range(1, 70):
     train_acc = test(train_loader)
     test_acc = test(test_loader)
     print(f'Epoch: {epoch:03d}, Train Acc: {train_acc:.4f}, Test Acc: {test_acc:.4f}')
-    print(list(model.parameters())[:10])
+
+    #for P in model.parameters():
+    #    print(P)
 

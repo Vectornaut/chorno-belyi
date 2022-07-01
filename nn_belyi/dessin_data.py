@@ -130,6 +130,14 @@ class DessinMedialGraph:
 
   def to_geom_data(self):
 
+    # Set the label to be one of three values.
+    if self.geometry > 0:
+      y = 2
+    elif self.geometry == 0:
+      y = 1
+    else:
+      y = 0
+
     # build edge tensor
     # Pytorch *really* assumes everything in sight is 0-indexed.
     edges = [[a-1, b-1] for [a,b] in self.black_arrows + self.white_arrows]
@@ -138,24 +146,10 @@ class DessinMedialGraph:
     # buld vertex tensor
     vertsb = {x for x in sum(self.black_arrows, [])}
     vertsw = {x for x in sum(self.white_arrows, [])}
-    verts = [[len([arrow for arrow in self.black_arrows if x in arrow])]
-             for x in vertsb.union(vertsw)]
+    #verts = [[len([arrow for arrow in self.black_arrows if x in arrow])]
+    #         for x in vertsb.union(vertsw)]
 
-    # build label
-    # if self.geometry > 0:
-    #   y = [1, 0, 0]
-    # elif self.geometry == 0:
-    #   y = [0, 1, 0]
-    # else:
-    #   y = [0, 0, 1]
-
-    # Set the label to be one of three values.
-    if self.geometry > 0:
-      y = 2
-    elif self.geometry == 0:
-      y = 1
-    else:
-      y = 0
+    verts = [[1] for x in vertsb.union(vertsw)]
     
     return torch_geometric.data.Data(
       x=torch.tensor(verts, dtype=torch.float),
