@@ -1,9 +1,14 @@
 .DS_Store
 *.swp
 *.sig
+*.backup
+notes.org
 *~
 output/
 docs/puzzles.html
 docs/*/
 !docs/images/
 __pycache__/
+nn_belyi/Cora/
+nn_belyi/Geometry/
+nn_belyi/data/
