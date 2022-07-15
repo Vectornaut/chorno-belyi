@@ -133,7 +133,7 @@ class DessinMedialGraph:
     return edges
   
   def to_geom_data(self):
-
+    
     # Set the label to be one of three values.
     if self.geometry > 0:
       y = 2
@@ -159,6 +159,26 @@ class DessinMedialGraph:
       x=torch.tensor(verts, dtype=torch.float),
       edge_index = edge_index.t().contiguous(),
       y=torch.tensor([y], dtype=torch.long))
+  
+  def to_order_data(self):
+    
+    # build edge tensor
+    # Pytorch *really* assumes everything in sight is 0-indexed.
+    edges = [[a-1, b-1] for [a,b] in self.black_arrows + self.white_arrows]
+    edge_index = torch.tensor(edges)
+    
+    # buld vertex tensor
+    vertsb = {x for x in sum(self.black_arrows, [])}
+    vertsw = {x for x in sum(self.white_arrows, [])}
+    #verts = [[len([arrow for arrow in self.black_arrows if x in arrow])]
+    #         for x in vertsb.union(vertsw)]
+    
+    verts = [[1] for x in vertsb.union(vertsw)]
+    
+    return torch_geometric.data.Data(
+      x=torch.tensor(verts, dtype=torch.float),
+      edge_index = edge_index.t().contiguous(),
+      y=torch.tensor([max(self.orders)], dtype=torch.long))
 
 ##############################
 # Training Orbit class
