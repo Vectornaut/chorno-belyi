@@ -82,37 +82,41 @@ class DessinMedialGraph:
    -1   hyperbolic
 
   """
-
-  def __init__(self, black_arrows, white_arrows, label, geometry):
-    self.black_arrows = black_arrows
-    self.white_arrows = white_arrows
-    self.label = label
-    self.geometry = geometry
   
-  @staticmethod
-  def from_triple(triple, label, geometry):
-    return DessinMedialGraph(
-      list(enumerate(triple[0], 1)),
-      list(enumerate(triple[1], 1)),
-      label,
-      geometry
-    )
+  class DessinMedialGraph:
+    def __init__(self, black_arrows, white_arrows, label, orders, geometry):
+      self.black_arrows = black_arrows
+      self.white_arrows = white_arrows
+      self.label = label
+      self.orders = orders
+      self.geometry = geometry
+    
+    @staticmethod
+    def from_triple(triple, label, orders, geometry):
+      return DessinMedialGraph(
+        list(enumerate(triple[0], 1)),
+        list(enumerate(triple[1], 1)),
+        label,
+        orders,
+        geometry
+      )
+    
+    def to_dict(self):
+      return {
+        'black_arrows': self.black_arrows,
+        'white_arrows': self.white_arrows
+      }
+    
+    @staticmethod
+    def from_dict(data, label, orders, geometry):
+      return DessinMedialGraph(
+        data['black_arrows'],
+        data['white_arrows'],
+        label,
+        orders,
+        geometry
+      )
   
-  def to_dict(self):
-    return {
-      'black_arrows': self.black_arrows,
-      'white_arrows': self.white_arrows
-    }
-  
-  @staticmethod
-  def from_dict(data, label, geometry):
-    return DessinMedialGraph(
-      data['black_arrows'],
-      data['white_arrows'],
-      label,
-      geometry
-    )
-
   def vectorize(self):
     """
     Test function to see if we can feed tensor-flow reasonably well
@@ -120,14 +124,14 @@ class DessinMedialGraph:
     
     edges = sum(self.white_arrows) + sum(self.black_arrows)
 
-    # Normalize so that the length of this vector is 40. 
+    # Normalize so that the length of this vector is 40.
     if len(edges) < 30:
       edges = edges + [0 for i in range(30-len(edges))]
     else:
       edges = edges[0:30]
 
     return edges
-
+  
   def to_geom_data(self):
 
     # Set the label to be one of three values.
@@ -137,7 +141,7 @@ class DessinMedialGraph:
       y = 1
     else:
       y = 0
-
+    
     # build edge tensor
     # Pytorch *really* assumes everything in sight is 0-indexed.
     edges = [[a-1, b-1] for [a,b] in self.black_arrows + self.white_arrows]
@@ -148,7 +152,7 @@ class DessinMedialGraph:
     vertsw = {x for x in sum(self.white_arrows, [])}
     #verts = [[len([arrow for arrow in self.black_arrows if x in arrow])]
     #         for x in vertsb.union(vertsw)]
-
+    
     verts = [[1] for x in vertsb.union(vertsw)]
     
     return torch_geometric.data.Data(
@@ -156,20 +160,14 @@ class DessinMedialGraph:
       edge_index = edge_index.t().contiguous(),
       y=torch.tensor([y], dtype=torch.long))
 
-    
 ##############################
 # Training Orbit class
 
 class TrainingOrbit:
-  """
-  A TrainingOrbit consists of, essentially, a list of DessinMedial graphs. These dessins
-  all lie in the same Galois orbit, hence, why they are organized within a TrainingOrbit
-  list.
-  """
-
-  def __init__(self, passport, label, geometry, dessins):
+  def __init__(self, passport, label, orders, geometry, dessins):
     self.passport = passport
     self.label = label
+    self.orders = orders
     self.geometry = geometry
     self.dessins = dessins
   
@@ -181,8 +179,7 @@ class TrainingOrbit:
     passport = name[:label_sep]
     label = name[label_sep + 1:]
     triples = json.loads(triple_str)
-    assert triples and isinstance(triples, list), (
-      'Orbit ' + name + ' must come with a non-empty list of permutation triples')
+    assert triples and isinstance(triples, list), 'Orbit ' + name + ' must come with a non-empty list of permutation triples'
     
     # find the geometry type:
     #    1   spherical
@@ -195,15 +192,16 @@ class TrainingOrbit:
     geometry = int(np.sign(q*r + r*p + p*q - p*q*r))
     
     # build dessins
-    dessins = [DessinMedialGraph.from_triple(triple, label, geometry) for triple in triples]
+    dessins = [DessinMedialGraph.from_triple(triple, label, orders, geometry) for triple in triples]
     
     # build orbit
-    return TrainingOrbit(passport, label, geometry, dessins)
+    return TrainingOrbit(passport, label, orders, geometry, dessins)
   
   def to_dict(self):
     return {
       'passport': self.passport,
       'label': self.label,
+      'orders': self.orders,
       'geometry': self.geometry,
       'dessins': [dessin.to_dict() for dessin in self.dessins]
     }
@@ -212,11 +210,12 @@ class TrainingOrbit:
   def from_dict(data):
     passport = data['passport']
     label = data['label']
+    orders = data['orders']
     geometry = data['geometry']
-    dessins = [DessinMedialGraph.from_dict(dessin, label, geometry) for dessin in data['dessins']]
-    return TrainingOrbit(passport, label, geometry, dessins)
+    dessins = [DessinMedialGraph.from_dict(dessin, label, orders, geometry) for dessin in data['dessins']]
+    return TrainingOrbit(passport, label, orders, geometry, dessins)
 
-  
+
 ################################################################################
 #
 # Read, write, and create raw training data.
