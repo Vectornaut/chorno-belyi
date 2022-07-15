@@ -42,10 +42,14 @@ from torch_geometric.loader import DataLoader, ImbalancedSampler
 
 # Set up balanced sampling
 batch_size = 64
-class_sample_count = [len([G for G in dataset if G.y == i]) for i in range(3)]
-class_weights = 1. / torch.Tensor(class_sample_count)
-trweights = [class_weights[G.y] for G in train_dataset]
-teweights = [class_weights[G.y] for G in test_dataset]
+class_labels = {G.y.item() for G in dataset}
+class_sample_count = {lab:len([G for G in dataset if G.y == lab]) for lab in class_labels}
+class_weights = {lab: 1./class_sample_count[lab]
+                 for lab in class_sample_count.keys()}
+
+class_weights = {0:1, 1:1}
+trweights = [class_weights[G.y.item()] for G in train_dataset]
+teweights = [class_weights[G.y.item()] for G in test_dataset]
 
 trsampler = torch.utils.data.sampler.WeightedRandomSampler(trweights, len(train_dataset),
                                                            replacement=True)
@@ -89,6 +93,8 @@ class GCN(torch.nn.Module):
         self.conv1 = GCNConv(dataset.num_node_features, hidden_channels, bias=False)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.conv4 = GCNConv(hidden_channels, hidden_channels)
+        self.conv5 = GCNConv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, dataset.num_classes, bias=False)
 
     def forward(self, x, edge_index, batch):
@@ -98,7 +104,11 @@ class GCN(torch.nn.Module):
         x = self.conv2(x, edge_index)
         x = x.relu()
         x = self.conv3(x, edge_index)
-
+        x = x.relu()
+        x = self.conv4(x, edge_index)
+        x = x.relu()
+        x = self.conv5(x, edge_index)
+        
         # 2. Readout layer
         x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
@@ -108,8 +118,8 @@ class GCN(torch.nn.Module):
         return x
 
 
-model = GCN(hidden_channels=4)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+model = GCN(hidden_channels=10)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 criterion = torch.nn.CrossEntropyLoss()
 
 def train():
@@ -123,14 +133,16 @@ def train():
         optimizer.zero_grad()  # Clear gradients.
 
 def test(loader):
-     model.eval()
+    model.eval()
 
-     correct = 0
-     for data in loader:  # Iterate in batches over the training/test dataset.
-         out = model(data.x, data.edge_index, data.batch)  
-         pred = out.argmax(dim=1)  # Use the class with highest probability.
-         correct += int((pred == data.y).sum())  # Check against ground-truth labels.         
-     return correct / len(loader.dataset)  # Derive ratio of correct predictions.
+    correct = 0
+    for data in loader:  # Iterate in batches over the training/test dataset.
+        out = model(data.x, data.edge_index, data.batch)
+        print(out)
+        pred = out.argmax(dim=1)  # Use the class with highest probability.
+        correct += int((pred == data.y).sum())  # Check against ground-truth labels.
+    print(f'Pred, Data: {pred}, {data.y}')
+    return correct / len(loader.dataset)  # Derive ratio of correct predictions.
 
  
 print(f'Initial_params: {list(model.parameters())}')
