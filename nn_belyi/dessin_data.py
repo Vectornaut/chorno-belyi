@@ -82,40 +82,38 @@ class DessinMedialGraph:
    -1   hyperbolic
 
   """
-  
-  class DessinMedialGraph:
-    def __init__(self, black_arrows, white_arrows, label, orders, geometry):
-      self.black_arrows = black_arrows
-      self.white_arrows = white_arrows
-      self.label = label
-      self.orders = orders
-      self.geometry = geometry
+  def __init__(self, black_arrows, white_arrows, label, orders, geometry):
+    self.black_arrows = black_arrows
+    self.white_arrows = white_arrows
+    self.label = label
+    self.orders = orders
+    self.geometry = geometry
     
-    @staticmethod
-    def from_triple(triple, label, orders, geometry):
-      return DessinMedialGraph(
-        list(enumerate(triple[0], 1)),
-        list(enumerate(triple[1], 1)),
-        label,
-        orders,
-        geometry
-      )
+  @staticmethod
+  def from_triple(triple, label, orders, geometry):
+    return DessinMedialGraph(
+      list(enumerate(triple[0], 1)),
+      list(enumerate(triple[1], 1)),
+      label,
+      orders,
+      geometry
+    )
     
-    def to_dict(self):
-      return {
-        'black_arrows': self.black_arrows,
-        'white_arrows': self.white_arrows
-      }
+  def to_dict(self):
+    return {
+      'black_arrows': self.black_arrows,
+      'white_arrows': self.white_arrows
+    }
     
-    @staticmethod
-    def from_dict(data, label, orders, geometry):
-      return DessinMedialGraph(
-        data['black_arrows'],
-        data['white_arrows'],
-        label,
-        orders,
-        geometry
-      )
+  @staticmethod
+  def from_dict(data, label, orders, geometry):
+    return DessinMedialGraph(
+      data['black_arrows'],
+      data['white_arrows'],
+      label,
+      orders,
+      geometry
+    )
   
   def vectorize(self):
     """
