@@ -1,6 +1,4 @@
 import torch
-from torch_geometric.datasets import TUDataset
-
 import dessin_data as dd
 from dessin_data import DessinGeometryDataset
 
@@ -32,7 +30,7 @@ print(f'Is undirected: {data.is_undirected()}')
 torch.manual_seed(12345)
 dataset = dataset.shuffle()
 
-T = 800
+T = 700
 N = 1000
 train_dataset = dataset[:T]
 test_dataset = dataset[T:N]
@@ -53,7 +51,7 @@ trsampler = torch.utils.data.sampler.WeightedRandomSampler(trweights, len(train_
                                                            replacement=True)
 
 tesampler = torch.utils.data.sampler.WeightedRandomSampler(teweights, len(test_dataset),
-                                                           replacement=True)
+                                                           replacement=False)
 
 #trsampler = ImbalancedSampler(train_dataset)
 #tesampler = ImbalancedSampler(test_dataset)

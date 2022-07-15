@@ -330,6 +330,46 @@ class DessinGeometryDataset(InMemoryDataset):
     data = list(load_json_data(raw_file).values())
 
     
+    data_list = order_training_set(data) ## the list of x.to_geom_data() outputs
+    
+    data, slices = self.collate(data_list)
+    torch.save((data, slices), self.processed_paths[0])
+
+  
+################################################################################
+#
+# DessinOrderData
+#
+################################################################################
+
+import shutil, os
+import torch
+from torch_geometric.data import InMemoryDataset
+
+class DessinOrderDataset(InMemoryDataset):
+  def __init__(self, root, transform=None, pre_transform=None, pre_filter=None):
+    super().__init__(root, transform, pre_transform, pre_filter)
+    self.data, self.slices = torch.load(self.processed_paths[0])
+  
+  @property
+  def raw_file_names(self):
+    return ['dessin_training.json']
+  
+  @property
+  def processed_file_names(self):
+    return ['I_hope_this_works.data']
+  
+  def download(self):
+    shutil.copyfile("../data-nn/dessin_training.json", self.raw_paths[0])
+  
+  def process(self):
+    ## whatever your script does to read dessin_training.json and spit out a
+    ## list of x.to_geom_data() outputs
+
+    raw_file = self.raw_paths[0]
+    data = list(load_json_data(raw_file).values())
+
+    
     data_list = geometry_training_set(data) ## the list of x.to_geom_data() outputs
     
     data, slices = self.collate(data_list)
@@ -361,6 +401,14 @@ def geometry_training_set(data):
 
   return [x.to_geom_data() for x in dessins]
 
+
+def order_training_set(data):
+  xvalues = []
+  yvalues = []
+
+  dessins = sum(list(sum([x.dessins for x in datum.orbits()], []) for datum in data), [])
+
+  return [x.to_order_data() for x in dessins]
 
     
 
