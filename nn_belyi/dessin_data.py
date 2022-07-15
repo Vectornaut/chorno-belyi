@@ -156,7 +156,18 @@ class DessinMedialGraph:
       edge_index = edge_index.t().contiguous(),
       y=torch.tensor([y], dtype=torch.long))
 
-    
+
+  def to_genus_data(self):
+    pass
+
+
+  def to_generator_data(self):
+    # Compute the degree [In the dessin] of the vertices of the appropriate colour
+    # 
+    # Find the LCM of the cycles 
+    pass
+
+  
 ##############################
 # Training Orbit class
 
