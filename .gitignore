@@ -11,4 +11,5 @@ docs/*/
 __pycache__/
 nn_belyi/Cora/
 nn_belyi/Geometry/
+nn_belyi/Order/
 nn_belyi/data/

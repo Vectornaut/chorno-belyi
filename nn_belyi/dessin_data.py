@@ -176,7 +176,7 @@ class DessinMedialGraph:
     return torch_geometric.data.Data(
       x=torch.tensor(verts, dtype=torch.float),
       edge_index = edge_index.t().contiguous(),
-      y=torch.tensor([max(self.orders)], dtype=torch.long))
+      y=torch.tensor([int(3 in self.orders)], dtype=torch.long))
 
 
   def to_genus_data(self):
@@ -368,7 +368,7 @@ class DessinOrderDataset(InMemoryDataset):
     data = list(load_json_data(raw_file).values())
 
     
-    data_list = geometry_training_set(data) ## the list of x.to_geom_data() outputs
+    data_list = order_training_set(data) ## the list of x.to_geom_data() outputs
     
     data, slices = self.collate(data_list)
     torch.save((data, slices), self.processed_paths[0])
