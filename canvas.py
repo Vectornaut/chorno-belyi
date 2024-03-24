@@ -572,7 +572,7 @@ class DomainCanvas(app.Canvas):
     # initialize step animation
     self.step = lambda t: identity(3)
     self.step_frame_rate = 30
-    self.step_frame_interval = 1000 / self.step_frame_rate
+    self.step_frame_interval = int(1000 / self.step_frame_rate)
     self.step_speed = 6
     self.step_nframes = 1
     self.step_timer = QTimer()
